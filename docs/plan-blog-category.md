@@ -1,139 +1,164 @@
-# 实施计划: 博客多级分类系统 + Web CMS
+# 实施计划: 博客多级分类系统 + Web CMS（v2）
+
+> 基于 Codex 审查报告 `docs/codex-review.md` 修订，对应 PRD v2。
 
 ## 概述
 
-本计划基于 `docs/PRD-blog-category.md`，分为两个 Part：
-- **Part A**：多级分类系统（P0/P1 优先级）
-- **Part B**：Web CMS 编辑系统（P2/P3/P4 优先级）
-
-建议按优先级分阶段实施。
+分三个阶段实施：
+- **Phase 0**：架构决策（必须先完成）
+- **Phase A**：多级分类系统（P1-P3）
+- **Phase B**：Web CMS 编辑系统（P4-P7）
 
 ---
 
-# Part A: 多级分类系统
+## Phase 0: 架构决策（P0）
 
-## Phase A-1: 一级分类基础（P0）
+> 在写任何代码前必须确认的四件事（Codex 建议 #7）。
 
-### Step 1: 创建树状分类配置
+### 决策清单
+
+| 决策项 | 确认方案 |
+|--------|----------|
+| URL 规则 | 文章稳定 `/${lang}/blog/${slug}/`；分类独立 `/${lang}/blog/category/[...path]/` |
+| 分类存储 | `categories.json`（数据） + `categories.ts`（读取/校验工具） |
+| 认证方案 | Cloudflare Worker + GitHub App |
+| 部署分支 | `master`（与 `deploy.yml` 一致） |
+
+### Step 0.1: 创建 GitHub App
+
+在 GitHub Settings → Developer settings → GitHub Apps 创建：
+- 名称：`YHL Blog CMS`
+- 回调 URL：`https://admin.alidadei.workers.dev/api/auth/callback`（Worker 部署后填写）
+- 权限：Contents (Read/Write)、Actions (Read)
+- 安装目标：仅 `Alidadei/YHL.github.io` 仓库
+- 记录 App ID、Client ID，生成 Private Key
+
+### Step 0.2: 创建 Cloudflare Worker 项目
+
+在项目仓库中新建 `worker/` 目录：
+- 使用 Wrangler CLI 初始化
+- 实现 OAuth callback + API 代理 + 会话管理
+- 部署到 `admin.alidadei.workers.dev`
+
+---
+
+## Phase A: 多级分类系统
+
+### Step 1: 创建分类数据与工具
+
+**新建**: `src/data/categories.json`
+
+```json
+[
+  {
+    "slug": "tech-learning",
+    "label": { "zh": "技术学习", "en": "Tech Learning" },
+    "description": { "zh": "论文阅读、技术调研、知识点总结等", "en": "Paper reading, tech research, knowledge summaries" },
+    "aliases": [],
+    "children": []
+  },
+  {
+    "slug": "personal-practice",
+    "label": { "zh": "个人实践", "en": "Personal Practice" },
+    "description": { "zh": "个人动手实践项目记录", "en": "Hands-on project records" },
+    "aliases": [],
+    "children": []
+  },
+  {
+    "slug": "personal-views",
+    "label": { "zh": "个人看法", "en": "Personal Views" },
+    "description": { "zh": "基于调研实践的领域观点", "en": "Domain perspectives based on research & practice" },
+    "aliases": [],
+    "children": []
+  }
+]
+```
 
 **新建**: `src/data/categories.ts`
 
-采用树状结构定义分类，支持无限嵌套：
-
+工具模块（只读，不改）：
 ```typescript
-export interface CategoryNode {
-  slug: string;
-  label: { zh: string; en: string };
-  description: { zh: string; en: string };
-  children?: CategoryNode[];
-}
+import categoryData from './categories.json';
 
-export const categoryTree: CategoryNode[] = [
-  {
-    slug: 'tech-learning',
-    label: { zh: '技术学习', en: 'Tech Learning' },
-    description: { zh: '论文阅读、技术调研、知识点总结等', en: 'Paper reading, tech research, knowledge summaries' },
-    children: [
-      // 未来子分类在此添加
-    ],
-  },
-  {
-    slug: 'personal-practice',
-    label: { zh: '个人实践', en: 'Personal Practice' },
-    description: { zh: '个人动手实践项目记录', en: 'Hands-on project records' },
-    children: [],
-  },
-  {
-    slug: 'personal-views',
-    label: { zh: '个人看法', en: 'Personal Views' },
-    description: { zh: '基于调研实践的领域观点', en: 'Domain perspectives based on research & practice' },
-    children: [],
-  },
-];
+export type CategoryNode = typeof categoryData[number];
 
-// 工具函数
 export function getTopLevelCategories(): CategoryNode[] { ... }
 export function findCategoryByPath(path: string[]): CategoryNode | null { ... }
 export function getCategoryLabel(path: string[], lang: 'zh' | 'en'): string { ... }
 export function flattenCategoryPaths(): string[][] { ... }
+export function validateSlug(slug: string): boolean {
+  return /^[a-z0-9-]+$/.test(slug) && slug.length > 0;
+}
+export function validateUniqueSlugs(tree: CategoryNode[], seen = new Set<string>()): string[] {
+  // 返回冲突的 slug 列表
+}
 ```
 
 ### Step 2: 更新 Content Schema
 
 **修改**: `src/content.config.ts`
 
-将 `category` 改为 `categories` 数组，表示从根到叶的完整路径：
-
 ```typescript
-// 修改前
-category: z.string().optional(),
-
-// 修改后
+// 新增 categories 字段（保留旧 category 字段做兼容）
 categories: z.array(z.string()).optional(),
-  // 完整分类路径，如 ['tech-learning', 'deep-learning', 'transformer']
-  // 旧文章不设此字段则默认为 ['tech-learning']
+  // 完整分类路径，如 ['tech-learning', 'deep-learning']
+  // 构建时通过 categories.ts 校验路径是否存在
 ```
 
-> 使用 `z.array(z.string())` 而非固定 enum，以支持无限层级扩展。
-> 分类合法性在构建时通过 `categories.ts` 的工具函数校验。
+> 旧 `category: z.string().optional()` 暂时保留，迁移完成后移除。
 
-### Step 3: 重构文章路由
+### Step 3: 更新文章路由（保持稳定 URL）
 
-**删除**: `src/pages/[lang]/blog/[...slug].astro`
+**修改**: `src/pages/[lang]/blog/[...slug].astro`
 
-**新建**: `src/pages/[lang]/blog/[...path].astro`
+保持现有路由结构不变（文章 URL 不含分类），只需在 `PostLayout` 中传入分类信息：
 
-使用 catch-all 路由匹配任意深度的分类路径：
+```typescript
+const { post } = Astro.props;
+const { Content } = await render(post);
+const cats = post.data.categories || post.data.category ? [post.data.category || 'tech-learning'] : [];
+---
+
+<PostLayout title={post.data.title} ... categories={cats} lang={lang}>
+  <Content />
+</PostLayout>
+```
+
+### Step 4: 创建分类列表页路由
+
+**新建**: `src/pages/[lang]/blog/category/[...path].astro`
+
+独立的分类浏览页面：
 
 ```typescript
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
-  return posts.map((post) => {
-    const parts = post.id.split('/');
-    const lang = parts[0] as Lang;
-    const slug = parts.slice(1).join('/');
-    const cats = post.data.categories || ['tech-learning'];
-    // path = 分类路径 + slug，如 ['tech-learning', 'deep-learning', 'slug']
-    const path = [...cats, slug];
-    return {
-      params: { lang, path: path.join('/') },
-      props: { post },
-    };
-  });
-}
-```
-
-URL 示例：
-- `/zh/blog/tech-learning/data-structure/`（一级分类）
-- `/zh/blog/tech-learning/deep-learning/attention-mechanism/`（二级分类）
-
-### Step 4: 添加分类列表页路由
-
-**新建**: `src/pages/[lang]/blog/[...category]/index.astro`（或在 index.astro 中通过 query param 处理）
-
-为每个分类路径生成独立的列表页：
-
-```typescript
-export async function getStaticPaths() {
-  // 获取所有分类路径（从 categoryTree 扁平化）
   const allPaths = flattenCategoryPaths();
-  return allPaths.flatMap(path => [
-    { params: { lang: 'zh', category: path.join('/') } },
-    { params: { lang: 'en', category: path.join('/') } },
-  ]);
+  const langs: Lang[] = ['zh', 'en'];
+
+  return langs.flatMap(lang =>
+    allPaths.map(path => ({
+      params: { lang, path: path.join('/') },
+      props: { categoryPath: path },
+    }))
+  );
 }
+
+// 同时为 aliases 生成重定向页面
 ```
 
-> **备选方案**：不生成分类列表页，而是在博客 index 页面通过前端 Tab + 子分类树实现筛选，URL 使用 hash 或 query param。这样更简单但 SEO 友好度较低。
+页面内容：
+- 面包屑导航
+- 该分类及子分类下的文章列表
+- 子分类树侧栏
 
 ### Step 5: 更新博客列表页
 
 **修改**: `src/pages/[lang]/blog/index.astro`
 
-- 顶部显示一级分类 Tab（全部 + 三个分类）
-- 选中一级分类后，下方显示该分类的子分类树（可折叠）
-- 子分类项显示文章数量
-- 文章链接格式：`/${lang}/blog/${cats.join('/')}/${slug}/`
+- 添加一级分类 Tab（全部 + 三个分类）
+- Tab 切换通过前端 JavaScript 筛选（纯客户端行为）
+- 文章卡片中显示分类标签
+- 分类标签链接到 `/[lang]/blog/category/${cats.join('/')}/`
 - 序列化数据中包含 `categories` 字段
 
 ### Step 6: 更新 i18n
@@ -141,342 +166,311 @@ export async function getStaticPaths() {
 **修改**: `src/i18n/ui.ts`
 
 ```typescript
-// zh
+// zh 新增
 'blog.category.all': '全部',
 'blog.category.tech-learning': '技术学习',
 'blog.category.personal-practice': '个人实践',
 'blog.category.personal-views': '个人看法',
 'blog.noPosts': '该分类暂无文章',
-'blog.breadcrumb': '面包屑',
 'blog.subcategories': '子分类',
+'blog.viewCategory': '查看分类',
 
-// en
+// en 新增
 'blog.category.all': 'All',
 'blog.category.tech-learning': 'Tech Learning',
 'blog.category.personal-practice': 'Personal Practice',
 'blog.category.personal-views': 'Personal Views',
 'blog.noPosts': 'No posts in this category',
-'blog.breadcrumb': 'Breadcrumb',
 'blog.subcategories': 'Subcategories',
+'blog.viewCategory': 'View category',
 ```
 
-> 子分类的翻译直接从 `categoryTree` 中读取，不需要逐个加到 ui.ts。
+> 子分类名称从 `categories.json` 读取，不逐一加到 ui.ts。
 
 ### Step 7: 更新 PostLayout
 
 **修改**: `src/layouts/PostLayout.astro`
 
-- 添加 `categories` 和 `lang` props
-- 标题上方显示面包屑导航（每级可点击）
-- 修复日期硬编码 `'zh-CN'` 问题
+- 添加 `categories` 和 `lang` Props
+- 标题上方显示分类面包屑（从 categories.json 读取标签名）
+- 每级面包屑链接到对应分类列表页
+- 修复日期硬编码 `'zh-CN'` → 根据 lang 动态选择
 
-### Step 8: 更新首页 + RSS + SearchBar
+### Step 8: 新建组件
 
-**修改**:
-- `src/pages/[lang]/index.astro` — 链接格式更新
-- `src/pages/rss.xml.ts` — 链接格式更新
-- `src/components/blog/SearchBar.tsx` — 显示分类路径
+**新建**: `src/components/blog/Breadcrumb.tsx`
 
-### Step 9: 标记现有文章
+通用面包屑 React 组件：
+- 输入：分类路径数组 + 语言
+- 输出：`技术学习 > 深度学习 > Transformer`
+- 每级可点击，链接到 `/${lang}/blog/category/${path}/`
+
+**新建**: `src/components/blog/CategoryTree.tsx`
+
+分类树组件：
+- 从 categories.json 读取树结构
+- 支持展开/折叠
+- 显示每个节点的文章数量
+- 当前选中节点高亮
+
+### Step 9: 更新 SearchBar
+
+**修改**: `src/components/blog/SearchBar.tsx`
+
+Codex 指出当前 SearchBar 只有搜索框和计数，需补完整结果 UI：
+- 搜索结果展示为文章列表（标题 + 分类标签 + 日期）
+- 分类标签可点击跳转到分类页
+- 序列化数据中包含 `categories` 字段
+
+### Step 10: 更新首页 + RSS
+
+**修改**: `src/pages/[lang]/index.astro`
+- 最近文章卡片中添加分类标签
+- 文章链接格式不变（稳定 URL）
+
+**修改**: `src/pages/rss.xml.ts`
+- 文章链接使用稳定 URL：`/${post.data.lang}/blog/${slug}/`
+- item 中添加 category 元数据
+
+### Step 11: 标记现有文章
 
 **修改**:
 - `src/content/posts/zh/data-structure.md` → 添加 `categories: ['tech-learning']`
 - `src/content/posts/zh/microcomputer.md` → 添加 `categories: ['tech-learning']`
 
----
+### Step 12: 添加示例子分类（验证多级功能）
 
-## Phase A-2: 多级子分类（P1）
+在 `categories.json` 的 `tech-learning` 下添加示例子分类：
 
-### Step 10: 子分类树组件
-
-**新建**: `src/components/blog/CategoryTree.tsx`
-
-React 组件，渲染分类树：
-- 支持展开/折叠
-- 显示每个节点的文章数量
-- 当前选中节点高亮
-- 点击节点筛选文章列表
-
-### Step 11: 面包屑组件
-
-**新建**: `src/components/blog/Breadcrumb.tsx`
-
-通用面包屑组件：
-- 输入分类路径数组 → 渲染 `技术学习 > 深度学习 > Transformer`
-- 每级可点击跳转
-- 支持中英文
-
-### Step 12: 添加示例子分类
-
-在 `categories.ts` 中添加示例子分类用于验证：
-
-```typescript
+```json
 {
-  slug: 'tech-learning',
-  children: [
+  "slug": "deep-learning",
+  "label": { "zh": "深度学习", "en": "Deep Learning" },
+  "description": { "zh": "神经网络、深度学习相关", "en": "Neural networks & deep learning" },
+  "aliases": [],
+  "children": [
     {
-      slug: 'deep-learning',
-      label: { zh: '深度学习', en: 'Deep Learning' },
-      description: { zh: '神经网络、深度学习相关', en: 'Neural networks & deep learning' },
-      children: [
-        {
-          slug: 'transformer',
-          label: { zh: 'Transformer', en: 'Transformer' },
-          description: { zh: 'Transformer 架构相关', en: 'Transformer architecture' },
-        },
-      ],
-    },
-    {
-      slug: 'embedded',
-      label: { zh: '嵌入式开发', en: 'Embedded Development' },
-      description: { zh: '单片机、嵌入式系统', en: 'MCU & embedded systems' },
-    },
-  ],
+      "slug": "transformer",
+      "label": { "zh": "Transformer", "en": "Transformer" },
+      "description": { "zh": "Transformer 架构相关", "en": "Transformer architecture" },
+      "aliases": [],
+      "children": []
+    }
+  ]
 }
 ```
 
 ---
 
-# Part B: Web CMS 编辑系统
+## Phase B: Web CMS 编辑系统
 
-## Phase B-1: 基础架构（P2）
+### Step 13: Cloudflare Worker 基础
 
-### Step 13: GitHub OAuth 配置
+**新建目录**: `worker/`
 
-**新建**: `src/lib/github/auth.ts`
-
-- GitHub OAuth App 配置（Client ID、回调 URL）
-- Device Flow 或 Web Application Flow 实现
-- Token 存储管理（sessionStorage）
-- 身份验证（检查是否为仓库 owner）
-
-```typescript
-export const GITHUB_CONFIG = {
-  clientId: import.meta.env.GITHUB_CLIENT_ID,
-  repo: 'Alidadei/YHL.github.io',
-  owner: 'Alidadei',
-};
-
-export async function authenticate(): Promise<string> { ... }
-export async function isAuthorized(token: string): Promise<boolean> { ... }
-export function getStoredToken(): string | null { ... }
+```
+worker/
+├── wrangler.toml         ← Worker 配置
+├── src/
+│   ├── index.ts          ← 主入口 + 路由
+│   ├── auth.ts           ← GitHub App OAuth 逻辑
+│   ├── github-api.ts     ← GitHub API 代理
+│   ├── batch.ts          ← GraphQL 批量操作
+│   ├── session.ts        ← 会话管理（KV 存储）
+│   └── utils.ts          ← 工具函数
+└── package.json
 ```
 
-### Step 14: GitHub API 封装
+核心功能：
+- OAuth callback 端点（code → token → 验证 user ID → 设置 cookie）
+- API 代理（浏览器 → Worker → GitHub API）
+- 会话管理（使用 Cloudflare KV 存储）
+- CORS 和安全头设置
 
-**新建**: `src/lib/github/api.ts`
-
-封装 GitHub Contents API 操作：
-
-```typescript
-export class GitHubCMS {
-  constructor(private token: string) {}
-
-  // 文件操作
-  async readFile(path: string): Promise<{ content: string; sha: string }> { ... }
-  async createFile(path: string, content: string, message: string): Promise<void> { ... }
-  async updateFile(path: string, content: string, sha: string, message: string): Promise<void> { ... }
-  async deleteFile(path: string, sha: string, message: string): Promise<void> { ... }
-  async listFiles(dir: string): Promise<GitHubFile[]> { ... }
-
-  // 图片上传
-  async uploadImage(file: File, path: string): Promise<string> { ... }
-
-  // 部署状态
-  async getLatestDeploymentStatus(): Promise<string> { ... }
-}
-```
-
-### Step 15: Admin 页面路由
+### Step 14: Admin 页面路由
 
 **新建**: `src/pages/[lang]/admin/index.astro`
 
-Admin SPA 入口页面：
-- 检查认证状态
-- 未登录 → 显示 GitHub 登录按钮
+- 检查会话 cookie（通过 Worker API `/api/user`）
+- 未登录 → 显示 GitHub 登录按钮（链接到 Worker 授权端点）
 - 已登录 + 已授权 → 加载 Admin React App
 - 已登录 + 未授权 → 显示 403
 
-### Step 16: Admin React App 骨架
-
-**新建**: `src/components/admin/AdminApp.tsx`
-
-Admin 主组件，包含：
-- 侧边栏导航：文章管理 / 标签管理 / 分类管理 / 图片管理
-- 主内容区域
-- 顶部状态栏：用户信息 / 部署状态 / 退出登录
+### Step 15: Admin React App
 
 **新建目录**: `src/components/admin/`
-- `AdminApp.tsx` — 主框架
-- `PostList.tsx` — 文章列表
-- `PostEditor.tsx` — 文章编辑器
-- `TagManager.tsx` — 标签管理
-- `CategoryManager.tsx` — 分类管理
-- `ImageManager.tsx` — 图片管理
-- `LoginScreen.tsx` — 登录页
-- `AuthGuard.tsx` — 权限守卫
 
-### Step 17: Markdown 编辑器集成
+```
+src/components/admin/
+├── AdminApp.tsx          ← 主框架（侧边栏 + 路由）
+├── AuthGuard.tsx         ← 权限守卫
+├── LoginScreen.tsx       ← 登录页
+├── PostList.tsx          ← 文章列表
+├── PostEditor.tsx        ← 文章编辑器（Markdown + frontmatter）
+├── TagManager.tsx        ← 标签管理
+├── CategoryManager.tsx   ← 分类管理
+├── ImageManager.tsx      ← 图片管理
+└── DeployStatus.tsx      ← 部署状态
+```
+
+### Step 16: 文章编辑器
 
 **新建**: `src/components/admin/PostEditor.tsx`
 
-安装依赖：`@uiw/react-md-editor`
+安装依赖：`npm install @uiw/react-md-editor dompurify @types/dompurify`
 
 功能：
-- 左右分栏：左侧 Markdown 编辑，右侧实时预览
+- 左右分栏：Markdown 编辑 + 实时预览
+- 预览使用 DOMPurify sanitize（防 XSS）
 - Frontmatter 可视化编辑面板
-- 分类选择器（树状选择）
+- 分类选择器（树状多选，从 categories.json 读取）
 - 标签选择器（多选 + 创建新标签）
 - 自动保存草稿到 localStorage
-- 提交保存到 GitHub
+- 保存与发布分离（`draft: true/false`）
+- 通过 Worker API 提交到 GitHub
 
-### Step 18: 文章 CRUD
+### Step 17: 文章 CRUD
 
-**新建/修改**: `src/components/admin/PostList.tsx`
+**修改**: `src/components/admin/PostList.tsx`
 
-功能：
-- 列出所有文章（标题、分类、日期、标签）
+- 列出所有文章（标题、分类、日期、标签、draft 状态）
 - 按分类筛选
 - 搜索
-- 新建文章 → 打开编辑器
-- 编辑文章 → 读取文件 → 打开编辑器
-- 删除文章 → 确认对话框 → 调用 API
+- 新建 → 打开编辑器（默认 draft: true）
+- 编辑 → 读取 → 打开编辑器
+- 删除 → 二次确认 → Worker API
 
----
-
-## Phase B-2: 标签与分类管理（P3/P4）
-
-### Step 19: 标签管理
+### Step 18: 标签管理
 
 **新建**: `src/components/admin/TagManager.tsx`
 
-功能：
-- 从所有文章中提取标签列表及使用次数
-- 创建新标签
-- 重命名标签 → 批量更新所有文章的 frontmatter
-- 合并标签 → 将多个标签合并为一个
-- 删除标签 → 从所有文章中移除
+- 从所有文章提取标签列表及使用次数
+- 创建/重命名/删除标签
+- **批量操作**：通过 Worker `/api/batch` 端点，使用 GraphQL `createCommitOnBranch` 单次 commit
 
-技术方案：批量操作使用 GitHub API 的 multi-file commit（一次 commit 修改多个文件）
-
-### Step 20: 分类管理
+### Step 19: 分类管理
 
 **新建**: `src/components/admin/CategoryManager.tsx`
 
-功能：
-- 树状可视化展示当前分类结构
-- 添加子分类：选择父节点 → 输入 slug + 中英文名 → 更新 `categories.ts`
-- 重命名分类：修改 `categories.ts` 中的节点 → 可选批量更新文章 `categories` 字段
-- 删除分类：删除节点 → 选择子分类/文章处理方式
-- 拖拽排序：调整同级分类顺序
+- 树状展示分类结构
+- 添加子分类（修改 categories.json）
+- 重命名分类（自动添加 aliases + 批量更新文章 categories）
+- 删除分类（选择处理方式：上移到父级 / 删除）
+- 所有修改走 Worker API，不改 TS 源码
 
-### Step 21: 图片管理
+### Step 20: 图片上传
 
 **新建**: `src/components/admin/ImageManager.tsx`
 
-功能：
-- 浏览 `public/images/posts/` 下所有图片（缩略图网格）
-- 拖拽/选择上传新图片
-- 点击图片 → 复制 Markdown 插入语法
+- 拖拽/选择上传
+- 安全约束（MIME 白名单、≤ 5MB、文件名唯一化）
+- 图片浏览（缩略图网格）
+- 点击复制 Markdown 插入语法
 - 删除图片
 
----
+### Step 21: 部署状态集成
 
-## Phase B-3: 自动部署（P2）
+**新建**: `src/components/admin/DeployStatus.tsx`
 
-### Step 22: 部署状态集成
-
-**修改**: `src/components/admin/AdminApp.tsx`
-
-- 每次保存后轮询 GitHub Actions API 检查部署状态
+- 提交后轮询 Worker `/api/deploy/status`
 - 显示：构建中 / 部署成功 / 部署失败
-- 失败时提供查看日志的链接
+- 失败时提供查看日志链接
 
-### Step 23: GitHub Actions 工作流更新
+### Step 22: 部署分支对齐
 
-**检查/修改**: `.github/workflows/` 下的部署工作流
+**检查**: `.github/workflows/deploy.yml`
 
-确保 push 到 main 分支时自动触发 build + deploy。
+当前已监听 `master` 分支，无需修改。确认 CMS 提交目标分支为 `master`。
 
 ---
 
 ## 文件变更总清单
 
-### Part A（多级分类）
+### Phase A（多级分类）
 
 | 文件 | 操作 | Step |
 |------|------|------|
+| `src/data/categories.json` | 新建 | 1 |
 | `src/data/categories.ts` | 新建 | 1 |
 | `src/content.config.ts` | 修改 | 2 |
-| `src/pages/[lang]/blog/[...path].astro` | 新建 | 3 |
-| `src/pages/[lang]/blog/[...slug].astro` | 删除 | 3 |
+| `src/pages/[lang]/blog/[...slug].astro` | 修改 | 3 |
+| `src/pages/[lang]/blog/category/[...path].astro` | 新建 | 4 |
 | `src/pages/[lang]/blog/index.astro` | 修改 | 5 |
 | `src/i18n/ui.ts` | 修改 | 6 |
 | `src/layouts/PostLayout.astro` | 修改 | 7 |
-| `src/pages/[lang]/index.astro` | 修改 | 8 |
-| `src/pages/rss.xml.ts` | 修改 | 8 |
-| `src/components/blog/SearchBar.tsx` | 修改 | 8 |
-| `src/content/posts/zh/data-structure.md` | 修改 | 9 |
-| `src/content/posts/zh/microcomputer.md` | 修改 | 9 |
-| `src/components/blog/CategoryTree.tsx` | 新建 | 10 |
-| `src/components/blog/Breadcrumb.tsx` | 新建 | 11 |
+| `src/components/blog/Breadcrumb.tsx` | 新建 | 8 |
+| `src/components/blog/CategoryTree.tsx` | 新建 | 8 |
+| `src/components/blog/SearchBar.tsx` | 修改 | 9 |
+| `src/pages/[lang]/index.astro` | 修改 | 10 |
+| `src/pages/rss.xml.ts` | 修改 | 10 |
+| `src/content/posts/zh/data-structure.md` | 修改 | 11 |
+| `src/content/posts/zh/microcomputer.md` | 修改 | 11 |
 
-### Part B（Web CMS）
+### Phase B（Web CMS）
 
-| 文件 | 操作 | Step |
-|------|------|------|
-| `src/lib/github/auth.ts` | 新建 | 13 |
-| `src/lib/github/api.ts` | 新建 | 14 |
-| `src/pages/[lang]/admin/index.astro` | 新建 | 15 |
-| `src/components/admin/AdminApp.tsx` | 新建 | 16 |
-| `src/components/admin/PostList.tsx` | 新建 | 18 |
-| `src/components/admin/PostEditor.tsx` | 新建 | 17 |
-| `src/components/admin/TagManager.tsx` | 新建 | 19 |
-| `src/components/admin/CategoryManager.tsx` | 新建 | 20 |
-| `src/components/admin/ImageManager.tsx` | 新建 | 21 |
-| `src/components/admin/LoginScreen.tsx` | 新建 | 16 |
-| `src/components/admin/AuthGuard.tsx` | 新建 | 16 |
-| `.github/workflows/deploy.yml` | 检查/修改 | 23 |
+| 文件/目录 | 操作 | Step |
+|-----------|------|------|
+| `worker/` 整个目录 | 新建 | 13 |
+| `src/pages/[lang]/admin/index.astro` | 新建 | 14 |
+| `src/components/admin/*.tsx` (8个文件) | 新建 | 15-21 |
+| `.github/workflows/deploy.yml` | 检查 | 22 |
 
-共 **25+ 个文件**，其中 Part A 14 个文件，Part B 12+ 个文件。
+共 **~28 个文件**：Phase A 15 个，Phase B 13+ 个。
+
+---
+
+## 依赖安装
+
+```bash
+# Phase A 无新依赖
+
+# Phase B
+npm install @uiw/react-md-editor dompurify @types/dompurify
+```
 
 ---
 
 ## 验证步骤
 
-### Part A 验证
+### Phase A 验证
 
 1. `npm run dev` 启动
-2. `/zh/blog/` — 确认一级 Tab 显示
-3. Tab 切换筛选正确
-4. 子分类树展开/折叠正常
-5. 文章 URL 包含完整分类路径：`/zh/blog/tech-learning/deep-learning/slug/`
-6. 文章页面包屑正确且可点击
-7. 中英文切换正常
+2. `/zh/blog/` — 确认 Tab 显示和切换
+3. `/zh/blog/category/tech-learning/` — 确认分类列表页独立路由
+4. 文章 URL 保持稳定：`/zh/blog/data-structure/`
+5. 文章页面包屑正确且可点击到分类页
+6. 子分类树展开/折叠正常
+7. SearchBar 显示完整结果列表
 8. RSS 链接格式正确
 9. `npm run build` 无错误
+10. 修改 categories.json 中的无效 slug → 构建报错
 
-### Part B 验证
+### Phase B 验证
 
-1. 访问 `/zh/admin/` — 跳转 GitHub 登录
-2. 非仓库 owner 登录后 → 显示 403
-3. Owner 登录 → 进入管理面板
-4. 创建文章 → 填写标题/分类/标签 → 保存 → 确认 GitHub 仓库有新文件
-5. 编辑文章 → 修改内容 → 保存 → 确认更新
-6. 删除文章 → 确认后文件从仓库删除
-7. 标签管理 → 重命名 → 确认所有文章更新
-8. 分类管理 → 添加子分类 → 确认 categories.ts 更新
-9. 图片上传 → 确认文件上传到仓库 → 插入 Markdown
-10. 保存后确认 GitHub Actions 触发并部署成功
+1. 访问 `/zh/admin/` → 跳转 GitHub 授权
+2. 浏览器 DevTools → 无 GitHub token 泄露到 JS
+3. 非 owner 登录 → 403
+4. 创建文章 → 默认 draft: true
+5. 发布文章 → 确认仓库有新 commit
+6. Markdown 预览 → 检查 XSS 被 sanitize
+7. 重命名标签 → 确认单次 commit 修改多文件
+8. 添加子分类 → 确认只改 JSON 不改 TS
+9. 上传超大/非法文件 → 被拒绝
+10. 提交后确认 GitHub Actions 触发并部署成功
 
 ---
 
-## 依赖安装（Part B 新增）
+## Codex 审查问题对照
 
-```bash
-npm install @uiw/react-md-editor
-# OAuth 相关无需额外依赖（使用 fetch + GitHub REST API）
-```
+| Codex 问题 | 本版解决方案 | 对应 Step |
+|------------|-------------|-----------|
+| #1 认证架构不成立 | 改用 Worker + GitHub App | 0.1, 0.2, 13 |
+| #2 URL 命名空间冲突 | 文章稳定 URL + 分类独立 `/category/` 前缀 | 3, 4 |
+| #3 CMS 改 TS 源码 | 改用 categories.json，CMS 只写 JSON | 1 |
+| #4 URL 强耦合无 redirect | 文章 URL 不含分类 + aliases 机制 | FR-A5 |
+| #5 批量 API 错误 | 改用 GraphQL createCommitOnBranch | 13, 18 |
+| #6 安全设计不足 | 补齐 state/nonce、ID 白名单、sanitize、CSP、上传约束 | FR-B1, B.4 |
+| #7 计划遗漏 | 统一 URL 方案、SearchBar 完整改造 | 5, 9 |
 
 ---
 
@@ -484,15 +478,15 @@ npm install @uiw/react-md-editor
 
 ### 添加新的一级分类
 
-1. 在 `src/data/categories.ts` 的 `categoryTree` 数组中添加新节点
-2. 在 `src/i18n/ui.ts` 中添加 Tab 翻译 key
-3. 新文章的 `categories` 字段使用新分类 slug
+1. 在 `categories.json` 数组中添加新节点
+2. 在 `ui.ts` 中添加 Tab 翻译 key
+3. 新文章使用新分类 slug
 
 ### 添加子分类
 
-1. 在 `categoryTree` 对应节点的 `children` 中添加子节点
+1. 在 `categories.json` 对应节点的 `children` 中添加
 2. 无需修改 schema 或路由代码
 
 ### 通过 CMS 管理
 
-Phase B 完成后，所有分类/标签管理均可通过 Web 界面完成，无需手动编辑代码文件。
+Phase B 完成后，分类/标签管理均通过 Web 界面完成。CMS 只修改 JSON 数据文件和 Markdown 文章，不触碰 TS 源码。
