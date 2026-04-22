@@ -1,0 +1,133 @@
+---
+import PageLayout from '../../../../layouts/PageLayout.astro';
+import { type Lang } from '../../../../data/site';
+import { getUI } from '../../../../i18n/ui';
+import { getCollection } from 'astro:content';
+import {
+  categoryTree,
+  flattenCategoryPaths,
+  findCategoryByPath,
+  getPostsInCategory,
+  getCategoryLabel,
+  type CategoryNode,
+} from '../../../../data/categories';
+
+export async function getStaticPaths() {
+  const allPaths = flattenCategoryPaths();
+  const langs: Lang[] = ['zh', 'en'];
+
+  const paths = langs.flatMap(lang =>
+    allPaths.map(categoryPath => ({
+      params: { lang, path: categoryPath.join('/') },
+      props: { categoryPath },
+    }))
+  );
+
+  return paths;
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const { categoryPath } = Astro.props as { categoryPath: string[] };
+const t = getUI.bind(null, lang as Lang);
+
+const category = findCategoryByPath(categoryPath);
+const allPosts = await getCollection('posts', ({ data }) => data.lang === lang && !data.draft);
+const postsInCategory = getPostsInCategory(allPosts, categoryPath);
+
+// Get child categories
+function getChildCategories(path: string[]): CategoryNode[] {
+  let nodes = categoryTree;
+  for (const seg of path) {
+    const node = nodes.find(n => n.slug === seg);
+    if (!node) return [];
+    nodes = node.children;
+  }
+  return nodes;
+}
+const childCategories = getChildCategories(categoryPath);
+
+// Breadcrumb items
+const breadcrumbItems = categoryPath.map((seg, i) => ({
+  slug: seg,
+  path: categoryPath.slice(0, i + 1),
+  label: getCategoryLabel(categoryPath.slice(0, i + 1), lang),
+}));
+---
+
+<PageLayout title={category ? category.label[lang] : t('nav.blog')}>
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm text-text-muted mb-6 flex-wrap">
+    <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{t('nav.blog')}</a>
+    {breadcrumbItems.map((item, i) => (
+      <>
+        <span>/</span>
+        {i < breadcrumbItems.length - 1 ? (
+          <a href={`/${lang}/blog/category/${item.path.join('/')}/`} class="hover:text-accent transition-colors">
+            {item.label.split(' > ').pop()}
+          </a>
+        ) : (
+          <span class="text-primary font-medium">{item.label.split(' > ').pop()}</span>
+        )}
+      </>
+    ))}
+  </nav>
+
+  <h1 class="text-3xl font-bold text-primary mb-2">
+    {category?.label[lang] ?? categoryPath[categoryPath.length - 1]}
+  </h1>
+  {category?.description[lang] && (
+    <p class="text-text-muted mb-8">{category.description[lang]}</p>
+  )}
+
+  <!-- Child categories -->
+  {childCategories.length > 0 && (
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-primary mb-4">{lang === 'zh' ? '子分类' : 'Subcategories'}</h2>
+      <div class="flex flex-wrap gap-2">
+        {childCategories.map(child => (
+          <a
+            href={`/${lang}/blog/category/${[...categoryPath, child.slug].join('/')}/`}
+            class="px-4 py-2 rounded-lg border border-border hover:border-accent/50 hover:shadow-sm transition-all text-sm"
+          >
+            {child.label[lang]}
+            <span class="text-text-muted ml-1">({getPostsInCategory(allPosts, [...categoryPath, child.slug]).length})</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- Posts in this category (including subcategories) -->
+  <div class="border-t border-border pt-6">
+    <h2 class="text-lg font-semibold text-primary mb-4">
+      {lang === 'zh' ? '文章' : 'Posts'}
+    </h2>
+    {postsInCategory.length === 0 ? (
+      <p class="text-text-muted">{lang === 'zh' ? '该分类暂无文章' : 'No posts in this category'}</p>
+    ) : (
+      <div class="space-y-4">
+        {postsInCategory.map((post) => {
+          const slug = post.id.split('/').slice(1).join('/');
+          return (
+            <a
+              href={`/${lang}/blog/${slug}/`}
+              class="block p-5 rounded-lg border border-border hover:border-accent/50 hover:shadow-sm transition-all group"
+            >
+              <h3 class="text-lg font-semibold text-primary group-hover:text-accent transition-colors mb-1">
+                {post.data.title}
+              </h3>
+              {post.data.description && (
+                <p class="text-text-muted text-sm mb-2">{post.data.description}</p>
+              )}
+              <time class="text-xs text-text-muted">
+                {post.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                  year: 'numeric', month: 'short', day: 'numeric'
+                })}
+              </time>
+            </a>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</PageLayout>

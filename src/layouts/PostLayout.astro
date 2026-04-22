@@ -2,6 +2,8 @@
 import BaseLayout from './BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import { type Lang } from '../data/site';
+import { getCategoryLabel } from '../data/categories';
 
 interface Props {
   title: string;
@@ -9,19 +11,36 @@ interface Props {
   date?: Date;
   tags?: string[];
   image?: string;
+  categories?: string[];
+  lang?: Lang;
 }
 
-const { title, description, date, tags = [], image } = Astro.props;
+const { title, description, date, tags = [], image, categories = [], lang = 'zh' } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} image={image}>
   <Header />
   <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
     <header class="mb-8">
+      <!-- Category breadcrumb -->
+      {categories.length > 0 && (
+        <nav class="flex items-center gap-1 text-sm text-text-muted mb-3 flex-wrap">
+          {categories.map((cat, i) => {
+            const path = categories.slice(0, i + 1);
+            const label = getCategoryLabel(path, lang).split(' > ').pop();
+            return (
+              <>
+                {i > 0 && <span class="text-text-muted">›</span>}
+                <a href={`/${lang}/blog/category/${path.join('/')}/`} class="hover:text-accent transition-colors">{label}</a>
+              </>
+            );
+          })}
+        </nav>
+      )}
       <h1 class="text-3xl font-bold text-primary mb-4">{title}</h1>
       {date && (
         <time datetime={date.toISOString()} class="text-text-muted text-sm">
-          {date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+          {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </time>
       )}
       {tags.length > 0 && (

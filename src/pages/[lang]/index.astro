@@ -4,7 +4,7 @@ import { siteConfig, type Lang } from '../../data/site';
 import { getUI } from '../../i18n/ui';
 import { getCollection } from 'astro:content';
 import Timeline from '../../components/timeline/Timeline.tsx';
-
+import { getDefaultCategories } from '../../data/categories';
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
 }
@@ -91,11 +91,17 @@ const timelineItems = lang === 'zh' ? [
       <div class="grid gap-6 md:grid-cols-3">
         {recentPosts.map((post) => {
           const slug = post.id.split('/').slice(1).join('/');
+          const cats = post.data.categories || (post.data.category ? [post.data.category] : getDefaultCategories());
           return (
             <a
               href={`/${lang}/blog/${slug}/`}
               class="block p-6 rounded-lg border border-border hover:border-accent/50 hover:shadow-sm transition-all"
             >
+              {cats.length > 0 && (
+                <span class="inline-block px-2 py-0.5 text-xs rounded bg-accent/10 text-accent mb-2">
+                  {cats.map(c => c).join(' > ')}
+                </span>
+              )}
               <h3 class="font-semibold text-primary mb-2 line-clamp-2">{post.data.title}</h3>
               {post.data.description && (
                 <p class="text-sm text-text-muted line-clamp-2">{post.data.description}</p>
