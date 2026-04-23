@@ -53,12 +53,11 @@ const breadcrumbItems = categoryPath.map((seg, i) => ({
   path: categoryPath.slice(0, i + 1),
   label: getCategoryLabel(categoryPath.slice(0, i + 1), lang),
 }));
+
+const isEmptyCategory = postsInCategory.length === 0 && childCategories.length === 0;
 ---
 
-<PageLayout title={category ? category.label[lang] : t('nav.blog')}>
-  {postsInCategory.length === 0 && childCategories.length === 0 && (
-    <meta name="robots" content="noindex" />
-  )}
+<PageLayout title={category ? category.label[lang] : t('nav.blog')} noindex={isEmptyCategory}>
   <!-- Breadcrumb -->
   <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-sm text-text-muted mb-6 flex-wrap">
     <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{t('nav.blog')}</a>
