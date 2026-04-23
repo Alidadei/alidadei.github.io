@@ -10,7 +10,7 @@ REPO_OWNER = "Alidadei"
 REPO_NAME = "alidadei.github.io"
 BRANCH = "master"
 
-[[kv_namespaces]]
-binding = "SESSIONS"
-id = ""         # fill after `wrangler kv:namespace create SESSIONS`
-preview_id = "" # fill after `wrangler kv:namespace create SESSIONS --preview`
+# [[kv_namespaces]]
+# binding = "SESSIONS"
+# id = ""
+# preview_id = ""
