@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 const API_BASE = typeof window !== 'undefined'
-  ? (window as any).__WORKER_URL__ || 'https://admin.alidadei.workers.dev'
+  ? (window as any).__WORKER_URL__ || 'https://yhl-blog-cms.yuhl.workers.dev'
   : '';
 
 type View = 'posts' | 'editor' | 'tags' | 'categories' | 'images' | 'deploy';

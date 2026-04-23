@@ -10,7 +10,6 @@ REPO_OWNER = "Alidadei"
 REPO_NAME = "alidadei.github.io"
 BRANCH = "master"
 
-# [[kv_namespaces]]
-# binding = "SESSIONS"
-# id = ""
-# preview_id = ""
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "729f276075444335a9a0a495599d2be1"
