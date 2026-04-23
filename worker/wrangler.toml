@@ -1,0 +1,16 @@
+name = "yhl-blog-cms"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+GITHUB_APP_CLIENT_ID = "Iv23li9qPfu0zxVNCTVa"
+GITHUB_APP_ID = "3478466"
+ALLOWED_USER_IDS = ""
+REPO_OWNER = "Alidadei"
+REPO_NAME = "alidadei.github.io"
+BRANCH = "master"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = ""         # fill after `wrangler kv:namespace create SESSIONS`
+preview_id = "" # fill after `wrangler kv:namespace create SESSIONS --preview`
