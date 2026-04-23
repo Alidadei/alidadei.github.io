@@ -5,7 +5,7 @@ import { getUI } from '../../i18n/ui';
 import { getCollection } from 'astro:content';
 import Timeline from '../../components/timeline/Timeline.tsx';
 import SunArc from '../../components/ui/SunArc.tsx';
-import { getDefaultCategories } from '../../data/categories';
+import { getDefaultCategories, getCategoryLabel } from '../../data/categories';
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
 }
@@ -103,7 +103,7 @@ const timelineItems = lang === 'zh' ? [
             >
               {cats.length > 0 && (
                 <span class="inline-block px-2 py-0.5 text-xs rounded bg-accent/10 text-accent mb-2">
-                  {cats.map(c => c).join(' > ')}
+                  {getCategoryLabel(cats, lang)}
                 </span>
               )}
               <h3 class="font-semibold text-primary mb-2 line-clamp-2">{post.data.title}</h3>

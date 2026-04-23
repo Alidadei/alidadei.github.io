@@ -5,7 +5,7 @@ import { getDefaultCategories } from '../../../data/categories';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
   return posts.map((post) => {
     const parts = post.id.split('/');
     const lang = parts[0] as Lang;

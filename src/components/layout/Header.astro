@@ -1,12 +1,12 @@
 ---
 import { siteConfig, type Lang } from '../../data/site';
-import { getLangFromUrl, getAlternateUrl, getLocalizedPath } from '../../lib/i18n';
+import { getLangFromUrl, getSafeAlternateUrl } from '../../lib/i18n';
 import { getUI } from '../../i18n/ui';
 
 const lang = getLangFromUrl(Astro.url);
 const navItems = siteConfig.nav[lang];
 const altLang = lang === 'zh' ? 'en' : 'zh';
-const altUrl = getAlternateUrl(Astro.url);
+const altUrl = getSafeAlternateUrl(Astro.url);
 const switchLabel = getUI(lang, 'lang.switch');
 ---
 

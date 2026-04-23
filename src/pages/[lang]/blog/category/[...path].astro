@@ -32,7 +32,8 @@ const t = getUI.bind(null, lang as Lang);
 
 const category = findCategoryByPath(categoryPath);
 const allPosts = await getCollection('posts', ({ data }) => data.lang === lang && !data.draft);
-const postsInCategory = getPostsInCategory(allPosts, categoryPath);
+const postsInCategory = getPostsInCategory(allPosts, categoryPath)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
 // Get child categories
 function getChildCategories(path: string[]): CategoryNode[] {

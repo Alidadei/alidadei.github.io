@@ -11,6 +11,21 @@ export interface CategoryNode {
 
 export const categoryTree: CategoryNode[] = categoryData as CategoryNode[];
 
+// Validate category tree at build time
+const slugConflicts = validateUniqueSlugs(categoryTree);
+if (slugConflicts.length > 0) {
+  console.warn(`[categories] Duplicate slugs detected: ${slugConflicts.join(', ')}`);
+}
+function validateNodes(nodes: CategoryNode[]): void {
+  for (const node of nodes) {
+    if (!validateSlug(node.slug)) {
+      console.warn(`[categories] Invalid slug: "${node.slug}"`);
+    }
+    validateNodes(node.children);
+  }
+}
+validateNodes(categoryTree);
+
 export function getTopLevelCategories(): CategoryNode[] {
   return categoryTree;
 }

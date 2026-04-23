@@ -24,15 +24,22 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     <header class="mb-8">
       <!-- Category breadcrumb -->
       {categories.length > 0 && (
-        <nav class="flex items-center gap-1 text-sm text-text-muted mb-3 flex-wrap">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1 text-sm text-text-muted mb-3 flex-wrap">
+          <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{lang === 'zh' ? '博客' : 'Blog'}</a>
+          <span class="text-text-muted">›</span>
           {categories.map((cat, i) => {
             const path = categories.slice(0, i + 1);
             const label = getCategoryLabel(path, lang).split(' > ').pop();
+            const isLast = i === categories.length - 1;
             return (
-              <>
+              <Fragment>
                 {i > 0 && <span class="text-text-muted">›</span>}
-                <a href={`/${lang}/blog/category/${path.join('/')}/`} class="hover:text-accent transition-colors">{label}</a>
-              </>
+                {isLast ? (
+                  <span class="text-primary font-medium" aria-current="page">{label}</span>
+                ) : (
+                  <a href={`/${lang}/blog/category/${path.join('/')}/`} class="hover:text-accent transition-colors">{label}</a>
+                )}
+              </fragment>
             );
           })}
         </nav>

@@ -3,7 +3,7 @@ import PageLayout from '../../../layouts/PageLayout.astro';
 import { type Lang } from '../../../data/site';
 import { getUI } from '../../../i18n/ui';
 import { getCollection } from 'astro:content';
-import { categoryTree, getPostsInCategory, getDefaultCategories } from '../../../data/categories';
+import { categoryTree, getDefaultCategories, getCategoryLabel } from '../../../data/categories';
 
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
@@ -87,10 +87,7 @@ const topCategories = categoryTree;
             <div class="flex items-center gap-2 mb-2">
               {post._categories.length > 0 && (
                 <span class="px-2 py-0.5 text-xs rounded bg-accent/10 text-accent">
-                  {post._categories.map(c => {
-                    const node = topCategories.find(t => t.slug === c);
-                    return node ? node.label[lang] : c;
-                  }).join(' > ')}
+                  {getCategoryLabel(post._categories, lang)}
                 </span>
               )}
             </div>
@@ -175,9 +172,10 @@ const topCategories = categoryTree;
       if (noResults) noResults.classList.toggle('hidden', visible > 0);
 
       if (searchCount && query) {
+        const isZh = document.documentElement.lang?.startsWith('zh');
         searchCount.textContent = visible > 0
-          ? `${visible} ${document.documentElement.lang === 'zh' ? '条结果' : 'results'}`
-          : (document.documentElement.lang === 'zh' ? '没有找到匹配的文章' : 'No matching posts found');
+          ? `${visible} ${isZh ? '条结果' : 'results'}`
+          : (isZh ? '没有找到匹配的文章' : 'No matching posts found');
         searchCount.classList.remove('hidden');
       } else if (searchCount) {
         searchCount.classList.add('hidden');
