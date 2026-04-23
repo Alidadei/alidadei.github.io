@@ -22,11 +22,6 @@ const enrichPosts = posts.map((p) => {
   return { ...p, _categories: cats };
 });
 
-const postsJson = JSON.stringify(enrichPosts.map((p) => ({
-  id: p.id,
-  data: { title: p.data.title, description: p.data.description, tags: p.data.tags, date: p.data.date, categories: p._categories },
-})));
-
 const topCategories = categoryTree;
 ---
 

@@ -182,7 +182,7 @@ export default function SunArc({ lang }: SunArcProps) {
       />
 
       {/* Content spacer */}
-      <div style={{ height: '200px', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} className="relative">
+      <div style={{ height: '200px', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', overflow: 'hidden' }} className="relative">
 
       {/* Stars at night */}
       {(isNight || (isDusk && brightness < 0.1) || (isDawn && brightness < 0.1)) && (
@@ -274,6 +274,9 @@ export default function SunArc({ lang }: SunArcProps) {
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 0.9; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation: none !important; transition: none !important; }
         }
       `}</style>
       </div>
