@@ -11,16 +11,33 @@ export interface Env {
 
 const SESSION_TTL = 8 * 60 * 60; // 8 hours
 
+export function corsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('Origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
 export function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
+  // This overload is used without request context; call corsResponse() instead when possible
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Credentials': 'true',
       ...headers,
+    },
+  });
+}
+
+export function corsResponse(data: unknown, request: Request, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders(request),
     },
   });
 }
