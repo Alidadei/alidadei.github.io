@@ -60,7 +60,7 @@ const breadcrumbItems = categoryPath.map((seg, i) => ({
     <meta name="robots" content="noindex" />
   )}
   <!-- Breadcrumb -->
-  <nav class="flex items-center gap-2 text-sm text-text-muted mb-6 flex-wrap">
+  <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-sm text-text-muted mb-6 flex-wrap">
     <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{t('nav.blog')}</a>
     {breadcrumbItems.map((item, i) => (
       <>
@@ -70,7 +70,7 @@ const breadcrumbItems = categoryPath.map((seg, i) => ({
             {item.label.split(' > ').pop()}
           </a>
         ) : (
-          <span class="text-primary font-medium">{item.label.split(' > ').pop()}</span>
+          <span class="text-primary font-medium" aria-current="page">{item.label.split(' > ').pop()}</span>
         )}
       </>
     ))}
