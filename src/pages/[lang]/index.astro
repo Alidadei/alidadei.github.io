@@ -4,6 +4,7 @@ import { siteConfig, type Lang } from '../../data/site';
 import { getUI } from '../../i18n/ui';
 import { getCollection } from 'astro:content';
 import Timeline from '../../components/timeline/Timeline.tsx';
+import SunArc from '../../components/ui/SunArc.tsx';
 import { getDefaultCategories } from '../../data/categories';
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
@@ -39,6 +40,9 @@ const timelineItems = lang === 'zh' ? [
 ---
 
 <PageLayout title={lang === 'zh' ? '首页' : 'Home'}>
+  <!-- Sun Arc Animation -->
+  <SunArc client:load lang={lang} />
+
   <!-- Hero Section -->
   <section class="text-center py-16 sm:py-24">
     <p class="text-accent text-lg mb-2">{t('hero.greeting')}</p>
