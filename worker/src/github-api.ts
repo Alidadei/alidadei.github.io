@@ -7,6 +7,7 @@ function authHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'yhl-blog-cms',
   };
 }
 

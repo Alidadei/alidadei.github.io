@@ -37,6 +37,8 @@ export async function handleBatchOperation(request: Request, env: Env): Promise<
     }
   `;
 
+  const headOid = await getHeadOid(session.accessToken, env);
+
   const variables = {
     input: {
       branch: {
@@ -50,7 +52,7 @@ export async function handleBatchOperation(request: Request, env: Env): Promise<
         additions,
         deletions,
       },
-      expectedHeadOid: await getHeadOid(session.accessToken, env),
+      expectedHeadOid: headOid,
     },
   };
 
@@ -59,6 +61,7 @@ export async function handleBatchOperation(request: Request, env: Env): Promise<
     headers: {
       Authorization: `Bearer ${session.accessToken}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'yhl-blog-cms',
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -97,6 +100,7 @@ async function getHeadOid(token: string, env: Env): Promise<string> {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'yhl-blog-cms',
     },
     body: JSON.stringify({
       query,
