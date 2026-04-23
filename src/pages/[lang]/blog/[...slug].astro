@@ -1,12 +1,12 @@
 ---
 import PostLayout from '../../../layouts/PostLayout.astro';
 import { type Lang } from '../../../data/site';
+import { getDefaultCategories } from '../../../data/categories';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
   return posts.map((post) => {
-    // post.id is like "zh/data-structure", extract the slug part
     const parts = post.id.split('/');
     const lang = parts[0] as Lang;
     const slug = parts.slice(1).join('/');
@@ -18,9 +18,11 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
+const { lang } = Astro.params as { lang: Lang };
 const { Content } = await render(post);
+const cats = post.data.categories || (post.data.category ? [post.data.category] : getDefaultCategories());
 ---
 
-<PostLayout title={post.data.title} date={post.data.date} tags={post.data.tags} description={post.data.description}>
+<PostLayout title={post.data.title} date={post.data.date} tags={post.data.tags} description={post.data.description} categories={cats} lang={lang}>
   <Content />
 </PostLayout>

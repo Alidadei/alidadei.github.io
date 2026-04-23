@@ -2,17 +2,18 @@
 import '../styles/global.css';
 import { siteConfig, type Lang } from '../data/site';
 import { getUI } from '../i18n/ui';
-import { getAlternateUrl, getLangFromUrl } from '../lib/i18n';
+import { getSafeAlternateUrl, getLangFromUrl } from '../lib/i18n';
 
 interface Props {
   title?: string;
   description?: string;
   image?: string;
+  noindex?: boolean;
 }
 
-const { title, description, image } = Astro.props;
+const { title, description, image, noindex } = Astro.props;
 const lang = getLangFromUrl(Astro.url);
-const altLang = getAlternateUrl(Astro.url);
+const altLang = getSafeAlternateUrl(Astro.url);
 const siteTitle = title
   ? `${title} | ${siteConfig.name}`
   : siteConfig.title;
@@ -48,6 +49,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <!-- KaTeX CSS for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

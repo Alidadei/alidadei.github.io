@@ -1,0 +1,13 @@
+请审查 docs/PRD-blog-category.md 和 docs/plan-blog-category.md 这两份文档。
+
+审查要点：
+1. 技术方案是否可行（Astro 6 静态站点 + 多级分类路由 + GitHub API CMS）
+2. 多级分类的 URL 路由方案（catch-all [...path]）是否有问题
+3. GitHub OAuth 纯前端实现的 CORS 问题是否有更好的解决方案
+4. 23步实施计划是否有遗漏或顺序问题
+5. 安全性风险（GitHub Token 暴露、XSS等）
+
+请用中文回答，输出：
+- 发现的问题（编号列表）
+- 改进建议（编号列表）
+- 修正后的实施方案（关键改动点即可）

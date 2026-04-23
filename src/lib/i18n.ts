@@ -29,3 +29,16 @@ export function getAlternateUrl(url: URL): string {
   const altLang = getAlternateLang(lang);
   return getLocalizedPath(url.pathname, altLang);
 }
+
+export function getSafeAlternateUrl(url: URL): string {
+  const lang = getLangFromUrl(url);
+  const altLang = getAlternateLang(lang);
+  const pathname = url.pathname;
+
+  // For blog post pages, fall back to blog listing since articles may not have translations
+  if (/^\/(zh|en)\/blog\/(?!category)(?!$)/.test(pathname)) {
+    return `/${altLang}/blog/`;
+  }
+
+  return getLocalizedPath(pathname, altLang);
+}
