@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'zh' } },
+    { params: { lang: 'en' } },
+  ];
+}
+
+const { lang } = Astro.params;
+---
+
+<BaseLayout title={lang === 'zh' ? '管理后台' : 'Admin'} noindex={true}>
+  <div id="admin-root" class="min-h-screen bg-gray-50 dark:bg-gray-900"></div>
+</BaseLayout>
+
+<script>
+  import { mountAdminApp } from '../../../components/admin/bootstrap';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const root = document.getElementById('admin-root');
+    if (root) {
+      mountAdminApp(root);
+    }
+  });
+</script>
