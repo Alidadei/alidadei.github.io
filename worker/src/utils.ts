@@ -48,7 +48,8 @@ export function generateState(): string {
   return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function isAllowedUser(userId: number, allowedIds: string): boolean {
+export function isAllowedUser(userId: number, allowedIds: string | undefined): boolean {
+  if (!allowedIds) return false;
   return allowedIds.split(',').map(Number).includes(userId);
 }
 
