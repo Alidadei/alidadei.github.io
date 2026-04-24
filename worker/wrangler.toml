@@ -5,7 +5,6 @@ compatibility_date = "2024-12-01"
 [vars]
 GITHUB_APP_CLIENT_ID = "Iv23li9qPfu0zxVNCTVa"
 GITHUB_APP_ID = "3478466"
-ALLOWED_USER_IDS = ""
 REPO_OWNER = "Alidadei"
 REPO_NAME = "alidadei.github.io"
 BRANCH = "master"
