@@ -69,9 +69,9 @@ export async function getSession(kv: KVNamespace, request: Request): Promise<{ u
 }
 
 export function setSessionCookie(sessionId: string): string {
-  return `cms_session=${sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`;
+  return `cms_session=${sessionId}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=28800`;
 }
 
 export function clearSessionCookie(): string {
-  return 'cms_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0';
+  return 'cms_session=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0';
 }
