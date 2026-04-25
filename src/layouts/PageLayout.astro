@@ -16,7 +16,7 @@ const { title, description, image, fullWidth = false, noindex = false } = Astro.
 
 <BaseLayout title={title} description={description} image={image} noindex={noindex}>
   <Header />
-  <main class={fullWidth ? '' : 'max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in'}>
+  <main class={fullWidth ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in'}>
     <slot />
   </main>
   <Footer />
