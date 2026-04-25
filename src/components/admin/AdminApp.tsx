@@ -302,7 +302,7 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
         setPost(p => p ? { ...p, sha: data.sha, content } : p);
         setMessage(publish ? '已发布' : '已保存');
       } else {
-        setMessage(`保存失败: ${data.error || 'Unknown error'}`);
+        setMessage(`保存失败: ${data.error || 'Unknown error'} ${data.details?.message || JSON.stringify(data.details) || ''}`);
       }
     } catch {
       setMessage('网络错误');
