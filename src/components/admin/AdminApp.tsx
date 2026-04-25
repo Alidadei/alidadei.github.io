@@ -268,9 +268,18 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
                 <div className="font-medium text-gray-900 dark:text-white">{post.name}</div>
                 <div className="text-sm text-gray-500">{post.path}</div>
               </div>
-              <button onClick={() => onEdit(post.path)} className="text-blue-600 hover:text-blue-800 text-sm">
-                编辑
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => onEdit(post.path)} className="text-blue-600 hover:text-blue-800 text-sm">
+                  编辑
+                </button>
+                <button
+                  onClick={() => handleDelete(post)}
+                  disabled={deleting === post.path}
+                  className="text-red-600 hover:text-red-800 text-sm"
+                >
+                  {deleting === post.path ? '删除中...' : '删除'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
