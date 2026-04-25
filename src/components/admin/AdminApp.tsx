@@ -9,7 +9,6 @@ let _sessionToken: string | null = null;
 function getSessionToken(): string | null {
   if (_sessionToken) return _sessionToken;
   if (typeof window === 'undefined') return null;
-  // Read from URL hash on first load
   const hash = window.location.hash;
   const match = hash.match(/session=([a-f0-9]+)/);
   if (match) {
@@ -18,7 +17,6 @@ function getSessionToken(): string | null {
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     return _sessionToken;
   }
-  // Read from sessionStorage
   _sessionToken = sessionStorage.getItem('cms_session_token');
   return _sessionToken;
 }
@@ -29,7 +27,7 @@ function authHeaders(): Record<string, string> {
 }
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const headers = { ...options.headers, ...authHeaders() };
+  const headers: Record<string, string> = { ...(options.headers as Record<string, string>), ...authHeaders() };
   return fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
 }
 
@@ -42,7 +40,7 @@ interface User {
 }
 
 interface AppState {
-  authenticated: boolean | null; // null = loading
+  authenticated: boolean | null;
   user: User | null;
   view: View;
   editingPath: string | null;
@@ -89,7 +87,6 @@ export default function AdminApp() {
     setState(s => ({ ...s, view, editingPath: editingPath || null }));
   };
 
-  // Loading
   if (state.authenticated === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -98,15 +95,12 @@ export default function AdminApp() {
     );
   }
 
-  // Not authenticated
   if (!state.authenticated) {
     return <LoginScreen onLogin={login} error={state.error} />;
   }
 
-  // Authenticated
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">CMS</h1>
@@ -127,7 +121,6 @@ export default function AdminApp() {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 p-6 overflow-auto">
         {state.view === 'posts' && <PostList onEdit={(path) => navigate('editor', path)} />}
         {state.view === 'editor' && <PostEditor filePath={state.editingPath} onBack={() => navigate('posts')} />}
@@ -200,7 +193,7 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    apiFetch('/api/posts`, { credentials: 'include' })
+    apiFetch('/api/posts')
       .then(r => r.json())
       .then(data => { setPosts(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -243,10 +236,7 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
                 <div className="font-medium text-gray-900 dark:text-white">{post.name}</div>
                 <div className="text-sm text-gray-500">{post.path}</div>
               </div>
-              <button
-                onClick={() => onEdit(post.path)}
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
+              <button onClick={() => onEdit(post.path)} className="text-blue-600 hover:text-blue-800 text-sm">
                 编辑
               </button>
             </div>
@@ -272,12 +262,11 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
 
   useEffect(() => {
     if (filePath) {
-      apiFetch('/api/posts/${encodeURIComponent(filePath)}`, { credentials: 'include' })
+      apiFetch(`/api/posts/${encodeURIComponent(filePath)}`)
         .then(r => r.json())
         .then(data => { setPost(data); setLoading(false); })
         .catch(() => setLoading(false));
     } else {
-      // New post
       const now = new Date().toISOString().slice(0, 10);
       setPost({
         path: `src/content/posts/zh/new-post-${Date.now()}.md`,
@@ -298,9 +287,8 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
       : post.content;
 
     try {
-      const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, {
+      const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
@@ -316,13 +304,12 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
       } else {
         setMessage(`保存失败: ${data.error || 'Unknown error'}`);
       }
-    } catch (err) {
+    } catch {
       setMessage('网络错误');
     }
     setSaving(false);
   };
 
-  // Auto-save to localStorage
   useEffect(() => {
     if (!post) return;
     const timer = setTimeout(() => {
@@ -330,17 +317,6 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
     }, 2000);
     return () => clearTimeout(timer);
   }, [post?.content, post?.path]);
-
-  // Restore from localStorage
-  useEffect(() => {
-    if (!post || !filePath) return;
-    const saved = localStorage.getItem(`cms-draft-${post.path}`);
-    if (saved && saved !== post.content) {
-      if (confirm('检测到本地草稿，是否恢复？')) {
-        setPost(p => p ? { ...p, content: saved } : p);
-      }
-    }
-  }, []);
 
   if (loading) return <div className="text-gray-500">加载中...</div>;
   if (!post) return <div className="text-red-500">加载失败</div>;
@@ -419,14 +395,14 @@ function TagManager() {
   const [newName, setNewName] = useState('');
 
   useEffect(() => {
-    apiFetch('/api/posts`, { credentials: 'include' })
+    apiFetch('/api/posts')
       .then(r => r.json())
       .then(async (data: PostFile[]) => {
         setPosts(data);
         const tags: Record<string, number> = {};
         for (const post of data) {
           try {
-            const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
+            const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`);
             const postData = await res.json();
             const content = postData.content || '';
             const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
@@ -438,7 +414,7 @@ function TagManager() {
                 });
               }
             }
-          } catch {}
+          } catch { /* skip */ }
         }
         setTagMap(tags);
         setLoading(false);
@@ -451,7 +427,7 @@ function TagManager() {
     const files: Array<{ path: string; content: string }> = [];
     for (const post of posts) {
       try {
-        const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
+        const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`);
         const data = await res.json();
         if (data.content?.includes(oldTag)) {
           const newContent = data.content.replace(
@@ -462,13 +438,12 @@ function TagManager() {
             files.push({ path: post.path, content: newContent });
           }
         }
-      } catch {}
+      } catch { /* skip */ }
     }
 
     if (files.length > 0) {
-      await apiFetch('/api/batch`, {
+      await apiFetch('/api/batch', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operation: 'renameTag', files, message: `cms: rename tag "${oldTag}" to "${newName}"` }),
       });
@@ -517,7 +492,7 @@ function CategoryManager() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    apiFetch('/api/file/${encodeURIComponent('src/data/categories.json')}`, { credentials: 'include' })
+    apiFetch('/api/file/src/data/categories.json')
       .then(r => r.json())
       .then(data => { setCategories(data.content); setSha(data.sha); setLoading(false); })
       .catch(() => setLoading(false));
@@ -529,9 +504,8 @@ function CategoryManager() {
     setMessage('');
 
     try {
-      const res = await apiFetch('/api/file/${encodeURIComponent('src/data/categories.json')}`, {
+      const res = await apiFetch('/api/file/src/data/categories.json', {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: categories, sha, message: 'cms: update categories.json' }),
       });
@@ -589,7 +563,7 @@ function ImageManager() {
   const [message, setMessage] = useState('');
 
   const loadImages = () => {
-    apiFetch('/api/images`, { credentials: 'include' })
+    apiFetch('/api/images')
       .then(r => r.json())
       .then(data => { setImages(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -607,9 +581,8 @@ function ImageManager() {
     formData.append('file', file);
 
     try {
-      const res = await apiFetch('/api/images/upload`, {
+      const res = await apiFetch('/api/images/upload', {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
@@ -629,9 +602,8 @@ function ImageManager() {
 
   const handleDelete = async (img: ImageItem) => {
     if (!confirm(`确定删除 ${img.name}？`)) return;
-    await apiFetch('/api/images/${encodeURIComponent(img.path)}`, {
+    await apiFetch(`/api/images/${encodeURIComponent(img.path)}`, {
       method: 'DELETE',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sha: img.sha }),
     });
@@ -694,7 +666,7 @@ function DeployStatus() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch('/api/deploy/status`, { credentials: 'include' })
+    apiFetch('/api/deploy/status')
       .then(r => r.json())
       .then(data => { setDeploy(data.status !== 'none' ? data : null); setLoading(false); })
       .catch(() => setLoading(false));
