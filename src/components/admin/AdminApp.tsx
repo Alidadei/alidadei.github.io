@@ -191,6 +191,38 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
   const [posts, setPosts] = useState<PostFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const loadPosts = useCallback(() => {
+    setLoading(true);
+    apiFetch('/api/posts')
+      .then(r => r.json())
+      .then(data => { setPosts(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadPosts(); }, [loadPosts]);
+
+  const handleDelete = async (post: PostFile) => {
+    if (!confirm(`确定删除 ${post.name}？此操作不可恢复。`)) return;
+    setDeleting(post.path);
+    try {
+      const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sha: post.sha, message: `cms: delete ${post.name}` }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        loadPosts();
+      } else {
+        alert(`删除失败: ${data.error} ${data.details?.message || ''}`);
+      }
+    } catch {
+      alert('网络错误');
+    }
+    setDeleting(null);
+  };
 
   useEffect(() => {
     apiFetch('/api/posts')
