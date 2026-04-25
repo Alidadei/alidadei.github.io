@@ -2,7 +2,7 @@ export interface Env {
   GITHUB_APP_CLIENT_ID: string;
   GITHUB_APP_CLIENT_SECRET: string;
   GITHUB_APP_ID: string;
-  ALLOWED_USER_IDS: string; // comma-separated
+  ALLOWED_USER_IDS: string;
   REPO_OWNER: string;
   REPO_NAME: string;
   BRANCH: string;
@@ -16,13 +16,12 @@ export function corsHeaders(request: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token',
     'Access-Control-Allow-Credentials': 'true',
   };
 }
 
 export function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
-  // This overload is used without request context; call corsResponse() instead when possible
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -60,6 +59,15 @@ export async function createSession(kv: KVNamespace, userId: number, accessToken
 }
 
 export async function getSession(kv: KVNamespace, request: Request): Promise<{ userId: number; accessToken: string } | null> {
+  // Check X-Session-Token header first (for API calls from admin page)
+  const headerToken = request.headers.get('X-Session-Token');
+  if (headerToken) {
+    const data = await kv.get(`session:${headerToken}`);
+    if (!data) return null;
+    return JSON.parse(data);
+  }
+
+  // Fallback to cookie
   const cookie = request.headers.get('Cookie') || '';
   const match = cookie.match(/cms_session=([a-f0-9]+)/);
   if (!match) return null;

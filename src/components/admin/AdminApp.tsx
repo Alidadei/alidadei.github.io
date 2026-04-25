@@ -4,6 +4,35 @@ const API_BASE = typeof window !== 'undefined'
   ? (window as any).__WORKER_URL__ || 'https://yhl-blog-cms.yuhl.workers.dev'
   : '';
 
+let _sessionToken: string | null = null;
+
+function getSessionToken(): string | null {
+  if (_sessionToken) return _sessionToken;
+  if (typeof window === 'undefined') return null;
+  // Read from URL hash on first load
+  const hash = window.location.hash;
+  const match = hash.match(/session=([a-f0-9]+)/);
+  if (match) {
+    _sessionToken = match[1];
+    sessionStorage.setItem('cms_session_token', _sessionToken);
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    return _sessionToken;
+  }
+  // Read from sessionStorage
+  _sessionToken = sessionStorage.getItem('cms_session_token');
+  return _sessionToken;
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getSessionToken();
+  return token ? { 'X-Session-Token': token } : {};
+}
+
+async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers = { ...options.headers, ...authHeaders() };
+  return fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
+}
+
 type View = 'posts' | 'editor' | 'tags' | 'categories' | 'images' | 'deploy';
 
 interface User {
@@ -31,7 +60,7 @@ export default function AdminApp() {
 
   const checkAuth = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/user`, { credentials: 'include' });
+      const res = await apiFetch('/api/user');
       const data = await res.json();
       if (data.authenticated) {
         setState(s => ({ ...s, authenticated: true, user: data.user }));
@@ -50,7 +79,9 @@ export default function AdminApp() {
   };
 
   const logout = async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    sessionStorage.removeItem('cms_session_token');
+    _sessionToken = null;
+    await apiFetch('/api/auth/logout', { method: 'POST' });
     setState(s => ({ ...s, authenticated: false, user: null }));
   };
 
@@ -169,7 +200,7 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/posts`, { credentials: 'include' })
+    apiFetch('/api/posts`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => { setPosts(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -241,7 +272,7 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
 
   useEffect(() => {
     if (filePath) {
-      fetch(`${API_BASE}/api/posts/${encodeURIComponent(filePath)}`, { credentials: 'include' })
+      apiFetch('/api/posts/${encodeURIComponent(filePath)}`, { credentials: 'include' })
         .then(r => r.json())
         .then(data => { setPost(data); setLoading(false); })
         .catch(() => setLoading(false));
@@ -267,7 +298,7 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
       : post.content;
 
     try {
-      const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(post.path)}`, {
+      const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -388,14 +419,14 @@ function TagManager() {
   const [newName, setNewName] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/posts`, { credentials: 'include' })
+    apiFetch('/api/posts`, { credentials: 'include' })
       .then(r => r.json())
       .then(async (data: PostFile[]) => {
         setPosts(data);
         const tags: Record<string, number> = {};
         for (const post of data) {
           try {
-            const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
+            const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
             const postData = await res.json();
             const content = postData.content || '';
             const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
@@ -420,7 +451,7 @@ function TagManager() {
     const files: Array<{ path: string; content: string }> = [];
     for (const post of posts) {
       try {
-        const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
+        const res = await apiFetch('/api/posts/${encodeURIComponent(post.path)}`, { credentials: 'include' });
         const data = await res.json();
         if (data.content?.includes(oldTag)) {
           const newContent = data.content.replace(
@@ -435,7 +466,7 @@ function TagManager() {
     }
 
     if (files.length > 0) {
-      await fetch(`${API_BASE}/api/batch`, {
+      await apiFetch('/api/batch`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -486,7 +517,7 @@ function CategoryManager() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/file/${encodeURIComponent('src/data/categories.json')}`, { credentials: 'include' })
+    apiFetch('/api/file/${encodeURIComponent('src/data/categories.json')}`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => { setCategories(data.content); setSha(data.sha); setLoading(false); })
       .catch(() => setLoading(false));
@@ -498,7 +529,7 @@ function CategoryManager() {
     setMessage('');
 
     try {
-      const res = await fetch(`${API_BASE}/api/file/${encodeURIComponent('src/data/categories.json')}`, {
+      const res = await apiFetch('/api/file/${encodeURIComponent('src/data/categories.json')}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -558,7 +589,7 @@ function ImageManager() {
   const [message, setMessage] = useState('');
 
   const loadImages = () => {
-    fetch(`${API_BASE}/api/images`, { credentials: 'include' })
+    apiFetch('/api/images`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => { setImages(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -576,7 +607,7 @@ function ImageManager() {
     formData.append('file', file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/images/upload`, {
+      const res = await apiFetch('/api/images/upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
@@ -598,7 +629,7 @@ function ImageManager() {
 
   const handleDelete = async (img: ImageItem) => {
     if (!confirm(`确定删除 ${img.name}？`)) return;
-    await fetch(`${API_BASE}/api/images/${encodeURIComponent(img.path)}`, {
+    await apiFetch('/api/images/${encodeURIComponent(img.path)}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -663,7 +694,7 @@ function DeployStatus() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/deploy/status`, { credentials: 'include' })
+    apiFetch('/api/deploy/status`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => { setDeploy(data.status !== 'none' ? data : null); setLoading(false); })
       .catch(() => setLoading(false));

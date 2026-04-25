@@ -95,8 +95,7 @@ export async function handleCallback(request: Request, env: Env): Promise<Respon
   return new Response(null, {
     status: 302,
     headers: {
-      Location: `${SITE_URL}/zh/admin/`,
-      'Set-Cookie': setSessionCookie(sessionId),
+      Location: `${SITE_URL}/zh/admin/#session=${sessionId}`,
     },
   });
 }
