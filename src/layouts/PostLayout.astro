@@ -21,10 +21,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 <BaseLayout title={title} description={description} image={image}>
   <Header />
   <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
-    <header class="mb-8">
+    <header class="mb-10">
       <!-- Category breadcrumb -->
       {categories.length > 0 && (
-        <nav aria-label="Breadcrumb" class="flex items-center gap-1 text-sm text-text-muted mb-3 flex-wrap">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1 text-sm text-text-muted mb-4 flex-wrap">
           <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{lang === 'zh' ? '博客' : 'Blog'}</a>
           <span class="text-text-muted">›</span>
           {categories.map((cat, i) => {
@@ -44,19 +44,22 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           })}
         </nav>
       )}
-      <h1 class="text-3xl font-bold text-primary mb-4">{title}</h1>
-      {date && (
-        <time datetime={date.toISOString()} class="text-text-muted text-sm">
-          {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </time>
-      )}
-      {tags.length > 0 && (
-        <div class="flex gap-2 mt-3">
-          {tags.map((tag) => (
-            <span class="px-2 py-1 text-xs rounded bg-bg-tertiary text-text-secondary">{tag}</span>
-          ))}
-        </div>
-      )}
+      <h1 class="text-3xl sm:text-4xl font-bold text-primary mb-4 leading-tight">{title}</h1>
+      <div class="article-title-line"></div>
+      <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted">
+        {date && (
+          <time datetime={date.toISOString()}>
+            {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+        )}
+        {tags.length > 0 && (
+          <div class="flex gap-1.5">
+            {tags.map((tag) => (
+              <span class="tag-chip">{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
     </header>
     <div class="prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
       <slot />

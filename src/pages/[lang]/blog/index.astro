@@ -26,7 +26,10 @@ const topCategories = categoryTree;
 ---
 
 <PageLayout title={t('nav.blog')}>
-  <h1 class="text-3xl font-bold text-primary mb-6">{t('nav.blog')}</h1>
+  <div class="mb-10">
+    <h1 class="text-3xl font-bold text-primary mb-2">{t('nav.blog')}</h1>
+    <div class="w-12 h-0.5 bg-accent rounded-full"></div>
+  </div>
 
   <!-- Category Tabs -->
   <div class="flex flex-wrap gap-2 mb-6">
@@ -39,7 +42,7 @@ const topCategories = categoryTree;
     {topCategories.map((cat) => (
       <button
         data-category={cat.slug}
-        class="category-tab px-4 py-2 text-sm rounded-full bg-bg-tertiary text-text-secondary hover:bg-accent/10 hover:text-accent transition-colors cursor-pointer"
+        class="category-tab px-4 py-2 text-sm rounded-full border border-border text-text-secondary hover:border-accent/50 hover:text-accent transition-colors cursor-pointer"
       >
         {cat.label[lang]}
       </button>
@@ -70,7 +73,7 @@ const topCategories = categoryTree;
   {enrichPosts.length === 0 ? (
     <p class="text-text-muted">{lang === 'zh' ? '暂无文章' : 'No posts yet.'}</p>
   ) : (
-    <div class="space-y-6" id="posts-list">
+    <div class="space-y-5 stagger-in" id="posts-list">
       {enrichPosts.map((post) => {
         const slug = post.id.split('/').slice(1).join('/');
         return (

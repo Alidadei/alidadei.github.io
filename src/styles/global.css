@@ -25,23 +25,182 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 克制的过渡动画 */
 .fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 逐个卡片淡入 */
+.stagger-in > * {
+  animation: fadeIn 0.4s ease-out both;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-in > *:nth-child(n+6) { animation-delay: 0.3s; }
+
+/* 文章卡片 */
+.post-card {
+  position: relative;
+  background: white;
+}
+.post-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.post-card:hover::after {
+  transform: scaleX(1);
+}
+
+/* 标签样式 */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  transition: all 0.2s ease;
+}
+.tag-chip:hover {
+  background: var(--color-accent);
+  background: rgba(176, 125, 79, 0.15);
+  color: var(--color-accent);
+}
+
+/* 文章正文排版增强 */
+.prose {
+  line-height: 1.9;
+}
+.prose h1 {
+  letter-spacing: -0.02em;
+  margin-top: 2em;
+  margin-bottom: 1em;
+}
+.prose h2 {
+  letter-spacing: -0.01em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-top: 2.5em;
+  margin-bottom: 1.2em;
+}
+.prose h3 {
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+}
+.prose p {
+  margin-bottom: 1.6em;
+}
+.prose a {
+  text-decoration: underline;
+  text-decoration-color: rgba(176, 125, 79, 0.3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s;
+}
+.prose a:hover {
+  text-decoration-color: var(--color-accent);
+}
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg-secondary);
+  padding: 1em 1.5em;
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+  margin: 2em 0;
+}
+.prose img {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  margin: 2em 0;
+}
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  margin: 3em 0;
+}
+.prose ul, .prose ol {
+  margin: 1.5em 0;
+  padding-left: 1.5em;
+}
+.prose ul {
+  list-style-type: none;
+}
+.prose ul > li {
+  position: relative;
+  padding-left: 1em;
+  margin-bottom: 0.6em;
+}
+.prose ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+.prose ol > li {
+  margin-bottom: 0.6em;
+  padding-left: 0.25em;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-size: 0.9em;
+}
+.prose th, .prose td {
+  padding: 0.75em 1em;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+.prose th {
+  background: var(--color-bg-secondary);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.prose tr:nth-child(even) td {
+  background: rgba(0,0,0,0.015);
 }
 
 /* 代码高亮 */
 pre {
   overflow-x: auto;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  background: #2d2a26 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+code {
+  font-size: 0.875em;
+}
+:not(pre) > code {
+  background: var(--color-bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--color-accent);
 }
 
 /* 滚动条美化 */
@@ -56,6 +215,25 @@ pre {
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* 文章页标题装饰线 */
+.article-title-line {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-light));
+  border-radius: 2px;
+  margin-bottom: 1.5rem;
+}
+
+/* 选中文字颜色 */
+::selection {
+  background: rgba(176, 125, 79, 0.2);
+  color: var(--color-primary-dark);
 }
 
 @media (prefers-reduced-motion: reduce) {
