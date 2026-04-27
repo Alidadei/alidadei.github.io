@@ -18,23 +18,23 @@ lang: zh
 
 新打开一个文件夹，启动 cc，输入 /context：
 
-![image-20260422201632381](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260422201632381.png)
+![image-20260422201632381](/images/posts/image-20260422201632381.png)
 
 复制本地配置过的 .claude 文件夹进去后，重启 claude，看 context：
 
-![image-20260422214652807](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260422214652807.png)
+![image-20260422214652807](/images/posts/image-20260422214652807.png)
 
 在一个文件夹启动 cc，任务多轮后，输入 /context，可见主要增长的就是 messages：
 
-![image-20260422201629266](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260422201629266.png)
+![image-20260422201629266](/images/posts/image-20260422201629266.png)
 
 /compact 压缩上下文之后再看：
 
-![image-20260422201823968](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260422201823968.png)
+![image-20260422201823968](/images/posts/image-20260422201823968.png)
 
 复制本地配置过的 .claude 文件夹进去后，重启 claude，恢复会话，再看 context，好像 sys prompt 和 MCP 都没有减小，说明恢复会话会加载原来的配置：
 
-![image-20260422214550826](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260422214550826.png)
+![image-20260422214550826](/images/posts/image-20260422214550826.png)
 
 ---
 

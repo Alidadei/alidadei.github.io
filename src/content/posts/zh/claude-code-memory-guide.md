@@ -27,7 +27,7 @@ C:\Users\y\.claude\projects\C--Users-y\memory\
 | **MEMORY.md** | 自动加载 | 200行后截断 | 核心记忆，每次会话自动读取 |
 | 主题文件（*.md） | 手动加载 | 无限制 | 详细知识库，按需读取 |
 
-![image-20260316211326454](C:\Users\y\AppData\Roaming\Typora\typora-user-images\image-20260316211326454.png)
+![image-20260316211326454](/images/posts/image-20260316211326454.png)
 
 ### 1.3 加载机制
 
