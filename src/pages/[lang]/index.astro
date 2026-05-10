@@ -23,19 +23,17 @@ const allProjects = await getCollection('projects', ({ data }) => data.lang === 
 
 // Timeline data
 const timelineItems = lang === 'zh' ? [
-  { date: '2024.09', title: '复旦大学直博录取', description: '医学人工智能博士研究生', type: 'education' as const },
+  { date: '2026.01 - 2026.04', title: '华为实习', description: '多媒体智能协作实验室 · Multi-Agent 会议助手', type: 'research' as const },
+  { date: '2025.09', title: '复旦大学入学', description: '生物医学工程（人工智能方向）博士研究生', type: 'education' as const },
+  { date: '2025.09 - 至今', title: '医疗大模型多模态融合研究', description: '课题负责人', type: 'research' as const },
+  { date: '2024.09', title: '复旦大学直博录取', description: '生物医学工程博士项目', type: 'education' as const },
   { date: '2023.08 - 2024.08', title: '"智能自主系统"课题组', description: '参与 LLM+RL 机器人学习研究', type: 'research' as const },
-  { date: '2024.08', title: '推免答辩获额外加分', description: '院系推免名额认定', type: 'award' as const },
-
-  { date: '2022.11 - 2023.11', title: '校级大创：智能桌面系统', description: '基于 STM32，项目负责人', type: 'research' as const },
-  { date: '2023', title: '一等奖学金 / 优秀学生', description: '中国海洋大学', type: 'award' as const },
 ] : [
-  { date: '2024.09', title: 'Admitted to Fudan University Ph.D.', description: 'Medical AI doctoral program', type: 'education' as const },
+  { date: '2026.01 - 2026.04', title: 'Internship at Huawei', description: 'Multimedia Intelligent Collaboration Lab · Multi-Agent Meeting Assistant', type: 'research' as const },
+  { date: '2025.09', title: 'Enrolled at Fudan University', description: 'Ph.D. in Biomedical Engineering (AI)', type: 'education' as const },
+  { date: '2025.09 - Present', title: 'Medical LLM Multimodal Fusion Research', description: 'Principal Investigator', type: 'research' as const },
+  { date: '2024.09', title: 'Admitted to Fudan University Ph.D.', description: 'Biomedical Engineering doctoral program', type: 'education' as const },
   { date: '2023.08 - 2024.08', title: '"Intelligent Autonomous Systems" Research Group', description: 'LLM + RL robotics research', type: 'research' as const },
-  { date: '2024.08', title: 'Recommendation Admission Bonus', description: 'Department oral defense', type: 'award' as const },
-  { date: '2023', title: 'Business English Competition - 2nd Prize', description: 'National level', type: 'competition' as const },
-  { date: '2022.11 - 2023.11', title: 'Innovation Project: Smart Desktop System', description: 'STM32-based, project leader', type: 'research' as const },
-  { date: '2023', title: 'Second-Class Scholarship / Outstanding Student', description: 'Ocean University of China', type: 'award' as const },
 ];
 ---
 

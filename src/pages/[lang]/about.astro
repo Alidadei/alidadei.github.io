@@ -17,13 +17,13 @@ const t = getUI.bind(null, lang as Lang);
     <section class="prose prose-lg max-w-none">
       {lang === 'zh' ? (
         <>
-          <p>我是中国海洋大学电子工程专业大四学生，已获得推免资格并被<strong>复旦大学医学人工智能博士项目</strong>直博录取。</p>
-          <p>我的<strong>研究兴趣</strong>包括深度强化学习、大语言模型、智能决策和人机交互。<strong>我期望在未来的科研生涯中为 AGI 的到来贡献自己的力量！</strong></p>
+          <p>我本科毕业于<strong>中国海洋大学（985）</strong>电子信息工程专业，专业排名第4名保研，现为<strong>复旦大学生物医学工程（人工智能方向）</strong>博士一年级研究生。</p>
+          <p>我的<strong>研究兴趣</strong>包括大语言模型、多智能体系统、医疗 AI 和 AI-Native 开发范式。我持续跟踪 Agent 领域 SOTA 进展与范式演进，热衷于对前沿 Paper/开源项目进行深度探索与工程化落地。<strong>我期望在未来的科研生涯中为 AGI 的到来贡献自己的力量！</strong></p>
         </>
       ) : (
         <>
-          <p>I am currently a senior student in Ocean University of China who <strong>has obtained the qualification for recommended postgraduate admission</strong> and has been <strong>directly admitted to the Ph.D. of Medical Artificial Intelligence at Fudan University</strong>.</p>
-          <p>My major during the undergraduate study is Electronic Engineering and my <strong>research interest</strong> includes Deep Reinforcement Learning, LLM, Intelligent Decision Making, and Human-Computer Interaction. <strong>I aspire to contribute to the arrival of AGI in my future research life!</strong></p>
+          <p>I graduated from <strong>Ocean University of China (985)</strong> with a B.Eng. in Electronic Information Engineering (ranked 4th in my major), and I am now a <strong>first-year Ph.D. student in Biomedical Engineering (AI direction) at Fudan University</strong>.</p>
+          <p>My <strong>research interests</strong> include Large Language Models, Multi-Agent Systems, Medical AI, and AI-Native Development. I actively track SOTA advances in the Agent field and enjoy deep-diving into cutting-edge papers and open-source projects for engineering落地. <strong>I aspire to contribute to the arrival of AGI in my future research career!</strong></p>
         </>
       )}
     </section>
@@ -48,7 +48,7 @@ const t = getUI.bind(null, lang as Lang);
     <!-- Honors -->
     <section>
       <h2 class="text-2xl font-bold text-primary mb-4">{lang === 'zh' ? '荣誉奖项' : 'Honors'}</h2>
-      <p class="mb-4">{lang === 'zh' ? '二等奖学金、优秀学生称号' : 'The Second-Class Scholarship, title of Outstanding Student'}</p>
+      <p class="mb-4">{lang === 'zh' ? '复旦大学相辉博士奖学金、二等奖学金、优秀学生称号' : 'Fudan University Xianghui Doctoral Scholarship, Second-Class Scholarship, Outstanding Student'}</p>
       <div class="grid grid-cols-2 gap-4">
         <img src="/images/二等奖学金.jpg" alt="Scholarship" class="w-full rounded-lg shadow-sm" />
         <img src="/images/优秀学生.jpg" alt="Outstanding Student" class="w-full rounded-lg shadow-sm" />
@@ -102,8 +102,8 @@ const t = getUI.bind(null, lang as Lang);
       </p>
       <p>
         {lang === 'zh'
-          ? '编程方面，我熟练使用 C、MATLAB、Python 和 Verilog，这些都是我研究领域的重要工具。'
-          : 'In terms of programming skills, I am experienced in using C, MATLAB, Python, and Verilog, which are all essential tools in my research field.'}
+          ? '技术方面，我熟练使用 AI-Native 开发范式（CC/Codex 重度使用），掌握 PyTorch、TensorFlow 等深度学习框架，具备扎实的论文调研、算法复现与创新点设计能力。'
+          : 'In terms of technical skills, I am proficient in AI-Native development (heavy user of CC/Codex), skilled in PyTorch, TensorFlow and other deep learning frameworks, with solid capabilities in paper research, algorithm reproduction and innovation design.'}
       </p>
     </section>
 
@@ -111,12 +111,15 @@ const t = getUI.bind(null, lang as Lang);
     <section>
       <h2 class="text-2xl font-bold text-primary mb-4">News</h2>
       <div class="border-t border-border pt-4 space-y-2">
+        <p><span class="text-red-700 font-bold">news!</span> 2026.01 - 2026.04. {lang === 'zh'
+          ? '完成**华为多媒体智能协作实验室**实习，参与多 Agent 会议助手项目开发。'
+          : 'Completed internship at **Huawei Multimedia Intelligent Collaboration Lab**, working on a Multi-Agent meeting assistant project.'}</p>
+        <p><span class="text-red-700 font-bold">news!</span> 2025.09. {lang === 'zh'
+          ? '正式入学**复旦大学生物医学工程（人工智能方向）博士项目**！'
+          : 'Officially enrolled in the **Ph.D. program in Biomedical Engineering (AI) at Fudan University**!'}</p>
         <p><span class="text-red-700 font-bold">news!</span> 26/09/2024. {lang === 'zh'
-          ? '我已被**复旦大学医学人工智能博士项目直博录取**！'
-          : 'I have been **directly admitted to the Ph.D. of Medical Artificial Intelligence at Fudan University**!'}</p>
-        <p><span class="text-red-700 font-bold">news!</span> 08/2024. {lang === 'zh'
-          ? '我通过口头答辩获得了院系额外加分认可。'
-          : 'I won an extra point bonus recognition of my department through oral defense.'}</p>
+          ? '我已被**复旦大学生物医学工程博士项目直博录取**！'
+          : 'I have been **directly admitted to the Ph.D. of Biomedical Engineering at Fudan University**!'}</p>
       </div>
     </section>
 

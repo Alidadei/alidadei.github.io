@@ -26,12 +26,12 @@ const { lang } = Astro.params as { lang: Lang };
       </h2>
       <div class="space-y-4">
         <div class="border-l-4 border-accent pl-4">
-          <h3 class="font-bold text-lg text-primary">2024 - present</h3>
-          <p>{lang === 'zh' ? '复旦大学 · 医学人工智能博士研究生' : 'Fudan University — Ph.D. in Medical AI'}</p>
+          <h3 class="font-bold text-lg text-primary">2025.09 - 2030.06</h3>
+          <p>{lang === 'zh' ? '复旦大学 · 生物医学工程（人工智能方向）博士研究生' : 'Fudan University — Ph.D. in Biomedical Engineering (AI)'}</p>
         </div>
         <div class="border-l-4 border-accent pl-4">
-          <h3 class="font-bold text-lg text-primary">2021 - 2025</h3>
-          <p>{lang === 'zh' ? '中国海洋大学 · 电子工程学院 · 书法协会干事、自强社志愿者' : 'Ocean University of China — Electronic Engineering'}</p>
+          <h3 class="font-bold text-lg text-primary">2021.08 - 2025.07</h3>
+          <p>{lang === 'zh' ? '中国海洋大学（985） · 电子信息工程 · 专业第4名保研' : 'Ocean University of China (985) — Electronic Information Engineering (Top 4, recommended for Ph.D.)'}</p>
         </div>
         <div class="border-l-4 border-accent pl-4">
           <h3 class="font-bold text-lg text-primary">2018-2021</h3>
@@ -50,6 +50,36 @@ const { lang } = Astro.params as { lang: Lang };
         {lang === 'zh' ? '研究经历' : 'Research Experience'}
       </h2>
       <div class="space-y-8">
+        <div class="border-l-4 border-accent pl-4">
+          <div class="flex items-baseline justify-between flex-wrap gap-2">
+            <h3 class="font-bold text-lg text-primary">
+              {lang === 'zh' ? '华为 · 多媒体智能协作实验室' : 'Huawei · Multimedia Intelligent Collaboration Lab'}
+            </h3>
+            <span class="text-sm text-text-muted">{lang === 'zh' ? '实习' : 'Internship'}</span>
+          </div>
+          <p class="text-sm text-text-muted mb-2">2026.01 - 2026.04</p>
+          <p class="text-text-secondary">
+            {lang === 'zh'
+              ? '参与 Multi-Agent 协作会议助手项目。基于 LangGraph 编排执行流，落地 A2A 协议实现跨 Agent 动态服务注册发现与解耦调用；实现语义路由优化与防误触发策略；搭建基于 LLM-as-a-Judge 的自动化评测流水线。'
+              : 'Worked on a Multi-Agent collaborative meeting assistant. Built with LangGraph orchestration, implemented A2A protocol for cross-agent dynamic service discovery and decoupled invocation; optimized semantic routing to prevent false triggers; built LLM-as-a-Judge automated evaluation pipeline.'}
+          </p>
+        </div>
+
+        <div class="border-l-4 border-accent pl-4">
+          <div class="flex items-baseline justify-between flex-wrap gap-2">
+            <h3 class="font-bold text-lg text-primary">
+              {lang === 'zh' ? '医疗大模型多模态信息融合与可解释性研究' : 'Medical LLM Multimodal Fusion & Interpretability Research'}
+            </h3>
+            <span class="text-sm text-text-muted">{lang === 'zh' ? '课题负责人' : 'Principal Investigator'}</span>
+          </div>
+          <p class="text-sm text-text-muted mb-2">2025.09 - {lang === 'zh' ? '至今' : 'Present'}</p>
+          <p class="text-text-secondary">
+            {lang === 'zh'
+              ? '针对特殊罕见病用药疗效难以预测的现象，构建基于医疗大模型和多模态信息融合方法的可解释性算法架构。基于 Agent Workflow 进行医学数据清洗，使用预训练医学大模型提取各模态特征，构建中期融合架构实现跨模态信息互补。'
+              : 'Building an interpretable algorithm architecture based on medical LLMs and multimodal fusion for predicting rare disease treatment efficacy. Using Agent Workflow for medical data preprocessing, pretrained medical LLMs for feature extraction, and mid-fusion architecture for cross-modal information complementarity.'}
+          </p>
+        </div>
+
         <div class="border-l-4 border-accent pl-4">
           <div class="flex items-baseline justify-between flex-wrap gap-2">
             <h3 class="font-bold text-lg text-primary">
@@ -89,17 +119,17 @@ const { lang } = Astro.params as { lang: Lang };
       </h2>
       <div class="grid md:grid-cols-3 gap-6">
         <div class="p-4 rounded-lg bg-bg-secondary">
-          <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '编程技能' : 'Programming'}</h3>
+          <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? 'AI-Native 开发' : 'AI-Native Dev'}</h3>
           <div class="flex flex-wrap gap-2">
-            {['C', 'C++', 'Matlab', 'Python', 'Verilog'].map((s) => (
+            {(lang === 'zh' ? ['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A'] : ['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A']).map((s) => (
               <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
             ))}
           </div>
         </div>
         <div class="p-4 rounded-lg bg-bg-secondary">
-          <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '科研技能' : 'Research'}</h3>
+          <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '深度学习' : 'Deep Learning'}</h3>
           <div class="flex flex-wrap gap-2">
-            {['LaTeX', 'Gazebo', 'Simulink', 'ROS', 'Git'].map((s) => (
+            {['PyTorch', 'TensorFlow', 'Python', 'LaTeX', 'Git'].map((s) => (
               <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
             ))}
           </div>
@@ -107,7 +137,7 @@ const { lang } = Astro.params as { lang: Lang };
         <div class="p-4 rounded-lg bg-bg-secondary">
           <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '通用技能' : 'General'}</h3>
           <div class="flex flex-wrap gap-2">
-            {['Office', 'CET-6: 622', 'CET-4: 657', lang === 'zh' ? '普通话二甲' : 'Putonghua 2A'].map((s) => (
+            {['C/C++', 'MATLAB', 'CET-6: 622', 'CET-4: 657', lang === 'zh' ? '普通话二甲' : 'Putonghua 2A'].map((s) => (
               <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
             ))}
           </div>
@@ -122,6 +152,7 @@ const { lang } = Astro.params as { lang: Lang };
       </h2>
       <div class="space-y-3">
         {(lang === 'zh' ? [
+          { title: '复旦大学相辉博士奖学金', desc: '复旦大学' },
           { title: '二等奖学金', desc: '中国海洋大学' },
           { title: '优秀学生称号', desc: '中国海洋大学' },
           { title: '全国英语阅读比赛一等奖', desc: '' },
@@ -131,6 +162,7 @@ const { lang } = Astro.params as { lang: Lang };
           { title: '华为HSD证书', desc: '' },
           { title: '美赛S奖', desc: 'MCM/ICM' },
         ] : [
+          { title: 'Fudan University Xianghui Doctoral Scholarship', desc: 'Fudan University' },
           { title: 'Second-Class Scholarship', desc: 'Ocean University of China' },
           { title: 'Outstanding Student', desc: 'Ocean University of China' },
           { title: 'National English Reading Competition - First Prize', desc: '' },
