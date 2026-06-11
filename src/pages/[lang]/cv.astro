@@ -192,7 +192,6 @@ const { lang } = Astro.params as { lang: Lang };
               </div>
             </div>
           ))}
-          <AwardWall client:load lang={lang} />
         </div>
       </div>
     </section>
@@ -236,6 +235,9 @@ const { lang } = Astro.params as { lang: Lang };
       </div>
     </div>
   </div>
+
+  <!-- Award wall easter egg at page bottom -->
+  <AwardWall client:load lang={lang} />
 
   <!-- Vanilla JS accordion - no React dependency -->
   <script>

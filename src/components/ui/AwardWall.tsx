@@ -17,6 +17,7 @@ const awardImages = [
   '/images/美赛S奖2428151.jpg',
   '/images/第五届海工.jpg',
   '/images/三年成绩不断进步.jpg',
+  '/images/第四届国际海洋工程准备科技创新大赛.jpg',
 ];
 
 interface WaterfallItem {
