@@ -20,7 +20,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
 <BaseLayout title={title} description={description} image={image}>
   <Header />
-  <article class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
+  <article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
     <header class="mb-10">
       <!-- Category breadcrumb -->
       {categories.length > 0 && (
@@ -70,7 +70,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       </div>
 
       <!-- Right-side TOC -->
-      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0">
+      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0 ml-auto">
         <div id="toc-container" class="sticky top-8">
           <h3 class="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
             {lang === 'zh' ? '目录' : 'Table of Contents'}
@@ -119,10 +119,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         link.href = '#' + heading.id;
         link.textContent = heading.textContent?.trim() || '';
 
-        // Hierarchy: h2 bold top-level, h3 indented, h4 smaller indented
-        let cls = 'toc-link block py-1 text-text-muted hover:text-accent transition-colors truncate';
+        // Hierarchy: all bold, with indent & size by level
+        let cls = 'toc-link block py-1 font-bold text-text-muted hover:text-accent transition-colors truncate';
         if (level === 2) {
-          cls += ' font-semibold text-[0.85rem]';
+          cls += ' text-[0.85rem]';
         } else if (level === 3) {
           cls += ' pl-3 text-[0.8rem]';
         } else if (level === 4) {
@@ -150,15 +150,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         tocLinks.forEach((link, i) => {
           if (i === currentIndex) {
             link.classList.remove('text-text-muted');
-            link.classList.add('text-accent', 'font-medium');
+            link.classList.add('text-accent');
             (link as HTMLElement).style.borderLeftColor = 'var(--color-accent)';
           } else {
-            link.classList.remove('text-accent', 'font-medium');
-            // Restore original font-weight for h2
-            const level = headingElements[i] ? parseInt(headingElements[i].tagName[1]) : 2;
-            if (level === 2) {
-              link.classList.add('font-semibold');
-            }
+            link.classList.remove('text-accent');
             link.classList.add('text-text-muted');
             (link as HTMLElement).style.borderLeftColor = 'transparent';
           }
