@@ -99,25 +99,36 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         return;
       }
 
+      // Clear any previous TOC items (for Astro page transitions)
+      tocNav.innerHTML = '';
+
+      // Compute the fixed header height for accurate scroll offset
+      const header = document.querySelector('header') || document.querySelector('nav');
+      const headerHeight = header ? header.getBoundingClientRect().height : 0;
+      // Extra padding so heading sits comfortably below the header
+      const scrollOffset = headerHeight + 24;
+
       headings.forEach((heading, index) => {
         // Generate an id if missing
         if (!heading.id) {
-          heading.id = 'heading-' + index + '-' + heading.textContent?.trim().replace(/\s+/g, '-').slice(0, 30);
+          heading.id = 'toc-h-' + index + '-' + heading.textContent?.trim().replace(/\s+/g, '-').slice(0, 30);
         }
 
         const level = parseInt(heading.tagName[1]); // 2, 3, or 4
         const link = document.createElement('a');
         link.href = '#' + heading.id;
         link.textContent = heading.textContent?.trim() || '';
-        link.className = 'toc-link block py-1 text-text-muted hover:text-accent transition-colors truncate';
 
-        // Indent based on level: h2 = 0, h3 = 12px, h4 = 24px
-        if (level === 3) link.style.paddingLeft = '12px';
-        if (level === 4) link.style.paddingLeft = '24px';
-
-        // Font size based on level
-        if (level === 3) link.style.fontSize = '0.8rem';
-        if (level === 4) link.style.fontSize = '0.75rem';
+        // Hierarchy: h2 bold top-level, h3 indented, h4 smaller indented
+        let cls = 'toc-link block py-1 text-text-muted hover:text-accent transition-colors truncate';
+        if (level === 2) {
+          cls += ' font-semibold text-[0.85rem]';
+        } else if (level === 3) {
+          cls += ' pl-3 text-[0.8rem]';
+        } else if (level === 4) {
+          cls += ' pl-6 text-[0.75rem] opacity-80';
+        }
+        link.className = cls;
 
         tocNav.appendChild(link);
       });
@@ -130,7 +141,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         let currentIndex = 0;
         for (let i = headingElements.length - 1; i >= 0; i--) {
           const rect = headingElements[i].getBoundingClientRect();
-          if (rect.top <= 120) {
+          if (rect.top <= scrollOffset + 10) {
             currentIndex = i;
             break;
           }
@@ -140,25 +151,30 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           if (i === currentIndex) {
             link.classList.remove('text-text-muted');
             link.classList.add('text-accent', 'font-medium');
-            // Add left border highlight
             (link as HTMLElement).style.borderLeftColor = 'var(--color-accent)';
           } else {
             link.classList.remove('text-accent', 'font-medium');
+            // Restore original font-weight for h2
+            const level = headingElements[i] ? parseInt(headingElements[i].tagName[1]) : 2;
+            if (level === 2) {
+              link.classList.add('font-semibold');
+            }
             link.classList.add('text-text-muted');
             (link as HTMLElement).style.borderLeftColor = 'transparent';
           }
         });
       }
 
-      // Smooth scroll on click
+      // Smooth scroll on click — use getBoundingClientRect for accurate position
       tocLinks.forEach(link => {
         link.addEventListener('click', (e) => {
           e.preventDefault();
           const targetId = (link as HTMLAnchorElement).getAttribute('href')?.slice(1);
           const target = document.getElementById(targetId || '');
           if (target) {
+            const top = target.getBoundingClientRect().top + window.scrollY - scrollOffset;
             window.scrollTo({
-              top: target.offsetTop - 80,
+              top: top,
               behavior: 'smooth'
             });
           }
