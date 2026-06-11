@@ -4,6 +4,8 @@ interface AwardWallProps {
   lang: 'zh' | 'en';
 }
 
+const featuredImage = '/images/相辉奖状.jpg';
+
 const awardImages = [
   '/images/二等奖学金.jpg',
   '/images/优秀学生.jpg',
@@ -112,36 +114,104 @@ export default function AwardWall({ lang }: AwardWallProps) {
             {lang === 'zh' ? '点击空白处或按 ESC 关闭' : 'Click anywhere or press ESC to close'}
           </div>
 
-          {/* Waterfall layout */}
+          {/* Featured image centered + waterfall around it */}
           <div className="absolute inset-8 flex justify-center items-start overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex gap-3 w-full max-w-4xl">
-              {[0, 1, 2].map((colIndex) => (
-                <div key={colIndex} className="flex-1 flex flex-col gap-3">
-                  {items
-                    .filter((item) => item.col === colIndex)
-                    .map((item, i) => (
-                      <div
-                        key={i}
-                        className="relative overflow-hidden rounded-lg"
-                        style={{
-                          height: `${item.height}px`,
-                          opacity: visible ? 1 : 0,
-                          transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                          transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
-                        }}
-                      >
-                        <img
-                          src={item.src}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          style={{
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                          }}
-                        />
-                      </div>
-                    ))}
+            <div className="flex gap-3 w-full max-w-5xl">
+              {/* Left column */}
+              <div className="flex-1 flex flex-col gap-3">
+                {items
+                  .filter((item) => item.col === 0)
+                  .map((item, i) => (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{
+                        height: `${item.height}px`,
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                        transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
+                      }}
+                    >
+                      <img
+                        src={item.src}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                      />
+                    </div>
+                  ))}
+              </div>
+
+              {/* Center column: featured image on top, then other items */}
+              <div className="flex-1 flex flex-col gap-3">
+                <div
+                  className="relative overflow-hidden rounded-lg border-2 border-yellow-400/50"
+                  style={{
+                    height: '300px',
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.9)',
+                    transition: 'opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s',
+                    boxShadow: '0 0 30px rgba(255,215,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  <img
+                    src={featuredImage}
+                    alt="相辉奖状"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                    <span className="text-white/90 text-sm font-medium">
+                      {lang === 'zh' ? '复旦大学相辉博士奖学金' : 'Fudan Xianghui Doctoral Scholarship'}
+                    </span>
+                  </div>
                 </div>
-              ))}
+                {items
+                  .filter((item) => item.col === 1)
+                  .map((item, i) => (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{
+                        height: `${item.height}px`,
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                        transition: `opacity 0.5s ease ${(i + 1) * 0.12}s, transform 0.5s ease ${(i + 1) * 0.12}s`,
+                      }}
+                    >
+                      <img
+                        src={item.src}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                      />
+                    </div>
+                  ))}
+              </div>
+
+              {/* Right column */}
+              <div className="flex-1 flex flex-col gap-3">
+                {items
+                  .filter((item) => item.col === 2)
+                  .map((item, i) => (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{
+                        height: `${item.height}px`,
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                        transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
+                      }}
+                    >
+                      <img
+                        src={item.src}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                      />
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         </div>
