@@ -9,21 +9,20 @@ export function getStaticPaths() {
 }
 
 const { lang } = Astro.params as { lang: Lang };
+
+const sectionOrder = ['education', 'internship', 'projects', 'skills', 'awards', 'contact'];
 ---
 
 <PageLayout title="CV">
   <h1 class="text-3xl font-bold text-primary mb-8">CV / {lang === 'zh' ? '简历' : 'Resume'}</h1>
 
-  <InteractiveResume client:load lang={lang}>
-    {/* Education section - rendered by Astro, consumed by the component */}
-  </InteractiveResume>
+  <InteractiveResume client:load lang={lang} sectionOrder={sectionOrder} />
 
-  {/* Static fallback / print-friendly version */}
-  <div id="resume-content" class="space-y-10 mt-8">
+  <div id="resume-content" class="space-y-6">
     <!-- Education -->
     <section data-section="education">
       <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b-2 border-primary">
-        {lang === 'zh' ? '教育经历' : 'Educational Experience'}
+        {lang === 'zh' ? '教育经历' : 'Education'}
       </h2>
       <div class="space-y-4">
         <div class="border-l-4 border-accent pl-4">
@@ -34,21 +33,13 @@ const { lang } = Astro.params as { lang: Lang };
           <h3 class="font-bold text-lg text-primary">2021.08 - 2025.07</h3>
           <p>{lang === 'zh' ? '中国海洋大学（985） · 电子信息工程 · 专业第4名保研' : 'Ocean University of China (985) — Electronic Information Engineering (Top 4, recommended for Ph.D.)'}</p>
         </div>
-        <div class="border-l-4 border-accent pl-4">
-          <h3 class="font-bold text-lg text-primary">2018-2021</h3>
-          <p>{lang === 'zh' ? '深圳外国语学校高中部' : 'Senior High School of Shenzhen Foreign Language School'}</p>
-        </div>
-        <div class="border-l-4 border-accent pl-4">
-          <h3 class="font-bold text-lg text-primary">2015-2018</h3>
-          <p>{lang === 'zh' ? '深圳外国语学校初中部' : 'Junior High School of Shenzhen Foreign Language School'}</p>
-        </div>
       </div>
     </section>
 
-    <!-- Research -->
-    <section data-section="research">
+    <!-- Internship -->
+    <section data-section="internship">
       <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b-2 border-primary">
-        {lang === 'zh' ? '研究经历' : 'Research Experience'}
+        {lang === 'zh' ? '实习经历' : 'Internship'}
       </h2>
       <div class="space-y-8">
         <div class="border-l-4 border-accent pl-4">
@@ -56,16 +47,23 @@ const { lang } = Astro.params as { lang: Lang };
             <h3 class="font-bold text-lg text-primary">
               {lang === 'zh' ? '华为 · 多媒体智能协作实验室' : 'Huawei · Multimedia Intelligent Collaboration Lab'}
             </h3>
-            <span class="text-sm text-text-muted">{lang === 'zh' ? '实习' : 'Internship'}</span>
+            <span class="text-sm text-text-muted">2026.01 - 2026.04</span>
           </div>
-          <p class="text-sm text-text-muted mb-2">2026.01 - 2026.04</p>
-          <p class="text-text-secondary">
+          <p class="text-text-secondary mt-2">
             {lang === 'zh'
               ? '参与 Multi-Agent 协作会议助手项目。基于 LangGraph 编排执行流，落地 A2A 协议实现跨 Agent 动态服务注册发现与解耦调用；实现语义路由优化与防误触发策略；搭建基于 LLM-as-a-Judge 的自动化评测流水线。'
               : 'Worked on a Multi-Agent collaborative meeting assistant. Built with LangGraph orchestration, implemented A2A protocol for cross-agent dynamic service discovery and decoupled invocation; optimized semantic routing to prevent false triggers; built LLM-as-a-Judge automated evaluation pipeline.'}
           </p>
         </div>
+      </div>
+    </section>
 
+    <!-- Projects / Research -->
+    <section data-section="projects">
+      <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b-2 border-primary">
+        {lang === 'zh' ? '项目经历' : 'Project Experience'}
+      </h2>
+      <div class="space-y-8">
         <div class="border-l-4 border-accent pl-4">
           <div class="flex items-baseline justify-between flex-wrap gap-2">
             <h3 class="font-bold text-lg text-primary">
@@ -116,13 +114,13 @@ const { lang } = Astro.params as { lang: Lang };
     <!-- Skills -->
     <section data-section="skills">
       <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b-2 border-primary">
-        {lang === 'zh' ? '技能' : 'Skills'}
+        {lang === 'zh' ? '专业技能' : 'Skills'}
       </h2>
       <div class="grid md:grid-cols-3 gap-6">
         <div class="p-4 rounded-lg bg-bg-secondary">
           <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? 'AI-Native 开发' : 'AI-Native Dev'}</h3>
           <div class="flex flex-wrap gap-2">
-            {(lang === 'zh' ? ['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A'] : ['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A']).map((s) => (
+            {['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A'].map((s) => (
               <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
             ))}
           </div>
@@ -146,7 +144,7 @@ const { lang } = Astro.params as { lang: Lang };
       </div>
     </section>
 
-    <!-- Awards -->
+    <!-- Awards (精简) -->
     <section data-section="awards">
       <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b-2 border-primary">
         {lang === 'zh' ? '获奖荣誉' : 'Awards & Honors'}
@@ -154,24 +152,14 @@ const { lang } = Astro.params as { lang: Lang };
       <div class="space-y-3">
         {(lang === 'zh' ? [
           { title: '复旦大学相辉博士奖学金', desc: '复旦大学' },
-          { title: '二等奖学金', desc: '中国海洋大学' },
+          { title: '一等奖学金', desc: '中国海洋大学' },
           { title: '优秀学生称号', desc: '中国海洋大学' },
-          { title: '全国英语阅读比赛一等奖', desc: '' },
-          { title: '全国大学生商务英语竞赛二等奖', desc: '2023' },
-          { title: '山东省机器人大赛三等奖', desc: '' },
-          { title: '蓝桥杯电子赛省奖', desc: '第十四届' },
           { title: '华为HSD证书', desc: '' },
-          { title: '美赛S奖', desc: 'MCM/ICM' },
         ] : [
           { title: 'Fudan University Xianghui Doctoral Scholarship', desc: 'Fudan University' },
-          { title: 'Second-Class Scholarship', desc: 'Ocean University of China' },
+          { title: 'First-Class Scholarship', desc: 'Ocean University of China' },
           { title: 'Outstanding Student', desc: 'Ocean University of China' },
-          { title: 'National English Reading Competition - First Prize', desc: '' },
-          { title: 'Business English Competition - Second Prize', desc: '2023' },
-          { title: 'Robot Competition - Third Prize (Shandong)', desc: '' },
-          { title: 'Lanqiao Cup Electronic Competition - Provincial Award', desc: '14th' },
           { title: 'Huawei HSD Certificate', desc: '' },
-          { title: 'MCM/ICM - S Award', desc: '' },
         ]).map((award) => (
           <div class="flex items-center gap-3 p-3 rounded-lg border border-border">
             <span class="text-lg">🎖</span>
