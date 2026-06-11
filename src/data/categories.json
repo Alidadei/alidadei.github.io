@@ -1,7 +1,7 @@
 [
   {
     "slug": "tech-learning",
-    "label": { "zh": "技术学习", "en": "Tech Learning" },
+    "label": { "zh": "算法笔记", "en": "Algorithm Notes" },
     "description": { "zh": "论文阅读、技术调研、知识点总结等", "en": "Paper reading, tech research, knowledge summaries" },
     "aliases": [],
     "children": [
@@ -45,7 +45,7 @@
   },
   {
     "slug": "personal-views",
-    "label": { "zh": "个人看法", "en": "Personal Views" },
+    "label": { "zh": "个人调研&感悟", "en": "Research & Insights" },
     "description": { "zh": "基于调研实践的领域观点", "en": "Domain perspectives based on research & practice" },
     "aliases": [],
     "children": []

@@ -6,8 +6,7 @@ tags:
   - 深度学习
   - 机器学习
   - 数学
-categories:
-  - tech-learning
+categories: ['tech-learning', 'deep-learning']
 lang: zh
 ---
 

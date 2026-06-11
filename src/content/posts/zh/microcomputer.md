@@ -4,9 +4,7 @@ date: 2023-04-01
 tags:
   - microcomputer
   - 微机原理
-categories:
-  - tech-learning
-  - embedded
+categories: ['tech-learning', 'embedded']
 lang: zh
 ---
 

@@ -5,8 +5,7 @@ tags:
   - Claude Code
   - Codex
   - AI Agent
-categories:
-  - tech-learning
+categories: ['personal-views']
 lang: zh
 ---
 

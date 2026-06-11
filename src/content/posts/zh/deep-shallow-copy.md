@@ -5,8 +5,7 @@ tags:
   - Python
   - 深浅拷贝
   - 编程基础
-categories:
-  - tech-learning
+categories: ['tech-learning', 'data-structure']
 lang: zh
 ---
 

@@ -4,9 +4,7 @@ date: 2023-03-01
 tags:
   - Data structure
   - 数据结构
-categories:
-  - tech-learning
-  - data-structure
+categories: ['tech-learning', 'data-structure']
 lang: zh
 ---
 

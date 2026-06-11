@@ -6,8 +6,7 @@ tags:
   - 归一化
   - BatchNorm
   - LayerNorm
-categories:
-  - tech-learning
+categories: ['tech-learning', 'deep-learning']
 lang: zh
 ---
 

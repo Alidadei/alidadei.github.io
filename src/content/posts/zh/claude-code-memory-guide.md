@@ -5,8 +5,7 @@ tags:
   - Claude Code
   - Memory
   - 配置
-categories:
-  - tech-learning
+categories: ['personal-views']
 lang: zh
 ---
 

@@ -6,8 +6,7 @@ tags:
   - Temperature
   - Softmax
   - 深度学习
-categories:
-  - tech-learning
+categories: ['tech-learning', 'deep-learning', 'transformer']
 lang: zh
 ---
 
