@@ -4,46 +4,34 @@ interface AwardWallProps {
   lang: 'zh' | 'en';
 }
 
+// Featured image in center
 const featuredImage = '/images/相辉奖状.jpg';
 
-const awardImages = [
+// Images positioned around the featured one
+const positionedImages = {
+  left: '/images/第五届海工.jpg',
+  right: '/images/第四届国际海洋工程准备科技创新大赛.jpg',
+  bottomLeft: '/images/华为HSD证书.jpg',
+  bottomRight: '/images/实习证明-华为.png',
+};
+
+// Remaining images for the bottom row
+const otherImages = [
   '/images/二等奖学金.jpg',
   '/images/优秀学生.jpg',
   '/images/第十四届蓝桥杯电子赛省奖.jpg',
   '/images/山东省机器人大赛三等奖.jpg',
-  '/images/华为HSD证书.jpg',
   '/images/全国英语阅读比赛一等奖.png',
   '/images/2023全国大学生商务英语竟赛二等奖.jpg',
   '/images/美赛S奖2428151.jpg',
-  '/images/第五届海工.jpg',
   '/images/三年成绩不断进步.jpg',
-  '/images/第四届国际海洋工程准备科技创新大赛.jpg',
 ];
-
-interface WaterfallItem {
-  src: string;
-  col: number;
-  height: number;  // display height based on aspect
-}
-
-function generateWaterfall(cols: number): WaterfallItem[] {
-  const colHeights = new Array(cols).fill(0);
-  return awardImages.map((src) => {
-    // Find shortest column
-    const minCol = colHeights.indexOf(Math.min(...colHeights));
-    const h = 160 + Math.floor(Math.random() * 80); // 160-240px height
-    colHeights[minCol] += h + 12; // 12px gap
-    return { src, col: minCol, height: h };
-  });
-}
 
 export default function AwardWall({ lang }: AwardWallProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [items, setItems] = useState<WaterfallItem[]>([]);
   const [visible, setVisible] = useState(false);
 
   const open = useCallback(() => {
-    setItems(generateWaterfall(3));
     setIsOpen(true);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -73,10 +61,12 @@ export default function AwardWall({ lang }: AwardWallProps) {
 
   const hintText = lang === 'zh' ? '点我看看~' : 'Click me~';
 
+  const baseDelay = (row: number, col: number) => (row * 0.08 + col * 0.06);
+
   return (
     <>
-      {/* Trigger: small trophy icon */}
-      <div className="flex justify-center mt-6">
+      {/* Trigger button at page bottom */}
+      <div className="flex justify-center mt-8">
         <button
           onClick={open}
           className="group relative opacity-40 hover:opacity-80 transition-opacity duration-500 cursor-pointer"
@@ -84,10 +74,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
           title={hintText}
         >
           <svg
-            width="28"
-            height="28"
-            viewBox="0 0 64 64"
-            fill="none"
+            width="28" height="28" viewBox="0 0 64 64" fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12"
           >
@@ -104,114 +91,121 @@ export default function AwardWall({ lang }: AwardWallProps) {
         </button>
       </div>
 
-      {/* Full-screen waterfall overlay */}
+      {/* Full-screen overlay */}
       {isOpen && (
         <div
-          className={`fixed inset-0 z-50 transition-colors duration-400 ${visible ? 'bg-black/80' : 'bg-black/0'}`}
+          className={`fixed inset-0 z-50 transition-colors duration-400 ${visible ? 'bg-black/85' : 'bg-black/0'}`}
           onClick={close}
         >
           {/* Close hint */}
-          <div className={`absolute top-4 right-6 text-white/60 text-sm transition-opacity duration-400 z-50 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`absolute top-4 right-6 text-white/60 text-sm z-50 transition-opacity duration-400 ${visible ? 'opacity-100' : 'opacity-0'}`}>
             {lang === 'zh' ? '点击空白处或按 ESC 关闭' : 'Click anywhere or press ESC to close'}
           </div>
 
-          {/* Featured image centered + waterfall around it */}
-          <div className="absolute inset-8 flex justify-center items-start overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex gap-3 w-full max-w-5xl">
-              {/* Left column */}
-              <div className="flex-1 flex flex-col gap-3">
-                {items
-                  .filter((item) => item.col === 0)
-                  .map((item, i) => (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden rounded-lg"
-                      style={{
-                        height: `${item.height}px`,
-                        opacity: visible ? 1 : 0,
-                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                        transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
-                      }}
-                    >
-                      <img
-                        src={item.src}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                      />
-                    </div>
-                  ))}
-              </div>
+          {/* Scrollable content */}
+          <div className="absolute inset-0 overflow-auto flex flex-col items-center py-8 px-4" onClick={(e) => e.stopPropagation()}>
 
-              {/* Center column: featured image on top, then other items */}
-              <div className="flex-1 flex flex-col gap-3">
+            {/* Main layout: featured + 4 positioned around */}
+            <div className="w-full max-w-5xl mt-8 mb-6">
+              {/* Top row: left | featured | right */}
+              <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-end">
+                {/* Left: 海工赛1 */}
                 <div
-                  className="relative overflow-hidden rounded-lg border-2 border-yellow-400/50"
+                  className="overflow-hidden rounded-lg"
+                  style={{
+                    height: '200px',
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateX(0)' : 'translateX(-30px)',
+                    transition: `opacity 0.5s ease ${baseDelay(0,0)}s, transform 0.5s ease ${baseDelay(0,0)}s`,
+                  }}
+                >
+                  <img src={positionedImages.left} alt="" className="w-full h-full object-cover shadow-xl" />
+                </div>
+
+                {/* Center: 相辉奖状 (featured) */}
+                <div
+                  className="overflow-hidden rounded-lg border-2 border-yellow-400/50 relative"
                   style={{
                     height: '300px',
                     opacity: visible ? 1 : 0,
-                    transform: visible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.9)',
+                    transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
                     transition: 'opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s',
-                    boxShadow: '0 0 30px rgba(255,215,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
+                    boxShadow: '0 0 40px rgba(255,215,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
                   }}
                 >
-                  <img
-                    src={featuredImage}
-                    alt="相辉奖状"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                  <img src={featuredImage} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                     <span className="text-white/90 text-sm font-medium">
                       {lang === 'zh' ? '复旦大学相辉博士奖学金' : 'Fudan Xianghui Doctoral Scholarship'}
                     </span>
                   </div>
                 </div>
-                {items
-                  .filter((item) => item.col === 1)
-                  .map((item, i) => (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden rounded-lg"
-                      style={{
-                        height: `${item.height}px`,
-                        opacity: visible ? 1 : 0,
-                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                        transition: `opacity 0.5s ease ${(i + 1) * 0.12}s, transform 0.5s ease ${(i + 1) * 0.12}s`,
-                      }}
-                    >
-                      <img
-                        src={item.src}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                      />
-                    </div>
-                  ))}
+
+                {/* Right: 海工赛2 */}
+                <div
+                  className="overflow-hidden rounded-lg"
+                  style={{
+                    height: '200px',
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateX(0)' : 'translateX(30px)',
+                    transition: `opacity 0.5s ease ${baseDelay(0,2)}s, transform 0.5s ease ${baseDelay(0,2)}s`,
+                  }}
+                >
+                  <img src={positionedImages.right} alt="" className="w-full h-full object-cover shadow-xl" />
+                </div>
               </div>
 
-              {/* Right column */}
-              <div className="flex-1 flex flex-col gap-3">
-                {items
-                  .filter((item) => item.col === 2)
-                  .map((item, i) => (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden rounded-lg"
-                      style={{
-                        height: `${item.height}px`,
-                        opacity: visible ? 1 : 0,
-                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                        transition: `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`,
-                      }}
-                    >
-                      <img
-                        src={item.src}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                      />
-                    </div>
-                  ))}
+              {/* Bottom row: bottomLeft | spacer | bottomRight */}
+              <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 mt-4">
+                {/* Bottom-left: 华为HSD */}
+                <div
+                  className="overflow-hidden rounded-lg"
+                  style={{
+                    height: '180px',
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                    transition: `opacity 0.5s ease ${baseDelay(1,0)}s, transform 0.5s ease ${baseDelay(1,0)}s`,
+                  }}
+                >
+                  <img src={positionedImages.bottomLeft} alt="" className="w-full h-full object-cover shadow-xl" />
+                </div>
+
+                {/* Bottom center spacer */}
+                <div />
+
+                {/* Bottom-right: 实习证明 */}
+                <div
+                  className="overflow-hidden rounded-lg"
+                  style={{
+                    height: '180px',
+                    opacity: visible ? 1 : 0,
+                    transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                    transition: `opacity 0.5s ease ${baseDelay(1,2)}s, transform 0.5s ease ${baseDelay(1,2)}s`,
+                  }}
+                >
+                  <img src={positionedImages.bottomRight} alt="" className="w-full h-full object-cover shadow-xl" />
+                </div>
+              </div>
+            </div>
+
+            {/* Other images in a scrollable row */}
+            <div className="w-full max-w-5xl">
+              <div className="flex gap-3 overflow-x-auto pb-4">
+                {otherImages.map((src, i) => (
+                  <div
+                    key={i}
+                    className="shrink-0 overflow-hidden rounded-lg"
+                    style={{
+                      width: '180px',
+                      height: '140px',
+                      opacity: visible ? 1 : 0,
+                      transform: visible ? 'translateY(0)' : 'translateY(20px)',
+                      transition: `opacity 0.4s ease ${0.4 + i * 0.06}s, transform 0.4s ease ${0.4 + i * 0.06}s`,
+                    }}
+                  >
+                    <img src={src} alt="" className="w-full h-full object-cover shadow-lg" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
