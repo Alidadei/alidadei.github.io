@@ -5,7 +5,7 @@ tags:
   - Claude Code
   - CLI
   - 配置
-categories: ['personal-views']
+categories: ['personal-practice']
 lang: zh
 ---
 

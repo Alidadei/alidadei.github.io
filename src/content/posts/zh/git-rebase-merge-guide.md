@@ -6,7 +6,7 @@ tags:
   - Rebase
   - Merge
   - 版本控制
-categories: ['personal-practice']
+categories: ['tech-learning']
 lang: zh
 ---
 

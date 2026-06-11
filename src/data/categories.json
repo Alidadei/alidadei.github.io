@@ -1,7 +1,7 @@
 [
   {
     "slug": "tech-learning",
-    "label": { "zh": "算法笔记", "en": "Algorithm Notes" },
+    "label": { "zh": "学习笔记", "en": "Study Notes" },
     "description": { "zh": "论文阅读、技术调研、知识点总结等", "en": "Paper reading, tech research, knowledge summaries" },
     "aliases": [],
     "children": [
