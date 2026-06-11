@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface InteractiveResumeProps {
   lang: 'zh' | 'en';
@@ -7,10 +7,13 @@ interface InteractiveResumeProps {
 
 export default function InteractiveResume({ lang, sectionOrder }: InteractiveResumeProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [mounted, setMounted] = useState(false);
+  const initialized = useRef(false);
 
+  // Initialize: wrap each data-section into accordion
   useEffect(() => {
-    // On mount, wrap each [data-section] into an accordion panel
+    if (initialized.current) return;
+    initialized.current = true;
+
     const container = document.getElementById('resume-content');
     if (!container) return;
 
@@ -18,133 +21,106 @@ export default function InteractiveResume({ lang, sectionOrder }: InteractiveRes
       const section = container.querySelector(`[data-section="${id}"]`) as HTMLElement;
       if (!section) return;
 
-      // Don't re-wrap if already wrapped
-      if (section.parentElement?.classList.contains('accordion-wrapper')) return;
+      const titleEl = section.querySelector(':scope > h2') as HTMLElement;
+      if (!titleEl) return;
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'accordion-wrapper border border-border rounded-lg overflow-hidden';
-
+      // Create accordion header
       const header = document.createElement('button');
-      header.className = 'accordion-header w-full flex items-center justify-between p-4 hover:bg-[var(--color-bg-secondary)] transition-colors text-left cursor-pointer';
-      header.dataset.section = id;
-
-      const titleEl = section.querySelector('h2');
-      const titleText = titleEl?.textContent || id;
-      if (titleEl) titleEl.style.display = 'none';
-
+      header.className = 'cv-accordion-header w-full flex items-center justify-between p-4 hover:bg-[var(--color-bg-secondary)] transition-colors text-left cursor-pointer';
+      header.dataset.sectionId = id;
       header.innerHTML = `
-        <span class="flex items-center gap-2">
-          <span class="font-bold text-lg text-[var(--color-text-primary)]">${titleText}</span>
-        </span>
-        <span class="accordion-arrow text-[var(--color-text-muted)] transition-transform duration-300">▼</span>
+        <span class="font-bold text-lg text-[var(--color-text-primary)]">${titleEl.textContent}</span>
+        <span class="cv-accordion-arrow text-[var(--color-text-muted)] transition-transform duration-300 rotate-180">▼</span>
       `;
 
+      // Create body wrapper
       const body = document.createElement('div');
-      body.className = 'accordion-body transition-all duration-300 overflow-hidden';
-      body.style.maxHeight = '0px';
+      body.className = 'cv-accordion-body overflow-hidden transition-[max-height] duration-300 ease-in-out';
+      body.style.maxHeight = '2000px';
 
-      // Move section content into body
-      while (section.firstChild) {
-        body.appendChild(section.firstChild);
-      }
-      section.appendChild(body);
-
-      wrapper.appendChild(header);
-      section.parentNode?.insertBefore(wrapper, section);
-      wrapper.appendChild(section);
-    });
-
-    setMounted(true);
-  }, [sectionOrder]);
-
-  const toggle = useCallback((id: string) => {
-    setCollapsed((prev) => {
-      const newState = { ...prev, [id]: !prev[id] };
-      const isNowCollapsed = newState[id];
-
-      const body = document.querySelector(`[data-section="${id}"] .accordion-body`) as HTMLElement;
-      const arrow = document.querySelector(`[data-section="${id}"] .accordion-arrow`) as HTMLElement;
-
-      if (body) {
-        if (isNowCollapsed) {
-          body.style.maxHeight = '0px';
-        } else {
-          body.style.maxHeight = body.scrollHeight + 'px';
-        }
-      }
-      if (arrow) {
-        arrow.style.transform = isNowCollapsed ? '' : 'rotate(180deg)';
-      }
-
-      return newState;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    // Attach click handlers
-    const handlers: Record<string, () => void> = {};
-    sectionOrder.forEach((id) => {
-      const header = document.querySelector(`[data-section="${id}"] .accordion-header`) as HTMLElement;
-      if (!header) return;
-      const handler = () => toggle(id);
-      handlers[id] = handler;
-      header.addEventListener('click', handler);
-
-      // Expand by default
-      const body = document.querySelector(`[data-section="${id}"] .accordion-body`) as HTMLElement;
-      const arrow = document.querySelector(`[data-section="${id}"] .accordion-arrow`) as HTMLElement;
-      if (body) {
-        body.style.maxHeight = body.scrollHeight + 'px';
-      }
-      if (arrow) {
-        arrow.style.transform = 'rotate(180deg)';
-      }
-    });
-
-    return () => {
-      sectionOrder.forEach((id) => {
-        const header = document.querySelector(`[data-section="${id}"] .accordion-header`);
-        if (header && handlers[id]) {
-          header.removeEventListener('click', handlers[id]);
+      // Move all children except h2 into body
+      const children = Array.from(section.children);
+      children.forEach((child) => {
+        if (child !== titleEl && child.tagName !== 'H2') {
+          body.appendChild(child);
         }
       });
+
+      // Hide original h2
+      titleEl.style.display = 'none';
+
+      // Insert header and body into section
+      section.insertBefore(header, section.firstChild);
+      section.appendChild(body);
+    });
+  }, [sectionOrder]);
+
+  // Click handler via event delegation on document
+  useEffect(() => {
+    const handleClick = (e: Event) => {
+      const target = (e.target as HTMLElement).closest('.cv-accordion-header') as HTMLElement;
+      if (!target) return;
+
+      const id = target.dataset.sectionId;
+      if (!id) return;
+
+      const body = target.nextElementSibling as HTMLElement;
+      const arrow = target.querySelector('.cv-accordion-arrow') as HTMLElement;
+      if (!body) return;
+
+      const isCurrentlyOpen = body.style.maxHeight !== '0px';
+      if (isCurrentlyOpen) {
+        body.style.maxHeight = '0px';
+        if (arrow) arrow.style.transform = '';
+      } else {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+      }
     };
-  }, [mounted, sectionOrder, toggle]);
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   const labels = {
     zh: { export: '📄 导出 PDF', collapse: '全部收起', expand: '全部展开' },
     en: { export: '📄 Export PDF', collapse: 'Collapse all', expand: 'Expand all' },
   };
-
   const t = labels[lang];
-  const allCollapsed = sectionOrder.every((id) => collapsed[id]);
 
   const toggleAll = () => {
-    const newState: Record<string, boolean> = {};
-    const willCollapse = !allCollapsed;
-    sectionOrder.forEach((id) => {
-      newState[id] = willCollapse;
-      const body = document.querySelector(`[data-section="${id}"] .accordion-body`) as HTMLElement;
-      const arrow = document.querySelector(`[data-section="${id}"] .accordion-arrow`) as HTMLElement;
-      if (body) body.style.maxHeight = willCollapse ? '0px' : body.scrollHeight + 'px';
-      if (arrow) arrow.style.transform = willCollapse ? '' : 'rotate(180deg)';
+    const allOpen = sectionOrder.every((id) => {
+      const header = document.querySelector(`.cv-accordion-header[data-section-id="${id}"]`);
+      if (!header) return true;
+      const body = header.nextElementSibling as HTMLElement;
+      return body && body.style.maxHeight !== '0px';
     });
-    setCollapsed(newState);
+
+    sectionOrder.forEach((id) => {
+      const header = document.querySelector(`.cv-accordion-header[data-section-id="${id}"]`) as HTMLElement;
+      if (!header) return;
+      const body = header.nextElementSibling as HTMLElement;
+      const arrow = header.querySelector('.cv-accordion-arrow') as HTMLElement;
+
+      if (allOpen) {
+        if (body) body.style.maxHeight = '0px';
+        if (arrow) arrow.style.transform = '';
+      } else {
+        if (body) body.style.maxHeight = body.scrollHeight + 'px';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+      }
+    });
   };
 
   const exportPdf = () => {
-    // Expand all before printing
-    const newState: Record<string, boolean> = {};
     sectionOrder.forEach((id) => {
-      newState[id] = false;
-      const body = document.querySelector(`[data-section="${id}"] .accordion-body`) as HTMLElement;
-      const arrow = document.querySelector(`[data-section="${id}"] .accordion-arrow`) as HTMLElement;
+      const header = document.querySelector(`.cv-accordion-header[data-section-id="${id}"]`) as HTMLElement;
+      if (!header) return;
+      const body = header.nextElementSibling as HTMLElement;
+      const arrow = header.querySelector('.cv-accordion-arrow') as HTMLElement;
       if (body) body.style.maxHeight = body.scrollHeight + 'px';
       if (arrow) arrow.style.transform = 'rotate(180deg)';
     });
-    setCollapsed(newState);
     setTimeout(() => window.print(), 200);
   };
 
@@ -161,7 +137,7 @@ export default function InteractiveResume({ lang, sectionOrder }: InteractiveRes
           onClick={toggleAll}
           className="px-4 py-2 text-sm rounded-lg border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors cursor-pointer"
         >
-          {allCollapsed ? t.expand : t.collapse}
+          {t.collapse}
         </button>
       </div>
     </div>
