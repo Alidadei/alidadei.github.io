@@ -17,46 +17,6 @@ const posts = defineCollection({
   }),
 });
 
-const publications = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/publications' }),
-  schema: z.object({
-    title: z.string(),
-    collection: z.literal('publications'),
-    category: z.enum(['manuscripts', 'conferences', 'books']),
-    excerpt: z.string().optional(),
-    date: z.date(),
-    venue: z.string().optional(),
-    slidesurl: z.string().optional(),
-    paperurl: z.string().optional(),
-    citation: z.string().optional(),
-  }),
-});
-
-const talks = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/talks' }),
-  schema: z.object({
-    title: z.string(),
-    collection: z.literal('talks'),
-    type: z.string().default('Talk'),
-    venue: z.string().optional(),
-    date: z.date(),
-    location: z.string().optional(),
-    talkurl: z.string().optional(),
-  }),
-});
-
-const teaching = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/teaching' }),
-  schema: z.object({
-    title: z.string(),
-    collection: z.literal('teaching'),
-    type: z.string().default('Undergraduate course'),
-    venue: z.string().optional(),
-    date: z.date(),
-    location: z.string().optional(),
-  }),
-});
-
 const projects = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
   schema: z.object({
@@ -85,9 +45,6 @@ const portfolio = defineCollection({
 
 export const collections = {
   posts,
-  publications,
-  talks,
-  teaching,
   projects,
   portfolio,
 };
