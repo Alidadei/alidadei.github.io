@@ -26,21 +26,15 @@ export const siteConfig = {
   nav: {
     zh: [
       { label: '首页', href: '/zh/' },
-      { label: '关于', href: '/zh/about/' },
       { label: '博客', href: '/zh/blog/' },
       { label: '项目', href: '/zh/projects/' },
-      { label: '论文', href: '/zh/publications/' },
       { label: '简历', href: '/zh/cv/' },
-      { label: '联系', href: '/zh/contact/' },
     ],
     en: [
       { label: 'Home', href: '/en/' },
-      { label: 'About', href: '/en/about/' },
       { label: 'Blog', href: '/en/blog/' },
       { label: 'Projects', href: '/en/projects/' },
-      { label: 'Publications', href: '/en/publications/' },
       { label: 'CV', href: '/en/cv/' },
-      { label: 'Contact', href: '/en/contact/' },
     ],
   },
 } as const;
