@@ -20,7 +20,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
 <BaseLayout title={title} description={description} image={image}>
   <Header />
-  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
+  <article class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
     <header class="mb-10">
       <!-- Category breadcrumb -->
       {categories.length > 0 && (
@@ -61,9 +61,128 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         )}
       </div>
     </header>
-    <div class="prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
-      <slot />
+
+    <!-- Article body with TOC sidebar -->
+    <div class="flex gap-8 relative">
+      <!-- Main content -->
+      <div class="flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
+        <slot />
+      </div>
+
+      <!-- Right-side TOC -->
+      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0">
+        <div id="toc-container" class="sticky top-8">
+          <h3 class="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
+            {lang === 'zh' ? '目录' : 'Table of Contents'}
+          </h3>
+          <nav id="toc-nav" class="space-y-1 text-sm border-l-2 border-border pl-3 max-h-[70vh] overflow-y-auto">
+            <!-- TOC items injected by JS -->
+          </nav>
+        </div>
+      </aside>
     </div>
   </article>
   <Footer />
+
+  <!-- TOC generation script -->
+  <script>
+    function initTOC() {
+      const prose = document.querySelector('.prose');
+      const tocNav = document.getElementById('toc-nav');
+      const tocSidebar = document.getElementById('toc-sidebar');
+      if (!prose || !tocNav || !tocSidebar) return;
+
+      // Find all headings h2-h4 in prose
+      const headings = prose.querySelectorAll('h2, h3, h4');
+      if (headings.length === 0) {
+        tocSidebar.style.display = 'none';
+        return;
+      }
+
+      headings.forEach((heading, index) => {
+        // Generate an id if missing
+        if (!heading.id) {
+          heading.id = 'heading-' + index + '-' + heading.textContent?.trim().replace(/\s+/g, '-').slice(0, 30);
+        }
+
+        const level = parseInt(heading.tagName[1]); // 2, 3, or 4
+        const link = document.createElement('a');
+        link.href = '#' + heading.id;
+        link.textContent = heading.textContent?.trim() || '';
+        link.className = 'toc-link block py-1 text-text-muted hover:text-accent transition-colors truncate';
+
+        // Indent based on level: h2 = 0, h3 = 12px, h4 = 24px
+        if (level === 3) link.style.paddingLeft = '12px';
+        if (level === 4) link.style.paddingLeft = '24px';
+
+        // Font size based on level
+        if (level === 3) link.style.fontSize = '0.8rem';
+        if (level === 4) link.style.fontSize = '0.75rem';
+
+        tocNav.appendChild(link);
+      });
+
+      // Scroll spy: highlight current heading
+      const tocLinks = tocNav.querySelectorAll('.toc-link');
+      const headingElements = Array.from(headings);
+
+      function updateActiveHeading() {
+        let currentIndex = 0;
+        for (let i = headingElements.length - 1; i >= 0; i--) {
+          const rect = headingElements[i].getBoundingClientRect();
+          if (rect.top <= 120) {
+            currentIndex = i;
+            break;
+          }
+        }
+
+        tocLinks.forEach((link, i) => {
+          if (i === currentIndex) {
+            link.classList.remove('text-text-muted');
+            link.classList.add('text-accent', 'font-medium');
+            // Add left border highlight
+            (link as HTMLElement).style.borderLeftColor = 'var(--color-accent)';
+          } else {
+            link.classList.remove('text-accent', 'font-medium');
+            link.classList.add('text-text-muted');
+            (link as HTMLElement).style.borderLeftColor = 'transparent';
+          }
+        });
+      }
+
+      // Smooth scroll on click
+      tocLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = (link as HTMLAnchorElement).getAttribute('href')?.slice(1);
+          const target = document.getElementById(targetId || '');
+          if (target) {
+            window.scrollTo({
+              top: target.offsetTop - 80,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+
+      // Throttled scroll listener
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            updateActiveHeading();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+
+      // Initial state
+      updateActiveHeading();
+    }
+
+    // Run on page load and after Astro page transitions
+    document.addEventListener('astro:page-load', initTOC);
+    initTOC();
+  </script>
 </BaseLayout>

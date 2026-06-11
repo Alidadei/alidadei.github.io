@@ -236,6 +236,22 @@ code {
   color: var(--color-primary-dark);
 }
 
+/* TOC sidebar styles */
+.toc-link {
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.toc-link:hover {
+  border-left-color: var(--color-accent);
+}
+#toc-nav::-webkit-scrollbar {
+  width: 3px;
+}
+#toc-nav::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
