@@ -61,8 +61,8 @@
 
 /rss.xml                    RSS 订阅源
 
-/[lang]/                    首页 (SunArc天空 + 每日一句 + 最新文章)
-/[lang]/about/              关于我 (自我介绍/News/教育/实习/项目/获奖/联系)
+/[lang]/                    首页 (SunArc天空+3D背景+最新文章)
+/[lang]/about/              关于我 (自我介绍/News/教育/实习/项目/获奖/联系/AwardWall彩蛋)
 /[lang]/cv/                 简历 (折叠面板，旧版保留)
 /[lang]/projects/           项目展示
 /[lang]/blog/               博客列表 (时间线 + 分类 + 搜索)
@@ -91,7 +91,7 @@ graph TB
 
     subgraph 布局层
         BL["BaseLayout<br/>HTML骨架+Meta+字体"]
-        PL["PageLayout<br/>Header+Main+Footer"]
+        PL["PageLayout<br/>Header+Main (无Footer)"]
         SL["PostLayout<br/>Header+文章+TOC+Footer"]
     end
 
@@ -322,13 +322,15 @@ alidadei.github.io/
 ├── CLAUDE.md                          # Claude Code 指令
 │
 ├── docs/                              # 文档
-│   ├── knowledge-graph.md             # ← 本文件
+│   ├── knowledge-graph-en/            # 知识图谱
+│   │   └── knowledge-graph.md         # ← 本文件
 │   ├── MAINTENANCE.md
 │   ├── PRD-blog-category.md
 │   ├── plan-blog-category.md
 │   └── ...
 │
 ├── public/                            # 静态资源
+│   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
 │   ├── favicon.ico
 │   ├── robots.txt
 │   ├── images/                        # ~50张图片
@@ -351,7 +353,7 @@ alidadei.github.io/
 │   │
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
-│   │   ├── PageLayout.astro           # Header+Main+Footer
+│   │   ├── PageLayout.astro           # Header+Main (Footer已移除)
 │   │   └── PostLayout.astro           # 文章布局+TOC
 │   │
 │   ├── components/                    # 组件
@@ -406,13 +408,52 @@ alidadei.github.io/
 ## 12. 导航结构
 
 ```
-当前导航 (4项)
-┌──────────┬──────────┬──────────┬──────────┐
-│  首页     │  博客     │  项目     │  关于我    │
-│  /zh/    │ /zh/blog/│/zh/proj/ │/zh/about/│
-└──────────┴──────────┴──────────┴──────────┘
-Harry Yu (logo)                                English (语言切换)
+当前导航 (4项 + 语言切换)
+┌──────────┬──────────┬──────────┬──────────┬─────────┐
+│  首页     │  关于我    │  博客     │  项目     │ English  │
+│  /zh/    │/zh/about/│ /zh/blog/│/zh/proj/ │ (无边框) │
+└──────────┴──────────┴──────────┴──────────┴─────────┘
+Harry Yu (logo, 左上)                                   右移2px对齐
 ```
+
+---
+
+## 13. 首页架构（最新）
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Header (透明, 导航右对齐, z-index: 50)               │
+├─────────────────────────────────────────────────────┤
+│  SunArc 天空动画 (渐变背景, 含干支+问候语)              │
+│  ┌──────────────────────────────┐                    │
+│  │ 丙午年 甲午月 丁巳日          │                    │
+│  │ 下午好                       │                    │
+│  └──────────────────────────────┘                    │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  3D背景 iframe (fixed, 全屏, z-index: 0)              │
+│  ├─ warm-storybook风格 Three.js场景                    │
+│  ├─ 农田星球地面 (绿色+PLANET 07土黄色块)               │
+│  ├─ 银白头机器人 (白眼, 麦垛)                           │
+│  ├─ 每日一句打字效果 (book旁, 银白色)                    │
+│  └─ 时间联动亮度 (白天明亮/夜晚暗淡)                     │
+│                                                      │
+├─────────────────────────────────────────────────────┤
+│  最新文章 (银白色字体, pointer-events-auto)             │
+│  └─ 日期 + 标题 + 描述                                │
+└─────────────────────────────────────────────────────┘
+无 Footer
+```
+
+**关键数据文件：**
+- `src/data/quotes.json` — 每日一句句子库 (中英各10条)
+- `public/3d-background.html` — 3D场景 (独立HTML, CDN加载Three.js)
+
+**层级关系：**
+- 3D iframe: `z-index: 0`, `position: fixed`
+- 页面内容: `z-index: 1`, `pointer-events: none` (空白区域穿透到3D)
+- 交互区块: `pointer-events: auto` (文章链接可点击)
+- Header: `z-index: 50` (始终在最上层)
 
 ---
 
