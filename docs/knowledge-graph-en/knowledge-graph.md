@@ -200,6 +200,8 @@ draft?: boolean        草稿 (默认 false)
 lang: zh | en          语言 (默认 zh)
 ```
 
+> **写作规范：** 标题只在 frontmatter 的 `title` 字段中声明，PostLayout 会自动渲染为页面 H1。正文内容从 `##` (h2) 开始写，**不要在正文中写 `# 标题`**，否则会与页面标题重复。
+
 ### projects (项目)
 ```
 title: string          项目名称
@@ -464,8 +466,8 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 ```
 
 **关键数据文件：**
-- `src/data/quotes.json` — 每日一句句子库 (中英各10条)
-- `public/3d-background.html` — 3D场景 (独立HTML, 自托管Three.js)
+- `src/data/quotes.json` — 每日一句句子库 (中文11条, 构建时自动同步到 `public/quotes.json`)
+- `public/3d-background.html` — 3D场景 (独立HTML, 自托管Three.js, 移动端跳过Bloom, 每日一句从 quotes.json 动态加载)
 - `public/vendor/three/` — Three.js + 后处理着色器 (UnrealBloom等)
 
 **层级关系：**
