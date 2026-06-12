@@ -14,7 +14,6 @@ const t = getUI.bind(null, lang as Lang);
 
 const allPosts = await getCollection('posts', ({ data }) => data.lang === lang && !data.draft);
 const posts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
 
 // Enrich posts with categories
 const enrichPosts = posts.map((p) => {
@@ -59,16 +58,6 @@ const topCategories = categoryTree;
     />
     <p id="search-count" class="text-sm text-[var(--color-text-muted)] mt-2 hidden"></p>
   </div>
-
-  {allTags.length > 0 && (
-    <div class="flex flex-wrap gap-2 mb-8">
-      {allTags.map((tag) => (
-        <span class="px-3 py-1 text-sm rounded-full bg-bg-tertiary text-text-secondary hover:bg-accent/10 hover:text-accent cursor-pointer transition-colors">
-          {tag}
-        </span>
-      ))}
-    </div>
-  )}
 
   {enrichPosts.length === 0 ? (
     <p class="text-text-muted">{lang === 'zh' ? '暂无文章' : 'No posts yet.'}</p>
