@@ -453,10 +453,10 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  └──────────────────────────────┘                    │
 ├─────────────────────────────────────────────────────┤
 │                                                      │
-│  2D 即时背景 Canvas (fixed, 全屏, z-index: 0)           │
-│  ├─ 内联 JS (~2KB)，随 HTML 同时到达，零额外请求          │
-│  ├─ 天空渐变 + 山丘剪影 + 纸纹 + 暗角                   │
-│  ├─ 时间联动亮度 (与3D场景同步)                          │
+│  2D 宇宙星空 Canvas (body直子级, fixed全屏, z-index: 0)  │
+│  ├─ 内联 JS (~3KB)，随 HTML 同时到达，零额外请求          │
+│  ├─ 深空背景 + 银河带 + 星云 + 5层星场(643颗) + 流星     │
+│  ├─ 远处星系团(5个模糊光斑)                              │
 │  └─ 3D加载完后 1.5s 淡出，释放资源                       │
 │                                                      │
 │  3D背景 iframe (fixed, 全屏, z-index: 0)              │
@@ -469,10 +469,13 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  注: 移动端也加载3D场景(跳过Bloom), 每日一句使用楷体字体    │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
-│  最新文章 (银白色字体, pointer-events-auto)             │
-│  └─ 日期 + 标题 + 描述                                │
+│  SunArc 太阳动画 + 最新文章                            │
+│  ├─ 3D加载完后1.2s淡入 (opacity 0→1, 2s transition)  │
+│  └─ 最新文章 (银白色字体, pointer-events-auto)        │
 └─────────────────────────────────────────────────────┘
 无 Footer
+
+加载叙事：宇宙星空(2D) → 降临星球(3D) → 星球天空(SunArc+内容)
 ```
 
 **关键数据文件：**
@@ -480,8 +483,8 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 - `public/3d-background.html` — 3D场景 (独立HTML, 自托管Three.js, 移动端跳过Bloom, 每日一句从 quotes.json 动态加载)
 - `public/vendor/three/` — Three.js + 后处理着色器 (UnrealBloom等)
 
-**层级关系：**
-- 3D iframe: `z-index: 0`, `position: fixed`
+**层级关系（背景层在body直子级，避免main的fade-in transform干扰fixed定位）：**
+- 2D Canvas + 3D iframe: `<body>` 直接子级, `z-index: 0`, `position: fixed`
 - 页面内容: `z-index: 1`, `pointer-events: none` (空白区域穿透到3D)
 - 交互区块: `pointer-events: auto` (文章链接可点击)
 - Header: `z-index: 50` (始终在最上层)
