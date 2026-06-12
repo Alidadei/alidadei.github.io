@@ -36,7 +36,7 @@ const topCategories = categoryTree;
 
 <PageLayout title={t('nav.blog')}>
   <!-- Title row with inline search -->
-  <div class="flex items-center gap-3 mb-6">
+  <div class="flex items-center gap-3 mb-6 flex-wrap">
     <h1 class="text-3xl font-bold text-primary">{t('nav.blog')}</h1>
     <button
       id="search-toggle"
@@ -53,7 +53,7 @@ const topCategories = categoryTree;
         id="blog-search"
         type="text"
         placeholder={lang === 'zh' ? '搜索...' : 'Search...'}
-        class="w-48 px-3 py-1 text-sm bg-bg-secondary rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+        class="w-full sm:w-48 px-3 py-1 text-sm bg-bg-secondary rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
       />
     </div>
     <p id="search-count" class="text-xs text-text-muted hidden"></p>
@@ -86,8 +86,8 @@ const topCategories = categoryTree;
         <div class="year-group mb-8">
           <h2 class="text-xl font-bold text-primary mb-4 text-center">{year}</h2>
           <div class="relative">
-            <!-- Center line -->
-            <div class="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-border"></div>
+            <!-- Center line (desktop) / Left line (mobile) -->
+            <div class="timeline-line absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-border"></div>
             {postsByYear[year].map((post, idx) => {
               const slug = post.id.split('/').slice(1).join('/');
               const isLeft = idx % 2 === 0;
@@ -98,14 +98,14 @@ const topCategories = categoryTree;
                   class:list={[
                     'post-card relative flex items-baseline gap-2 py-2 group',
                     isLeft
-                      ? 'justify-end pr-[calc(50%+16px)]'
-                      : 'justify-start pl-[calc(50%+16px)]',
+                      ? 'justify-end pr-[calc(50%+16px)] md:justify-end md:pr-[calc(50%+16px)]'
+                      : 'justify-start pl-[calc(50%+16px)] md:justify-start md:pl-[calc(50%+16px)]',
                   ]}
                 >
                   <!-- Timeline dot -->
-                  <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border group-hover:bg-accent group-hover:scale-125 transition-all"></span>
+                  <span class="timeline-dot absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-border group-hover:bg-accent group-hover:scale-125 transition-all"></span>
                   <!-- Title -->
-                  <span class="text-base text-primary group-hover:text-accent transition-colors truncate">
+                  <span class="text-base text-primary group-hover:text-accent transition-colors">
                     {post.data.title}
                   </span>
                   <!-- Date -->
@@ -126,6 +126,25 @@ const topCategories = categoryTree;
   <p id="no-results" class="text-text-muted hidden">{lang === 'zh' ? '该分类暂无文章' : 'No posts in this category'}</p>
 </PageLayout>
 
+<!-- Mobile timeline: left-aligned single column -->
+<style is:global>
+  @media (max-width: 767px) {
+    .timeline-line {
+      left: 8px !important;
+      transform: none !important;
+    }
+    .timeline-dot {
+      left: 8px !important;
+      transform: translate(-50%, -50%) !important;
+    }
+    .post-card {
+      justify-content: flex-start !important;
+      padding-left: 28px !important;
+      padding-right: 4px !important;
+    }
+  }
+</style>
+
 <script>
   function initBlogPage() {
     const tabs = document.querySelectorAll<HTMLButtonElement>('.category-tab');
@@ -144,7 +163,8 @@ const topCategories = categoryTree;
     searchToggle?.addEventListener('click', () => {
       searchOpen = !searchOpen;
       if (searchWrapper) {
-        searchWrapper.style.maxWidth = searchOpen ? '200px' : '0';
+        const maxW = window.innerWidth < 640 ? `${Math.min(200, window.innerWidth - 140)}px` : '200px';
+        searchWrapper.style.maxWidth = searchOpen ? maxW : '0';
         searchWrapper.style.opacity = searchOpen ? '1' : '0';
       }
       if (searchOpen) {

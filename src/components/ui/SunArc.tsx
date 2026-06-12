@@ -178,11 +178,11 @@ export default function SunArc({ lang }: SunArcProps) {
       {/* Fixed sky background behind navbar */}
       <div
         className="fixed top-0 left-0 right-0 pointer-events-none"
-        style={{ height: '280px', background: skyGradient, transition: 'background 2s ease', zIndex: 0 }}
+        style={{ height: 'clamp(160px, 35vw, 280px)', background: skyGradient, transition: 'background 2s ease', zIndex: 0 }}
       />
 
       {/* Content spacer */}
-      <div style={{ height: '200px', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', overflow: 'hidden' }} className="relative">
+      <div style={{ height: 'clamp(120px, 25vw, 200px)', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', overflow: 'hidden' }} className="relative">
 
       {/* Stars at night */}
       {(isNight || (isDusk && brightness < 0.1) || (isDawn && brightness < 0.1)) && (
