@@ -51,13 +51,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     {noindex && <meta name="robots" content="noindex" />}
 
-    <!-- KaTeX CSS for math rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+    <!-- KaTeX CSS for math rendering (only needed on blog posts) -->
+    <!-- Moved to PostLayout.astro to reduce page load -->
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body class="min-h-screen bg-bg text-text antialiased">
     <slot />

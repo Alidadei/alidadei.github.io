@@ -20,6 +20,8 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
 <BaseLayout title={title} description={description} image={image}>
   <Header />
+  <!-- KaTeX CSS only loaded on blog post pages -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
     <header class="mb-10">
       <!-- Category breadcrumb -->
