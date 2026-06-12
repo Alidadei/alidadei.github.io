@@ -488,6 +488,7 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 3D 库 | Three.js 自托管 `public/vendor/three/`，避免 CDN 依赖 |
 | 数学公式 | KaTeX 仅在文章详情页 (PostLayout) 加载 CSS |
 | 3D 背景 | 移动端加载 Three.js 但跳过 Bloom 后处理，减轻 GPU 负担 |
+| 3D 懒加载 | 首页 iframe 延迟 2 秒加载 3D，先渲染主页面内容，加载完成后 1 秒淡入 (`opacity 0→1`) |
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
