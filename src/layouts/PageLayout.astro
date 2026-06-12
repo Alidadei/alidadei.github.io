@@ -1,7 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
 
 interface Props {
   title?: string;
@@ -9,10 +8,9 @@ interface Props {
   image?: string;
   fullWidth?: boolean;
   noindex?: boolean;
-  noFooter?: boolean;
 }
 
-const { title, description, image, fullWidth = false, noindex = false, noFooter = false } = Astro.props;
+const { title, description, image, fullWidth = false, noindex = false } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} image={image} noindex={noindex}>
@@ -20,5 +18,4 @@ const { title, description, image, fullWidth = false, noindex = false, noFooter 
   <main class={fullWidth ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in'}>
     <slot />
   </main>
-  {!noFooter && <Footer />}
 </BaseLayout>

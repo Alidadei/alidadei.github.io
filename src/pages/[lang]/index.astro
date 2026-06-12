@@ -2,7 +2,6 @@
 import PageLayout from '../../layouts/PageLayout.astro';
 import { siteConfig, type Lang } from '../../data/site';
 import { getCollection } from 'astro:content';
-import quotesData from '../../data/quotes.json';
 import SunArc from '../../components/ui/SunArc.tsx';
 
 export function getStaticPaths() {
@@ -10,76 +9,66 @@ export function getStaticPaths() {
 }
 
 const { lang } = Astro.params as { lang: Lang };
-const quotes = quotesData[lang];
-const defaultQuote = quotes[0];
 
 // Get the latest post
 const allPosts = await getCollection('posts', ({ data }) => data.lang === lang && !data.draft);
 const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())[0];
 ---
 
-<PageLayout title={lang === 'zh' ? '首页' : 'Home'} noFooter>
-  <!-- Layer 1: Sun Arc Animation -->
-  <SunArc client:idle lang={lang} />
+<PageLayout title={lang === 'zh' ? '首页' : 'Home'}>
+  <!-- Make body transparent so 3D background shows through -->
+  <style is:global>
+    body { background: transparent !important; }
+  </style>
 
-  <!-- Spacer -->
-  <div class="h-40"></div>
+  <!-- 3D Background — fullscreen fixed, behind everything -->
+  <iframe
+    src="/3d-background.html"
+    class="fixed inset-0 w-full h-full border-0"
+    style="z-index: 0;"
+    title="3D Background"
+  ></iframe>
 
-  <!-- Layer 2: Daily Quote -->
-  <section class="py-28 text-center">
-    <p
-      id="daily-quote"
-      class="text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto transition-opacity duration-500"
-    >
-      {defaultQuote}
-    </p>
-  </section>
+  <!-- All page content above the 3D scene -->
+  <div class="relative pointer-events-none" style="z-index: 1;">
+    <!-- Layer 1: Sun Arc Animation (has its own sky background) -->
+    <SunArc client:idle lang={lang} />
 
-  <!-- Layer 3: Recent Post -->
-  {latestPost && (
-    <section class="pt-16 pb-40 border-t border-border max-w-2xl mx-auto">
-      <div class="flex items-center justify-between mb-8">
-        <h2 class="text-xl font-bold text-primary">
-          {lang === 'zh' ? '最新文章' : 'Recent Post'}
-        </h2>
-        <a href={`/${lang}/blog/`} class="text-sm text-accent hover:text-accent-light transition-colors">
-          {lang === 'zh' ? '所有文章 →' : 'All posts →'}
-        </a>
-      </div>
-      <a
-        href={`/${lang}/blog/${latestPost.id.split('/').slice(1).join('/')}/`}
-        class="block group"
-      >
-        <div class="flex items-baseline gap-4">
-          <time class="shrink-0 text-sm text-text-muted font-mono">
-            {latestPost.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
-              year: 'numeric', month: 'short', day: 'numeric'
-            })}
-          </time>
-          <h3 class="text-lg font-semibold text-primary group-hover:text-accent transition-colors">
-            {latestPost.data.title}
-          </h3>
+    <!-- Layer 2: Spacer for breathing room -->
+    <div class="h-72"></div>
+
+    <!-- Layer 3: Recent Post -->
+    {latestPost && (
+      <section class="pt-12 pb-32 max-w-2xl mx-auto px-4 pointer-events-auto">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-xl font-bold" style="color: rgba(220,225,230,0.9);">
+            {lang === 'zh' ? '最新文章' : 'Recent Post'}
+          </h2>
+          <a href={`/${lang}/blog/`} class="text-sm transition-colors" style="color: rgba(200,208,216,0.7);">
+            {lang === 'zh' ? '所有文章 →' : 'All posts →'}
+          </a>
         </div>
-        {latestPost.data.description && (
-          <p class="text-sm text-text-muted mt-2 ml-[calc(8rem+1rem)]">
-            {latestPost.data.description}
-          </p>
-        )}
-      </a>
-    </section>
-  )}
+        <a
+          href={`/${lang}/blog/${latestPost.id.split('/').slice(1).join('/')}/`}
+          class="block group"
+        >
+          <div class="flex items-baseline gap-4">
+            <time class="shrink-0 text-sm font-mono" style="color: rgba(180,190,200,0.6);">
+              {latestPost.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                year: 'numeric', month: 'short', day: 'numeric'
+              })}
+            </time>
+            <h3 class="text-lg font-semibold group-hover:text-accent transition-colors" style="color: rgba(220,225,230,0.9);">
+              {latestPost.data.title}
+            </h3>
+          </div>
+          {latestPost.data.description && (
+            <p class="text-sm mt-2 ml-[calc(8rem+1rem)]" style="color: rgba(180,190,200,0.5);">
+              {latestPost.data.description}
+            </p>
+          )}
+        </a>
+      </section>
+    )}
+  </div>
 </PageLayout>
-
-<script define:vars={{ quotes }}>
-  // Pick a quote based on the current date (changes daily)
-  const today = new Date();
-  const dayIndex = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate()) % quotes.length;
-  const el = document.getElementById('daily-quote');
-  if (el && quotes[dayIndex]) {
-    el.style.opacity = '0';
-    setTimeout(() => {
-      el.textContent = quotes[dayIndex];
-      el.style.opacity = '1';
-    }, 100);
-  }
-</script>

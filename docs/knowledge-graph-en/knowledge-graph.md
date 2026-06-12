@@ -1,0 +1,419 @@
+# Harry Yu 个人博客 — 项目知识图谱
+
+> 生成时间：2026-06-12
+> 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
+
+---
+
+## 1. 整体架构
+
+```
+用户浏览器
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│  GitHub Pages (静态部署)                      │
+│  alidadei.github.io                          │
+│                                              │
+│  ┌──────────────────────────────────────┐    │
+│  │  Astro SSG 构建产物                    │    │
+│  │  - HTML 页面 (.html)                  │    │
+│  │  - CSS / JS bundles                   │    │
+│  │  - 图片等静态资源                      │    │
+│  └──────────────────────────────────────┘    │
+└─────────────────────────────────────────────┘
+         ▲                    ▲
+         │ 构建               │ API
+┌────────┴──────┐   ┌────────┴────────────┐
+│ GitHub Actions │   │ Cloudflare Worker   │
+│ CI/CD Pipeline │   │ (CMS 后端 API)      │
+│ deploy.yml     │   │ yhl-blog-cms        │
+└───────────────┘   └─────────────────────┘
+                            │
+                            ▼
+                     GitHub Contents API
+                     (OAuth 鉴权 + KV 会话)
+```
+
+---
+
+## 2. 技术栈
+
+| 层级 | 技术 | 版本 |
+|------|------|------|
+| **框架** | Astro | 6.1.3 |
+| **交互组件** | React | 19.2.4 |
+| **样式** | Tailwind CSS | 4.2.2 |
+| **Markdown** | MDX + remark-math + rehype-katex | — |
+| **农历库** | lunar-javascript | — |
+| **构建工具** | Vite (Astro 内置) | — |
+| **部署** | GitHub Pages (Actions) | — |
+| **CMS 后端** | Cloudflare Worker + KV | — |
+| **Node** | >= 22.12.0 | — |
+
+---
+
+## 3. 页面路由图
+
+```
+/ (根路径)
+ └─→ 重定向 /zh/
+
+/rss.xml                    RSS 订阅源
+
+/[lang]/                    首页 (SunArc天空 + 每日一句 + 最新文章)
+/[lang]/about/              关于我 (自我介绍/News/教育/实习/项目/获奖/联系)
+/[lang]/cv/                 简历 (折叠面板，旧版保留)
+/[lang]/projects/           项目展示
+/[lang]/blog/               博客列表 (时间线 + 分类 + 搜索)
+/[lang]/blog/[slug]/        博客文章详情 (TOC侧边栏 + 面包屑)
+/[lang]/blog/category/[..]/ 分类页
+/[lang]/admin/              CMS 管理后台 (noindex)
+```
+
+**语言前缀**：`/zh/` 中文 (默认) | `/en/` 英文
+
+---
+
+## 4. 组件依赖关系
+
+```mermaid
+graph TB
+    subgraph 页面层
+        HOME["index.astro<br/>首页"]
+        ABOUT["about.astro<br/>关于我"]
+        CV["cv.astro<br/>简历"]
+        BLOG["blog/index.astro<br/>博客列表"]
+        POST["blog/[...slug].astro<br/>文章详情"]
+        PROJ["projects.astro<br/>项目"]
+        ADMIN["admin/index.astro<br/>CMS后台"]
+    end
+
+    subgraph 布局层
+        BL["BaseLayout<br/>HTML骨架+Meta+字体"]
+        PL["PageLayout<br/>Header+Main+Footer"]
+        SL["PostLayout<br/>Header+文章+TOC+Footer"]
+    end
+
+    subgraph 组件层
+        HDR["Header.astro<br/>导航栏"]
+        FTR["Footer.astro<br/>版权+社交"]
+        SUN["SunArc.tsx ⚛<br/>天空动画+干支"]
+        TL["Timeline.tsx ⚛<br/>时间线"]
+        AW["AwardWall.tsx ⚛<br/>照片墙彩蛋"]
+        SB["SearchBar.tsx ⚛<br/>搜索栏"]
+        AA["AdminApp.tsx ⚛<br/>CMS管理"]
+    end
+
+    HOME --> PL
+    ABOUT --> PL
+    CV --> PL
+    BLOG --> PL
+    PROJ --> PL
+    POST --> SL
+
+    PL --> BL
+    PL --> HDR
+    PL --> FTR
+    SL --> BL
+    SL --> HDR
+    SL --> FTR
+
+    HOME -.->|"client:idle"| SUN
+    HOME -.->|"client:visible"| TL
+    ABOUT -.->|"client:load"| AW
+    CV -.->|"client:load"| AW
+    ADMIN -.->|"client:only"| AA
+
+    style SUN fill:#f9e0b7,stroke:#b07d4f
+    style AW fill:#f9e0b7,stroke:#b07d4f
+    style TL fill:#f9e0b7,stroke:#b07d4f
+    style AA fill:#e0e0e0,stroke:#888
+    style SB fill:#e0e0e0,stroke:#888
+```
+
+> ⚛ = React 组件 (需要 client: 指令水合)
+> 其余为 Astro 组件 (静态渲染，0 JS)
+
+---
+
+## 5. 数据流
+
+```
+┌───────────────────────────────────────────────────────┐
+│  数据源                                                │
+│                                                        │
+│  src/data/                                             │
+│  ├── site.ts          站点配置 (作者/导航/社交链接)       │
+│  ├── categories.json  分类树 (3顶级 + 子分类)            │
+│  ├── categories.ts    分类工具函数                       │
+│  └── quotes.json      每日一句 (中英各10条)               │
+│                                                        │
+│  src/content/                                          │
+│  ├── posts/zh/        10篇博客文章 (Markdown)            │
+│  ├── portfolio/       2个作品集项目                      │
+│  └── (projects/)      空 (待填充)                       │
+│                                                        │
+│  src/i18n/                                             │
+│  ├── ui.ts            UI翻译字典 (30+ key × 2语言)      │
+│  └── (lib/i18n.ts)    路由工具函数                       │
+│                                                        │
+│  public/images/       ~50张图片素材                      │
+└───────────────────────────────────────────────────────┘
+                    │
+                    ▼  Astro 构建时注入
+┌───────────────────────────────────────────────────────┐
+│  页面组件 (Astro frontmatter)                           │
+│                                                        │
+│  getCollection('posts')  ──→  文章列表/排序/过滤         │
+│  getCollection('projects') ──→ 项目列表                 │
+│  import siteConfig      ──→  导航/作者信息              │
+│  import categories.json ──→  分类树渲染                 │
+│  import quotes.json     ──→  每日一句数据               │
+│  getUI(lang, key)       ──→  界面文字翻译               │
+└───────────────────────────────────────────────────────┘
+                    │
+                    ▼  静态生成 HTML
+┌───────────────────────────────────────────────────────┐
+│  dist/                                                 │
+│  37个HTML页面 + CSS/JS bundles + 静态资源               │
+└───────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. 内容集合 Schema
+
+### posts (博客文章)
+```
+title: string          文章标题
+description?: string   摘要描述
+date: Date             发布日期
+updated?: Date         更新日期
+tags: string[]         标签列表
+categories?: string[]  分类路径 (如 ["tech-learning", "deep-learning"])
+category?: string      旧版分类 (兼容)
+image?: string         封面图
+draft?: boolean        草稿 (默认 false)
+lang: zh | en          语言 (默认 zh)
+```
+
+### projects (项目)
+```
+title: string          项目名称
+description: string    项目描述
+date: Date             日期
+tags: string[]         标签
+github?: string        GitHub 链接
+demo?: string          在线演示链接
+image?: string         封面图
+featured?: boolean     是否精选
+lang: zh | en          语言
+```
+
+### portfolio (作品集)
+```
+title: string          标题
+excerpt?: string       摘要
+image?: string         图片
+link?: string          外链
+```
+
+---
+
+## 7. 分类体系
+
+```
+博客分类树
+├── tech-learning (学习笔记)
+│   └── deep-learning (深度学习)
+│       └── transformer
+│   └── embedded (嵌入式)
+│   └── data-structure (数据结构)
+├── personal-practice (个人实践)
+└── personal-views (个人调研&感悟)
+```
+
+---
+
+## 8. 样式系统
+
+```
+global.css
+├── @import "tailwindcss"
+├── @theme { 自定义颜色变量 }
+│   ├── primary: #5b4636 (深棕)
+│   ├── accent: #b07d4f (铜色)
+│   ├── bg: #faf6f0 (米白)
+│   ├── text: #3a2e24 (深棕文字)
+│   └── border: #ddd2c2 (浅棕边框)
+│
+├── 基础排版 (body 字体/行高/平滑)
+├── 动画 (.fade-in / .stagger-in)
+├── 文章排版 (.prose h1-h4 / blockquote / table / code)
+├── 组件样式 (.post-card / .tag-chip / .toc-link)
+├── 滚动条美化
+└── prefers-reduced-motion 适配
+```
+
+**字体**：Noto Sans SC (中文) + Inter (英文) + 系统字体回退
+
+---
+
+## 9. CMS 后端架构
+
+```
+管理员浏览器
+    │
+    ▼
+/admin/ 页面 (React SPA)
+    │
+    ▼  API 调用
+Cloudflare Worker (yhl-blog-cms)
+    │
+    ├── /api/auth/login      → GitHub OAuth 授权
+    ├── /api/auth/callback    → 换取 token + 创建 KV 会话
+    ├── /api/posts            → CRUD 博客文章
+    ├── /api/file/*           → 读写任意文件 (categories.json 等)
+    ├── /api/images           → 上传/删除图片
+    ├── /api/batch            → 批量操作 (GraphQL commit)
+    ├── /api/deploy/status    → 查看 GitHub Actions 部署状态
+    │
+    ▼
+GitHub Contents API
+    │
+    ▼  推送代码
+GitHub Repository
+    │
+    ▼  触发
+GitHub Actions → 构建 → 部署到 GitHub Pages
+```
+
+---
+
+## 10. 客户端交互汇总
+
+| 页面 | 交互 | 实现方式 |
+|------|------|----------|
+| 首页 | 天空动画 (实时太阳位置/日升日落) | React SunArc (client:idle) |
+| 首页 | 干支日期逐字打出 | React useState + setInterval |
+| 首页 | 每日一句轮换 | Vanilla JS (按日期取模) |
+| 博客列表 | 搜索过滤 | Vanilla JS (标题匹配) |
+| 博客列表 | 分类标签切换 | Vanilla JS (DOM toggle) |
+| 博客列表 | 搜索框展开/收起 | Vanilla JS (max-width transition) |
+| 文章详情 | TOC 侧边栏生成 + 滚动追踪 | Vanilla JS (Intersection + RAF) |
+| 文章详情 | 平滑跳转 | Vanilla JS (getBoundingClientRect) |
+| 简历 | 折叠面板展开/收起 | Vanilla JS (max-height transition) |
+| 简历 | 全部展开/收起 | Vanilla JS |
+| 简历 | 导出 PDF | window.print() |
+| 关于我/简历 | 照片墙彩蛋 | React AwardWall (client:load) |
+| CMS 后台 | 文章增删改 + 图片管理 + 部署 | React AdminApp (client:only) |
+
+---
+
+## 11. 文件清单
+
+```
+alidadei.github.io/
+├── .github/workflows/deploy.yml      # CI/CD
+├── astro.config.mjs                   # Astro 配置
+├── package.json                       # 依赖
+├── tsconfig.json                      # TS 配置
+├── CLAUDE.md                          # Claude Code 指令
+│
+├── docs/                              # 文档
+│   ├── knowledge-graph.md             # ← 本文件
+│   ├── MAINTENANCE.md
+│   ├── PRD-blog-category.md
+│   ├── plan-blog-category.md
+│   └── ...
+│
+├── public/                            # 静态资源
+│   ├── favicon.ico
+│   ├── robots.txt
+│   ├── images/                        # ~50张图片
+│   ├── images/posts/                  # 博客配图
+│   ├── portfolio/                     # 作品集资源
+│   └── files/                         # PDF 论文/Slides
+│
+├── src/
+│   ├── content.config.ts              # 内容集合 Schema
+│   ├── styles/global.css              # 全局样式
+│   │
+│   ├── data/                          # 数据层
+│   │   ├── site.ts                    # 站点配置
+│   │   ├── categories.ts             # 分类工具
+│   │   ├── categories.json           # 分类树
+│   │   └── quotes.json               # 每日一句
+│   │
+│   ├── i18n/ui.ts                     # 翻译字典
+│   ├── lib/i18n.ts                    # i18n 路由工具
+│   │
+│   ├── layouts/                       # 布局
+│   │   ├── BaseLayout.astro           # HTML 骨架
+│   │   ├── PageLayout.astro           # Header+Main+Footer
+│   │   └── PostLayout.astro           # 文章布局+TOC
+│   │
+│   ├── components/                    # 组件
+│   │   ├── layout/
+│   │   │   ├── Header.astro           # 导航栏
+│   │   │   └── Footer.astro           # 页脚
+│   │   ├── ui/
+│   │   │   ├── SunArc.tsx             # 天空动画 ⚛
+│   │   │   └── AwardWall.tsx          # 照片墙彩蛋 ⚛
+│   │   ├── timeline/
+│   │   │   └── Timeline.tsx           # 时间线 ⚛
+│   │   ├── blog/
+│   │   │   └── SearchBar.tsx          # 搜索 ⚛
+│   │   ├── resume/
+│   │   │   └── InteractiveResume.tsx  # 简历交互 ⚛
+│   │   └── admin/
+│   │       ├── AdminApp.tsx           # CMS管理 ⚛
+│   │       └── bootstrap.ts           # CMS入口
+│   │
+│   ├── pages/                         # 页面路由
+│   │   ├── index.astro                # 根路径重定向
+│   │   ├── rss.xml.ts                 # RSS
+│   │   └── [lang]/
+│   │       ├── index.astro            # 首页
+│   │       ├── about.astro            # 关于我
+│   │       ├── cv.astro               # 简历
+│   │       ├── projects.astro         # 项目
+│   │       ├── blog/
+│   │       │   ├── index.astro        # 博客列表
+│   │       │   ├── [...slug].astro    # 文章详情
+│   │       │   └── category/
+│   │       │       └── [...path].astro # 分类页
+│   │       └── admin/
+│   │           └── index.astro        # CMS后台
+│   │
+│   └── content/                       # 内容
+│       ├── posts/zh/                  # 10篇博客
+│       └── portfolio/                 # 2个作品
+│
+└── worker/                            # CMS 后端
+    ├── wrangler.toml
+    └── src/
+        ├── index.ts                   # 路由
+        ├── auth.ts                    # OAuth
+        ├── github-api.ts              # GitHub API
+        ├── batch.ts                   # 批量操作
+        └── utils.ts                   # 工具函数
+```
+
+---
+
+## 12. 导航结构
+
+```
+当前导航 (4项)
+┌──────────┬──────────┬──────────┬──────────┐
+│  首页     │  博客     │  项目     │  关于我    │
+│  /zh/    │ /zh/blog/│/zh/proj/ │/zh/about/│
+└──────────┴──────────┴──────────┴──────────┘
+Harry Yu (logo)                                English (语言切换)
+```
+
+---
+
+*知识图谱结束。如需更新，请基于项目实际代码重新扫描。*

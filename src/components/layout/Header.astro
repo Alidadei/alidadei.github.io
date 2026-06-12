@@ -18,7 +18,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       </a>
 
       <!-- Right side: Nav + Language toggle -->
-      <div class="hidden md:flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-4" style="transform: translateX(2px);">
         <nav class="flex items-center gap-1">
           {navItems.map((item) => {
             const isActive = Astro.url.pathname.replace(/\/$/, '') === item.href.replace(/\/$/, '');
@@ -39,7 +39,7 @@ const switchLabel = getUI(lang, 'lang.switch');
         </nav>
         <a
           href={altUrl}
-          class="px-3 py-1.5 text-sm rounded-md border border-border text-text-secondary hover:text-primary hover:border-primary transition-colors"
+          class="px-3 py-1.5 text-sm text-text-muted hover:text-accent transition-colors"
         >
           {switchLabel}
         </a>
@@ -77,7 +77,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       })}
       <a
         href={altUrl}
-        class="block px-3 py-2 text-sm text-text-secondary hover:text-primary transition-colors"
+        class="block px-3 py-2 text-sm text-text-muted hover:text-accent transition-colors"
       >
         {switchLabel}
       </a>
