@@ -49,7 +49,7 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
     <SunArc client:idle lang={lang} />
 
     <!-- Layer 2: Spacer — enough room for daily quote on mobile -->
-    <div class="h-56 md:h-72"></div>
+    <div class="h-64 md:h-72"></div>
 
     <!-- Layer 3: Recent Post -->
     {latestPost && (
