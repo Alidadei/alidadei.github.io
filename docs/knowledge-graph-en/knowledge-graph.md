@@ -497,9 +497,9 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
 | Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |
 | 每日一句 | `3d-background.html` 通过 `fetch('/quotes.json')` 动态加载，`npm run build` 自动从 `src/data/` 同步到 `public/` |
-| 每日一句字体 | 楷体字族 (STKaiti / KaiTi / 华文楷体)，全设备统一 |
+| 每日一句字体 | 霞鹜文楷 (LXGW WenKai Lite) Web 字体，jsDelivr CDN 加载，回退系统楷体 |
 | 博客正文行距 | PostLayout header `mb-4` 紧凑间距（原 `mb-10` 太宽） |
-| 首页移动端间距 | spacer `h-48 md:h-72` + section `pt-12`，避免"最新文章"遮挡每日一句 |
+| 首页移动端间距 | spacer `h-64 md:h-72` + section `pt-12`，避免"最新文章"遮挡每日一句 |
 
 ---
 
