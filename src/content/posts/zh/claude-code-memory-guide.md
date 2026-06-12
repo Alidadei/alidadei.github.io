@@ -9,7 +9,6 @@ categories: ['personal-practice']
 lang: zh
 ---
 
-# Claude Code Memory 与 CLAUDE.md 配置指南
 
 ## 一、Memory 系统
 

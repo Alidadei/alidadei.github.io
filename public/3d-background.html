@@ -521,7 +521,7 @@ async function initQuote() {
   const fallback = ["简单是终极的复杂。"];
   let quotes = fallback;
   try {
-    const res = await fetch('/quotes.json');
+    const res = await fetch('/quotes.json?t=' + new Date().toISOString().slice(0,10));
     if (res.ok) {
       const data = await res.json();
       quotes = data.zh && data.zh.length > 0 ? data.zh : fallback;

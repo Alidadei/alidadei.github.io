@@ -9,7 +9,6 @@ categories: ['tech-learning', 'data-structure']
 lang: zh
 ---
 
-# 深浅拷贝
 
 ## 深拷贝
 
@@ -60,13 +59,10 @@ df_with_quant = df[has_quantitative].copy()
 list_1 = [1, [2, 3]]
 list_2 = list_1[:]  # 浅拷贝
 
-# 修改第一层（不可变元素），互不影响
 list_2[0] = 9
-# 修改嵌套层（列表为可变元素），互相影响
 list_2[1][0] = 99
 
 print(list_1)
-# 输出 [1, [99, 3]] -> 内部列表变了
 ```
 
 这一句 list_2[0] = 9 做的事情叫做：**引用重指向（Rebinding）**。

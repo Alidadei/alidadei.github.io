@@ -10,7 +10,6 @@ categories: ['tech-learning', 'deep-learning', 'transformer']
 lang: zh
 ---
 
-# Temperature 的数学本质
 
 ## 一、Temperature 的数学本质
 

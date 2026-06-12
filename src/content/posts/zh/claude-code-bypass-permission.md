@@ -9,7 +9,6 @@ categories: ['personal-practice']
 lang: zh
 ---
 
-# Claude Code CLI - Bypass Permission 配置指南
 
 ## 概述
 

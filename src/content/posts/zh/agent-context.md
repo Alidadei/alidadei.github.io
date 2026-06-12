@@ -9,7 +9,6 @@ categories: ['personal-practice']
 lang: zh
 ---
 
-# 编程 Agent 的 Context
 
 ## Claude Code
 

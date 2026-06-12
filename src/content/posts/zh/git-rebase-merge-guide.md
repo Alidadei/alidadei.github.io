@@ -10,7 +10,6 @@ categories: ['tech-learning']
 lang: zh
 ---
 
-# Git Rebase 与 Merge 完全指南：图解、对比与冲突解决
 
 ---
 
@@ -46,20 +45,15 @@ lang: zh
 ### 2.3 常用命令
 
 ```bash
-# 将当前分支 rebase 到目标分支
 git rebase <target-branch>
 
-# 交互式 rebase（可整理、合并、修改提交）
 git rebase -i HEAD~n
 
-# 发生冲突时，解决后继续
 git add <resolved-file>
 git rebase --continue
 
-# 跳过当前冲突的提交（慎用）
 git rebase --skip
 
-# 放弃 rebase，回到之前状态
 git rebase --abort
 ```
 
@@ -87,17 +81,13 @@ git rebase --abort
 ### 3.3 常用命令
 
 ```bash
-# 将目标分支合并到当前分支
 git merge <target-branch>
 
-# 发生冲突时，解决后提交合并
 git add <resolved-file>
 git commit -m "Merge message"
 
-# 或使用 --continue 完成合并（部分情况下需要）
 git merge --continue
 
-# 放弃合并，回到之前状态
 git merge --abort
 ```
 
