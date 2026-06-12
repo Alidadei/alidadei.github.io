@@ -15,43 +15,260 @@ const allPosts = await getCollection('posts', ({ data }) => data.lang === lang &
 const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())[0];
 ---
 
-<PageLayout title={lang === 'zh' ? '首页' : 'Home'}>
-  <!-- Make body transparent so 3D background shows through -->
+<PageLayout title={lang === 'zh' ? '首页' : 'Home'} homeBg={true}>
   <style is:global>
     body { background: transparent !important; }
   </style>
 
-  <!-- 3D Background — lazy loaded after main content renders -->
-  <div id="bg-container" class="fixed inset-0 w-full h-full" style="z-index: 0;">
-    <iframe
-      id="bg-3d"
-      class="fixed inset-0 w-full h-full border-0 opacity-0 transition-opacity duration-1000"
-      title="3D Background"
-    ></iframe>
-  </div>
-
   <script>
-    // Delay 3D loading so main page content renders first
+    // ── Instant 2D Starry Sky Background ──
+    (function() {
+      const c = document.getElementById('bg-2d');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const dpr = Math.min(devicePixelRatio, 2);
+      let W, H;
+
+      // Seeded pseudo-random for consistent star positions
+      let seed = 42;
+      function srand(s) { seed = s; }
+      function rand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+
+      function draw() {
+        W = window.innerWidth; H = window.innerHeight;
+        c.width = W * dpr; c.height = H * dpr;
+        ctx.scale(dpr, dpr);
+
+        // ── Deep space background (pure black → deep blue) ──
+        const grad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.4, Math.max(W, H) * 0.8);
+        grad.addColorStop(0,   '#080c20');
+        grad.addColorStop(0.3, '#060a18');
+        grad.addColorStop(0.6, '#040812');
+        grad.addColorStop(1,   '#020408');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Milky Way core (bright band across the sky) ──
+        ctx.save();
+        ctx.translate(W * 0.45, H * 0.3);
+        ctx.rotate(-0.55);
+        for (let layer = 0; layer < 3; layer++) {
+          const mwGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, W * (0.3 + layer * 0.1));
+          const intensity = 0.07 - layer * 0.015;
+          const hue = [210, 230, 260][layer];
+          mwGrad.addColorStop(0, `rgba(${140+layer*20},${150+layer*15},${200-layer*20},${intensity})`);
+          mwGrad.addColorStop(0.4, `rgba(${100+layer*15},${120+layer*10},${180-layer*15},${intensity * 0.5})`);
+          mwGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = mwGrad;
+          ctx.fillRect(-W * 0.55, -H * (0.04 + layer * 0.02), W * 1.1, H * (0.08 + layer * 0.04));
+        }
+        ctx.restore();
+
+        // ── Nebulae (cosmic dust clouds) ──
+        const nebulae = [
+          { x: 0.15, y: 0.2,  rx: 0.22, ry: 0.12, color: [100, 60, 160], a: 0.06 },
+          { x: 0.8,  y: 0.12, rx: 0.16, ry: 0.10, color: [60, 100, 180], a: 0.05 },
+          { x: 0.5,  y: 0.55, rx: 0.18, ry: 0.14, color: [160, 80, 100], a: 0.04 },
+          { x: 0.35, y: 0.7,  rx: 0.14, ry: 0.08, color: [80, 140, 160], a: 0.04 },
+          { x: 0.7,  y: 0.45, rx: 0.20, ry: 0.10, color: [120, 80, 180], a: 0.05 },
+          { x: 0.25, y: 0.5,  rx: 0.10, ry: 0.14, color: [180, 100, 80], a: 0.03 },
+        ];
+        for (const n of nebulae) {
+          ctx.save();
+          ctx.translate(W * n.x, H * n.y);
+          ctx.scale(1, n.ry / n.rx);
+          const ng = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.min(W, H) * n.rx);
+          ng.addColorStop(0, `rgba(${n.color[0]},${n.color[1]},${n.color[2]},${n.a})`);
+          ng.addColorStop(0.5, `rgba(${n.color[0]},${n.color[1]},${n.color[2]},${n.a * 0.4})`);
+          ng.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = ng;
+          ctx.beginPath();
+          ctx.arc(0, 0, Math.min(W, H) * n.rx, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // ── Dense star field (5 layers for depth) ──
+        srand(42);
+
+        // Layer 1: Ultra-faint dust stars (400)
+        for (let i = 0; i < 400; i++) {
+          const x = rand() * W, y = rand() * H;
+          const size = 0.2 + rand() * 0.5;
+          const alpha = 0.1 + rand() * 0.25;
+          ctx.fillStyle = `rgba(180,190,220,${alpha})`;
+          ctx.fillRect(x, y, size, size);
+        }
+
+        // Layer 2: Small stars (150)
+        for (let i = 0; i < 150; i++) {
+          const x = rand() * W, y = rand() * H;
+          const size = 0.5 + rand() * 1;
+          const alpha = 0.2 + rand() * 0.4;
+          ctx.fillStyle = `rgba(200,210,240,${alpha})`;
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Layer 3: Medium stars (60)
+        for (let i = 0; i < 60; i++) {
+          const x = rand() * W, y = rand() * H;
+          const size = 1 + rand() * 1.2;
+          const alpha = 0.4 + rand() * 0.4;
+          // Color variety: blue-white, warm yellow, cool blue
+          const colors = ['200,215,255','255,245,220','180,200,255','255,220,180'];
+          const col = colors[Math.floor(rand() * colors.length)];
+          ctx.fillStyle = `rgba(${col},${alpha})`;
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Layer 4: Bright stars with glow (25)
+        const starColors = [
+          [255,240,200], // warm white
+          [200,220,255], // cool blue
+          [255,200,150], // orange giant
+          [180,200,255], // hot blue
+          [255,255,230], // pure white
+        ];
+        for (let i = 0; i < 25; i++) {
+          const x = rand() * W, y = rand() * H;
+          const size = 1.2 + rand() * 2;
+          const col = starColors[Math.floor(rand() * starColors.length)];
+          // Outer glow
+          const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 5);
+          glow.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},0.25)`);
+          glow.addColorStop(0.3, `rgba(${col[0]},${col[1]},${col[2]},0.06)`);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(x - size * 5, y - size * 5, size * 10, size * 10);
+          // Core
+          ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},0.9)`;
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Layer 5: Prominent stars with cross spikes (8)
+        for (let i = 0; i < 8; i++) {
+          const x = W * 0.08 + rand() * W * 0.84;
+          const y = H * 0.05 + rand() * H * 0.7;
+          const size = 2 + rand() * 2.5;
+          const col = starColors[Math.floor(rand() * starColors.length)];
+          // Large glow
+          const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 8);
+          glow.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},0.2)`);
+          glow.addColorStop(0.2, `rgba(${col[0]},${col[1]},${col[2]},0.06)`);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(x - size * 8, y - size * 8, size * 16, size * 16);
+          // Core
+          ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},0.95)`;
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+          // 4-point diffraction spikes
+          ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.35)`;
+          ctx.lineWidth = 0.8;
+          const spikeLen = size * 6;
+          ctx.beginPath();
+          ctx.moveTo(x - spikeLen, y); ctx.lineTo(x + spikeLen, y);
+          ctx.moveTo(x, y - spikeLen); ctx.lineTo(x, y + spikeLen);
+          ctx.stroke();
+          // Diagonal spikes (shorter)
+          ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.15)`;
+          const dSpike = spikeLen * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(x - dSpike, y - dSpike); ctx.lineTo(x + dSpike, y + dSpike);
+          ctx.moveTo(x + dSpike, y - dSpike); ctx.lineTo(x - dSpike, y + dSpike);
+          ctx.stroke();
+        }
+
+        // ── Distant galaxy clusters (tiny fuzzy patches) ──
+        const galaxies = [
+          { x: 0.12, y: 0.35, r: 0.025, a: 0.08 },
+          { x: 0.88, y: 0.55, r: 0.02, a: 0.06 },
+          { x: 0.6, y: 0.75, r: 0.018, a: 0.05 },
+          { x: 0.3, y: 0.15, r: 0.015, a: 0.06 },
+          { x: 0.75, y: 0.28, r: 0.022, a: 0.07 },
+        ];
+        for (const g of galaxies) {
+          const gg = ctx.createRadialGradient(W * g.x, H * g.y, 0, W * g.x, H * g.y, Math.min(W, H) * g.r);
+          gg.addColorStop(0, `rgba(200,180,220,${g.a})`);
+          gg.addColorStop(0.5, `rgba(160,150,200,${g.a * 0.3})`);
+          gg.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = gg;
+          ctx.beginPath(); ctx.arc(W * g.x, H * g.y, Math.min(W, H) * g.r, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // ── Shooting stars (2-3 at a time) ──
+        srand(Math.floor(Date.now() / 20000));
+        const shootCount = 2 + Math.floor(rand() * 2);
+        for (let s = 0; s < shootCount; s++) {
+          if (rand() > 0.35) {
+            const sx = rand() * W;
+            const sy = rand() * H * 0.6;
+            const len = 30 + rand() * 80;
+            const angle = 0.2 + rand() * 0.6;
+            const ex = sx + Math.cos(angle) * len;
+            const ey = sy + Math.sin(angle) * len;
+            const sg = ctx.createLinearGradient(sx, sy, ex, ey);
+            sg.addColorStop(0, 'rgba(255,255,255,0.8)');
+            sg.addColorStop(0.2, 'rgba(200,220,255,0.4)');
+            sg.addColorStop(1, 'rgba(150,180,255,0)');
+            ctx.strokeStyle = sg;
+            ctx.lineWidth = 1 + rand() * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+            ctx.stroke();
+          }
+        }
+
+        // ── Vignette ──
+        const vGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.25, W/2, H/2, Math.max(W,H)*0.75);
+        vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        vGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
+        ctx.fillStyle = vGrad;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      draw();
+      window.addEventListener('resize', draw);
+
+      // Fade out when 3D is ready
+      window._fade2d = function() {
+        c.style.transition = 'opacity 1.5s ease';
+        c.style.opacity = '0';
+        setTimeout(() => { c.style.display = 'none'; }, 1600);
+      };
+    })();
+
+    // ── Loading sequence: 2D (instant) → 3D (idle) → SunArc + content (after 3D) ──
     const bg3d = document.getElementById('bg-3d');
+    const pageContent = document.getElementById('page-content');
     if (bg3d) {
-      setTimeout(() => {
-        bg3d.src = '/3d-background.html';
+      function load3d() {
+        bg3d.src = '/3d-background.html?v=20260613';
         bg3d.addEventListener('load', () => {
+          // Step 1: 3D fades in, 2D fades out
           bg3d.style.opacity = '1';
+          if (window._fade2d) setTimeout(window._fade2d, 500);
+          // Step 2: SunArc + page content fades in (planet sky reveals)
+          if (pageContent) setTimeout(() => { pageContent.style.opacity = '1'; }, 1200);
         });
-      }, 2000);
+      }
+      // Start loading 3D as soon as browser is idle
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(load3d);
+      } else {
+        window.addEventListener('load', load3d);
+      }
     }
   </script>
 
-  <!-- All page content above the 3D scene -->
-  <div class="relative pointer-events-none" style="z-index: 1;">
-    <!-- Layer 1: Sun Arc Animation -->
+  <!-- All page content — hidden until 3D scene arrives, then fades in -->
+  <div id="page-content" class="relative pointer-events-none" style="z-index: 1; opacity: 0; transition: opacity 2s ease;">
+    <!-- Layer: Sun Arc Animation (planet sky) -->
     <SunArc client:idle lang={lang} />
 
-    <!-- Layer 2: Spacer — enough room for daily quote on mobile -->
+    <!-- Spacer — enough room for daily quote on mobile -->
     <div class="h-64 md:h-72"></div>
 
-    <!-- Layer 3: Recent Post -->
+    <!-- Recent Post -->
     {latestPost && (
       <section class="pt-12 md:pt-12 pb-20 md:pb-32 max-w-2xl mx-auto px-4 pointer-events-auto">
         <div class="flex items-center justify-between mb-6 md:mb-8">

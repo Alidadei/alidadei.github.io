@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-12
+> 生成时间：2026-06-13
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -341,6 +341,7 @@ alidadei.github.io/
 │
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
+│   ├── pixel-preview.html             # 3D像素化预览 (Three.js 低分辨率+CSS pixelated)
 │   ├── favicon.ico / favicon.svg
 │   ├── robots.txt
 │   ├── fonts/                         # 自托管 Inter 字体 (woff2)
@@ -452,12 +453,19 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  └──────────────────────────────┘                    │
 ├─────────────────────────────────────────────────────┤
 │                                                      │
+│  2D 即时背景 Canvas (fixed, 全屏, z-index: 0)           │
+│  ├─ 内联 JS (~2KB)，随 HTML 同时到达，零额外请求          │
+│  ├─ 天空渐变 + 山丘剪影 + 纸纹 + 暗角                   │
+│  ├─ 时间联动亮度 (与3D场景同步)                          │
+│  └─ 3D加载完后 1.5s 淡出，释放资源                       │
+│                                                      │
 │  3D背景 iframe (fixed, 全屏, z-index: 0)              │
 │  ├─ warm-storybook风格 Three.js场景                    │
 │  ├─ 农田星球地面 (绿色+PLANET 07土黄色块)               │
 │  ├─ 银白头机器人 (白眼, 麦垛)                           │
 │  ├─ 每日一句打字效果 (book旁, 银白色)                    │
 │  └─ 时间联动亮度 (白天明亮/夜晚暗淡)                     │
+│  注: iframe src 带版本号 ?v=YYYYMMDD 强制长期缓存         │
 │  注: 移动端也加载3D场景(跳过Bloom), 每日一句使用楷体字体    │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
@@ -488,7 +496,9 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 3D 库 | Three.js 自托管 `public/vendor/three/`，避免 CDN 依赖 |
 | 数学公式 | KaTeX 仅在文章详情页 (PostLayout) 加载 CSS |
 | 3D 背景 | 移动端加载 Three.js 但跳过 Bloom 后处理，减轻 GPU 负担 |
-| 3D 懒加载 | 首页 iframe 延迟 2 秒加载 3D，先渲染主页面内容，加载完成后 1 秒淡入 (`opacity 0→1`) |
+| 3D 懒加载 | 首页 iframe 延迟 2 秒加载 3D，先渲染主页面内容，加载完成后 1.5 秒淡入 (`opacity 0→1`) |
+| 2D 即时背景 | 内联 Canvas 2D 背景随 HTML 同时到达，零依赖 (~2KB)，色调与3D一致，3D加载完后淡出过渡 |
+| 3D 长期缓存 | iframe src 加版本号参数 `?v=YYYYMMDD`，浏览器永久缓存，修改3D文件后需更新版本号 |
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |

@@ -13,7 +13,7 @@ interface Props {
 const { title, description, image, fullWidth = false, noindex = false } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} image={image} noindex={noindex}>
+<BaseLayout title={title} description={description} image={image} noindex={noindex} homeBg={Astro.props.homeBg}>
   <Header />
   <main class={fullWidth ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in'}>
     <slot />

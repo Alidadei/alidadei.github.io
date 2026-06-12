@@ -56,6 +56,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
   </head>
   <body class="min-h-screen bg-bg text-text antialiased">
+    <!-- Home page background layers (injected before slot to avoid transform interference) -->
+    {Astro.props.homeBg && (
+      <>
+        <canvas id="bg-2d" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;display:block;"></canvas>
+        <div id="bg-container" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;">
+          <iframe id="bg-3d" title="3D Background" style="position:fixed;top:0;left:0;width:100vw;height:100vh;border:0;opacity:0;transition:opacity 1.5s;"></iframe>
+        </div>
+      </>
+    )}
     <slot />
   </body>
 </html>
