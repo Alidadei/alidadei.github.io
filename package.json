@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "cp src/data/quotes.json public/quotes.json && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },

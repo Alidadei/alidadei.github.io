@@ -19,20 +19,14 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
   <!-- Make body transparent so 3D background shows through -->
   <style is:global>
     body { background: transparent !important; }
-    @media (max-width: 767px) {
-      body { background: var(--color-bg) !important; }
-    }
   </style>
 
-  <!-- 3D Background — desktop only, fullscreen fixed -->
+  <!-- 3D Background — fullscreen fixed, all devices -->
   <div id="bg-container" class="fixed inset-0 w-full h-full" style="z-index: 0;">
-    <!-- Static fallback for mobile -->
-    <div id="bg-static" class="md:hidden w-full h-full bg-gradient-to-b from-[#f5e6d3] via-[#e8c8d8] to-[#b8d0f0]"></div>
-    <!-- 3D iframe for desktop -->
     <iframe
       id="bg-3d"
       src="/3d-background.html"
-      class="hidden md:block fixed inset-0 w-full h-full border-0"
+      class="fixed inset-0 w-full h-full border-0"
       title="3D Background"
     ></iframe>
   </div>

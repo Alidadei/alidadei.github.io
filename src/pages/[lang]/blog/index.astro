@@ -126,24 +126,17 @@ const topCategories = categoryTree;
   <p id="no-results" class="text-text-muted hidden">{lang === 'zh' ? '该分类暂无文章' : 'No posts in this category'}</p>
 </PageLayout>
 
-<!-- Mobile timeline: left-aligned single column -->
+<!-- Mobile timeline: keep desktop left-right layout, enlarge fonts -->
 <style is:global>
   @media (max-width: 767px) {
-    .timeline-line {
-      left: 8px !important;
-      transform: none !important;
-    }
-    .timeline-dot {
-      left: 8px !important;
-      transform: translate(-50%, -50%) !important;
-    }
     .post-card {
-      justify-content: flex-start !important;
-      padding-left: 28px !important;
-      padding-right: 4px !important;
+      gap: 0.25rem;
     }
-    h2 {
-      text-align: left !important;
+    .post-card .text-base {
+      font-size: 1.05rem;
+    }
+    .post-card .text-sm {
+      font-size: 0.9rem;
     }
   }
 </style>

@@ -388,9 +388,13 @@ for (const c of [{ x: -250, y: 150, z: -200, s: 1.0, sp: 0.07 }, { x: 280, y: 13
 }
 
 // ── Post Processing ──
+// Skip Bloom on mobile for better performance
+const isMobile = window.innerWidth < 768;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.4, 0.8, 0.75));
+if (!isMobile) {
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.4, 0.8, 0.75));
+}
 const OutlineShader = {
   uniforms: { tDiffuse: { value: null }, resolution: { value: new THREE.Vector2(W, H) }, edgeStrength: { value: 0.35 }, edgeColor: { value: new THREE.Vector3(0.227, 0.184, 0.271) } },
   vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
@@ -512,34 +516,35 @@ window.addEventListener('resize', () => {
 });
 
 // === Daily Quote with Typewriter Effect ===
-const quotes = [
-  "探索智能与医疗的交汇点，用技术回应真实世界的问题。",
-  "保持饥饿，保持愚蠢。",
-  "代码是写给人看的，顺便能在机器上运行。",
-  "最好的投资，是投资自己。",
-  "简单是终极的复杂。",
-  "学而不思则罔，思而不学则殆。",
-  "不积跬步，无以至千里。",
-  "做正确的事，比把事做正确更重要。",
-  "真正的知识，是知道自己无知的程度。",
-  "世界上最快乐的事，莫过于为理想而奋斗。"
-];
-const today = new Date();
-const idx = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate()) % quotes.length;
-const target = quotes[idx];
-const el = document.getElementById('quote-text');
-let ci = 0;
-function typeNext() {
-  if (!el) return;
-  if (ci <= target.length) {
-    el.textContent = target.slice(0, ci);
-    ci++;
-    setTimeout(typeNext, 60 + Math.random() * 40);
-  } else {
-    el.classList.add('done');
+// Load quotes from JSON file instead of hardcoding
+async function initQuote() {
+  const fallback = ["简单是终极的复杂。"];
+  let quotes = fallback;
+  try {
+    const res = await fetch('/quotes.json');
+    if (res.ok) {
+      const data = await res.json();
+      quotes = data.zh && data.zh.length > 0 ? data.zh : fallback;
+    }
+  } catch (e) { /* use fallback */ }
+  const today = new Date();
+  const idx = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate()) % quotes.length;
+  const target = quotes[idx];
+  const el = document.getElementById('quote-text');
+  let ci = 0;
+  function typeNext() {
+    if (!el) return;
+    if (ci <= target.length) {
+      el.textContent = target.slice(0, ci);
+      ci++;
+      setTimeout(typeNext, 60 + Math.random() * 40);
+    } else {
+      el.classList.add('done');
+    }
   }
+  setTimeout(typeNext, 2000);
 }
-setTimeout(typeNext, 2000);
+initQuote();
 </script>
 </body>
 </html>

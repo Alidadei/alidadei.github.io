@@ -65,15 +65,38 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     </header>
 
     <!-- Article body with TOC sidebar -->
-    <!-- Mobile TOC (collapsible, visible below lg) -->
-    <details id="toc-mobile" class="lg:hidden mb-6 border border-border rounded-lg">
-      <summary class="px-4 py-3 cursor-pointer text-sm font-semibold text-primary hover:bg-bg-secondary transition-colors">
-        {lang === 'zh' ? '📖 目录' : '📖 Table of Contents'}
-      </summary>
-      <nav id="toc-nav-mobile" class="px-4 pb-3 space-y-1 text-sm max-h-[50vh] overflow-y-auto">
-        <!-- TOC items injected by JS -->
-      </nav>
-    </details>
+
+    <!-- Mobile floating TOC button (visible below lg) -->
+    <button
+      id="toc-mobile-btn"
+      class="lg:hidden fixed right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-bg-secondary/90 backdrop-blur border border-border shadow-md flex items-center justify-center text-text-muted hover:text-accent hover:border-accent transition-all"
+      aria-label={lang === 'zh' ? '目录' : 'Table of Contents'}
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
+      </svg>
+    </button>
+
+    <!-- Mobile TOC slide-out panel -->
+    <div id="toc-mobile-panel" class="lg:hidden fixed inset-y-0 right-0 z-50 w-72 max-w-[80vw] translate-x-full transition-transform duration-300 ease-in-out">
+      <div class="h-full bg-bg/95 backdrop-blur-md shadow-2xl border-l border-border flex flex-col">
+        <!-- Panel header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <span class="text-sm font-semibold text-primary">{lang === 'zh' ? '目录' : 'Contents'}</span>
+          <button id="toc-mobile-close" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-bg-tertiary text-text-muted hover:text-primary transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Panel body: TOC links -->
+        <nav id="toc-nav-mobile" class="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+          <!-- TOC items injected by JS -->
+        </nav>
+      </div>
+    </div>
+    <!-- Mobile TOC backdrop -->
+    <div id="toc-mobile-backdrop" class="lg:hidden fixed inset-0 z-45 bg-black/20 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
     <div class="flex gap-8 relative">
       <!-- Main content -->
@@ -155,13 +178,32 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         }
       });
 
-      // Hide mobile TOC if no headings
-      if (headings.length === 0 && tocNavMobile) {
-        const tocMobile = document.getElementById('toc-mobile');
-        if (tocMobile) tocMobile.style.display = 'none';
+      // Hide mobile TOC button if no headings
+      if (headings.length === 0) {
+        const tocBtn = document.getElementById('toc-mobile-btn');
+        if (tocBtn) tocBtn.style.display = 'none';
       }
 
-      // Mobile TOC click: smooth scroll + close details
+      // Mobile TOC panel: open / close
+      const tocPanel = document.getElementById('toc-mobile-panel');
+      const tocBtn = document.getElementById('toc-mobile-btn');
+      const tocClose = document.getElementById('toc-mobile-close');
+      const tocBackdrop = document.getElementById('toc-mobile-backdrop');
+
+      function openMobileTOC() {
+        if (tocPanel) tocPanel.classList.remove('translate-x-full');
+        if (tocBackdrop) { tocBackdrop.classList.remove('opacity-0', 'pointer-events-none'); tocBackdrop.classList.add('opacity-100'); }
+      }
+      function closeMobileTOC() {
+        if (tocPanel) tocPanel.classList.add('translate-x-full');
+        if (tocBackdrop) { tocBackdrop.classList.add('opacity-0', 'pointer-events-none'); tocBackdrop.classList.remove('opacity-100'); }
+      }
+
+      tocBtn?.addEventListener('click', openMobileTOC);
+      tocClose?.addEventListener('click', closeMobileTOC);
+      tocBackdrop?.addEventListener('click', closeMobileTOC);
+
+      // Mobile TOC click: smooth scroll + close panel
       if (tocNavMobile) {
         tocNavMobile.querySelectorAll('a').forEach((link) => {
           link.addEventListener('click', (e) => {
@@ -171,9 +213,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
             if (target) {
               const top = target.getBoundingClientRect().top + window.scrollY - scrollOffset;
               window.scrollTo({ top, behavior: 'smooth' });
-              // Close the <details> after navigation
-              const details = document.getElementById('toc-mobile') as HTMLDetailsElement | null;
-              if (details) details.open = false;
+              closeMobileTOC();
             }
           });
         });
@@ -181,6 +221,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
       // Scroll spy: highlight current heading
       const tocLinks = tocNav.querySelectorAll('.toc-link');
+      const mobileLinks = tocNavMobile ? tocNavMobile.querySelectorAll('.toc-link') : [];
       const headingElements = Array.from(headings);
 
       function updateActiveHeading() {
@@ -193,8 +234,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           }
         }
 
-        tocLinks.forEach((link, i) => {
-          if (i === currentIndex) {
+        const allLinks = [...tocLinks, ...mobileLinks];
+        allLinks.forEach((link, i) => {
+          const realIndex = i % headingElements.length;
+          if (realIndex === currentIndex) {
             link.classList.remove('text-text-muted');
             link.classList.add('text-accent');
             (link as HTMLElement).style.borderLeftColor = 'var(--color-accent)';
