@@ -21,15 +21,27 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
     body { background: transparent !important; }
   </style>
 
-  <!-- 3D Background — fullscreen fixed, all devices -->
+  <!-- 3D Background — lazy loaded after main content renders -->
   <div id="bg-container" class="fixed inset-0 w-full h-full" style="z-index: 0;">
     <iframe
       id="bg-3d"
-      src="/3d-background.html"
-      class="fixed inset-0 w-full h-full border-0"
+      class="fixed inset-0 w-full h-full border-0 opacity-0 transition-opacity duration-1000"
       title="3D Background"
     ></iframe>
   </div>
+
+  <script>
+    // Delay 3D loading so main page content renders first
+    const bg3d = document.getElementById('bg-3d');
+    if (bg3d) {
+      setTimeout(() => {
+        bg3d.src = '/3d-background.html';
+        bg3d.addEventListener('load', () => {
+          bg3d.style.opacity = '1';
+        });
+      }, 2000);
+    }
+  </script>
 
   <!-- All page content above the 3D scene -->
   <div class="relative pointer-events-none" style="z-index: 1;">
@@ -37,7 +49,7 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
     <SunArc client:idle lang={lang} />
 
     <!-- Layer 2: Spacer — enough room for daily quote on mobile -->
-    <div class="h-48 md:h-72"></div>
+    <div class="h-56 md:h-72"></div>
 
     <!-- Layer 3: Recent Post -->
     {latestPost && (
