@@ -48,7 +48,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       <!-- Mobile menu button -->
       <button
         id="mobile-menu-btn"
-        class="md:hidden p-2 rounded-md text-text-secondary hover:bg-bg-secondary"
+        class="md:hidden p-2.5 rounded-md text-text-secondary hover:bg-bg-secondary"
         aria-label="Toggle menu"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,14 +58,14 @@ const switchLabel = getUI(lang, 'lang.switch');
     </div>
 
     <!-- Mobile Navigation -->
-    <nav id="mobile-menu" class="md:hidden hidden pb-4 px-6 sm:px-8 lg:px-12">
+    <nav id="mobile-menu" class="md:hidden overflow-hidden transition-all duration-300 ease-in-out px-6 sm:px-8 lg:px-12" style="max-height: 0; opacity: 0;">
       {navItems.map((item) => {
         const isActive = Astro.url.pathname.replace(/\/$/, '') === item.href.replace(/\/$/, '');
         return (
           <a
             href={item.href}
             class:list={[
-              'block px-3 py-2 text-sm rounded-md transition-colors',
+              'block px-3 py-3 text-sm rounded-md transition-colors',
               isActive
                 ? 'text-accent font-medium'
                 : 'text-text-muted hover:text-text-secondary',
@@ -77,7 +77,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       })}
       <a
         href={altUrl}
-        class="block px-3 py-2 text-sm text-text-muted hover:text-accent transition-colors"
+        class="block px-3 py-3 text-sm text-text-muted hover:text-accent transition-colors"
       >
         {switchLabel}
       </a>
@@ -87,7 +87,30 @@ const switchLabel = getUI(lang, 'lang.switch');
 <script>
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
+  const hamburgerSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
+  const closeSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+  let menuOpen = false;
+
+  function closeMenu() {
+    menuOpen = false;
+    if (menu) { menu.style.maxHeight = '0'; menu.style.opacity = '0'; }
+    document.body.style.overflow = '';
+    if (btn) btn.innerHTML = hamburgerSVG;
+  }
+
   btn?.addEventListener('click', () => {
-    menu?.classList.toggle('hidden');
+    menuOpen = !menuOpen;
+    if (menuOpen) {
+      if (menu) { menu.style.maxHeight = '300px'; menu.style.opacity = '1'; }
+      document.body.style.overflow = 'hidden';
+      if (btn) btn.innerHTML = closeSVG;
+    } else {
+      closeMenu();
+    }
+  });
+
+  // Close menu when clicking nav links
+  menu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeMenu);
   });
 </script>

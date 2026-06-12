@@ -69,7 +69,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
       <div className="flex justify-center mt-8">
         <button
           onClick={open}
-          className="group relative opacity-40 hover:opacity-80 transition-opacity duration-500 cursor-pointer"
+          className="group relative opacity-40 hover:opacity-80 transition-opacity duration-500 cursor-pointer p-3"
           aria-label={hintText}
           title={hintText}
         >
@@ -108,7 +108,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
             {/* Main layout: featured + 4 positioned around */}
             <div className="w-full max-w-5xl mt-8 mb-6">
               {/* Top row: left | featured | right */}
-              <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1fr] gap-4 items-end">
                 {/* Left: 海工赛1 */}
                 <div
                   className="overflow-hidden rounded-lg"
@@ -119,7 +119,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
                     transition: `opacity 0.5s ease ${baseDelay(0,0)}s, transform 0.5s ease ${baseDelay(0,0)}s`,
                   }}
                 >
-                  <img src={positionedImages.left} alt="" className="w-full h-full object-cover shadow-xl" />
+                  <img src={positionedImages.left} alt="" className="w-full h-full object-cover shadow-xl" loading="lazy" />
                 </div>
 
                 {/* Center: 相辉奖状 (featured) */}
@@ -133,7 +133,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
                     boxShadow: '0 0 40px rgba(255,215,0,0.3), 0 8px 32px rgba(0,0,0,0.4)',
                   }}
                 >
-                  <img src={featuredImage} alt="" className="w-full h-full object-cover" />
+                  <img src={featuredImage} alt="" className="w-full h-full object-cover" loading="lazy" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                     <span className="text-white/90 text-sm font-medium">
                       {lang === 'zh' ? '复旦大学相辉博士奖学金' : 'Fudan Xianghui Doctoral Scholarship'}
@@ -151,12 +151,12 @@ export default function AwardWall({ lang }: AwardWallProps) {
                     transition: `opacity 0.5s ease ${baseDelay(0,2)}s, transform 0.5s ease ${baseDelay(0,2)}s`,
                   }}
                 >
-                  <img src={positionedImages.right} alt="" className="w-full h-full object-cover shadow-xl" />
+                  <img src={positionedImages.right} alt="" className="w-full h-full object-cover shadow-xl" loading="lazy" />
                 </div>
               </div>
 
               {/* Bottom row: bottomLeft | spacer | bottomRight */}
-              <div className="grid grid-cols-[1fr_2fr_1fr] gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_1fr] gap-4 mt-4">
                 {/* Bottom-left: 华为HSD */}
                 <div
                   className="overflow-hidden rounded-lg"
@@ -167,7 +167,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
                     transition: `opacity 0.5s ease ${baseDelay(1,0)}s, transform 0.5s ease ${baseDelay(1,0)}s`,
                   }}
                 >
-                  <img src={positionedImages.bottomLeft} alt="" className="w-full h-full object-cover shadow-xl" />
+                  <img src={positionedImages.bottomLeft} alt="" className="w-full h-full object-cover shadow-xl" loading="lazy" />
                 </div>
 
                 {/* Bottom center spacer */}
@@ -183,7 +183,7 @@ export default function AwardWall({ lang }: AwardWallProps) {
                     transition: `opacity 0.5s ease ${baseDelay(1,2)}s, transform 0.5s ease ${baseDelay(1,2)}s`,
                   }}
                 >
-                  <img src={positionedImages.bottomRight} alt="" className="w-full h-full object-cover shadow-xl" />
+                  <img src={positionedImages.bottomRight} alt="" className="w-full h-full object-cover shadow-xl" loading="lazy" />
                 </div>
               </div>
             </div>

@@ -41,11 +41,12 @@
 
 | 层级 | 技术 | 版本 |
 |------|------|------|
-| **框架** | Astro | 6.1.3 |
-| **交互组件** | React | 19.2.4 |
-| **样式** | Tailwind CSS | 4.2.2 |
+| **框架** | Astro | ^6.1.3 |
+| **交互组件** | React | ^19.2.4 |
+| **样式** | Tailwind CSS | ^4.2.2 |
 | **Markdown** | MDX + remark-math + rehype-katex | — |
-| **农历库** | lunar-javascript | — |
+| **农历库** | lunar-javascript | ^1.7.7 |
+| **3D图形** | Three.js (自托管) | vendor/three/ |
 | **构建工具** | Vite (Astro 内置) | — |
 | **部署** | GitHub Pages (Actions) | — |
 | **CMS 后端** | Cloudflare Worker + KV | — |
@@ -92,16 +93,17 @@ graph TB
     subgraph 布局层
         BL["BaseLayout<br/>HTML骨架+Meta+字体"]
         PL["PageLayout<br/>Header+Main (无Footer)"]
-        SL["PostLayout<br/>Header+文章+TOC+Footer"]
+        SL["PostLayout<br/>Header+文章+TOC"]
     end
 
     subgraph 组件层
-        HDR["Header.astro<br/>导航栏"]
+        HDR["Header.astro<br/>导航栏(含移动端动画)"]
         FTR["Footer.astro<br/>版权+社交"]
         SUN["SunArc.tsx ⚛<br/>天空动画+干支"]
         TL["Timeline.tsx ⚛<br/>时间线"]
-        AW["AwardWall.tsx ⚛<br/>照片墙彩蛋"]
+        AW["AwardWall.tsx ⚛<br/>照片墙彩蛋(响应式+懒加载)"]
         SB["SearchBar.tsx ⚛<br/>搜索栏"]
+        IR["InteractiveResume.tsx ⚛<br/>简历交互"]
         AA["AdminApp.tsx ⚛<br/>CMS管理"]
     end
 
@@ -114,20 +116,20 @@ graph TB
 
     PL --> BL
     PL --> HDR
-    PL --> FTR
     SL --> BL
     SL --> HDR
-    SL --> FTR
 
     HOME -.->|"client:idle"| SUN
     HOME -.->|"client:visible"| TL
     ABOUT -.->|"client:load"| AW
     CV -.->|"client:load"| AW
+    CV -.->|"client:load"| IR
     ADMIN -.->|"client:only"| AA
 
     style SUN fill:#f9e0b7,stroke:#b07d4f
     style AW fill:#f9e0b7,stroke:#b07d4f
     style TL fill:#f9e0b7,stroke:#b07d4f
+    style IR fill:#f9e0b7,stroke:#b07d4f
     style AA fill:#e0e0e0,stroke:#888
     style SB fill:#e0e0e0,stroke:#888
 ```
@@ -155,10 +157,10 @@ graph TB
 │  └── (projects/)      空 (待填充)                       │
 │                                                        │
 │  src/i18n/                                             │
-│  ├── ui.ts            UI翻译字典 (30+ key × 2语言)      │
+│  ├── ui.ts            UI翻译字典 (38 key × 2语言)       │
 │  └── (lib/i18n.ts)    路由工具函数                       │
 │                                                        │
-│  public/images/       ~50张图片素材                      │
+│  public/images/       ~60+张图片素材                     │
 └───────────────────────────────────────────────────────┘
                     │
                     ▼  Astro 构建时注入
@@ -176,7 +178,7 @@ graph TB
                     ▼  静态生成 HTML
 ┌───────────────────────────────────────────────────────┐
 │  dist/                                                 │
-│  37个HTML页面 + CSS/JS bundles + 静态资源               │
+│  HTML页面 + CSS/JS bundles + 静态资源                    │
 └───────────────────────────────────────────────────────┘
 ```
 
@@ -256,7 +258,7 @@ global.css
 └── prefers-reduced-motion 适配
 ```
 
-**字体**：Noto Sans SC (中文) + Inter (英文) + 系统字体回退
+**字体**：Inter (自托管 woff2) + Noto Sans SC (系统回退) + PingFang SC + Microsoft YaHei
 
 ---
 
@@ -298,6 +300,7 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 首页 | 天空动画 (实时太阳位置/日升日落) | React SunArc (client:idle) |
 | 首页 | 干支日期逐字打出 | React useState + setInterval |
 | 首页 | 每日一句轮换 | Vanilla JS (按日期取模) |
+| 首页 | 3D背景场景 (warm-storybook风格) | Three.js iframe (桌面端) / 渐变回退 (手机端) |
 | 博客列表 | 搜索过滤 | Vanilla JS (标题匹配) |
 | 博客列表 | 分类标签切换 | Vanilla JS (DOM toggle) |
 | 博客列表 | 搜索框展开/收起 | Vanilla JS (max-width transition) |
@@ -307,6 +310,7 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 简历 | 全部展开/收起 | Vanilla JS |
 | 简历 | 导出 PDF | window.print() |
 | 关于我/简历 | 照片墙彩蛋 | React AwardWall (client:load) |
+| 全局 | 移动端汉堡菜单动画 (max-height+opacity) | Vanilla JS + CSS transition |
 | CMS 后台 | 文章增删改 + 图片管理 + 部署 | React AdminApp (client:only) |
 
 ---
@@ -319,7 +323,7 @@ alidadei.github.io/
 ├── astro.config.mjs                   # Astro 配置
 ├── package.json                       # 依赖
 ├── tsconfig.json                      # TS 配置
-├── CLAUDE.md                          # Claude Code 指令
+├── CLAUDE.md                          # Claude Code 指令 (精简版)
 │
 ├── docs/                              # 文档
 │   ├── knowledge-graph-en/            # 知识图谱
@@ -331,12 +335,21 @@ alidadei.github.io/
 │
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
-│   ├── favicon.ico
+│   ├── favicon.ico / favicon.svg
 │   ├── robots.txt
-│   ├── images/                        # ~50张图片
-│   ├── images/posts/                  # 博客配图
-│   ├── portfolio/                     # 作品集资源
-│   └── files/                         # PDF 论文/Slides
+│   ├── fonts/                         # 自托管 Inter 字体 (woff2)
+│   │   ├── inter-400.woff2
+│   │   ├── inter-500.woff2
+│   │   ├── inter-600.woff2
+│   │   └── inter-700.woff2
+│   ├── images/                        # ~60+张图片
+│   │   └── posts/                     # 博客配图
+│   ├── portfolio/                     # 作品集资源 + 独立HTML
+│   ├── files/                         # PDF 论文/Slides
+│   └── vendor/three/                  # 自托管 Three.js + 后处理着色器
+│       ├── three.module.js
+│       ├── postprocessing/
+│       └── shaders/
 │
 ├── src/
 │   ├── content.config.ts              # 内容集合 Schema
@@ -348,21 +361,21 @@ alidadei.github.io/
 │   │   ├── categories.json           # 分类树
 │   │   └── quotes.json               # 每日一句
 │   │
-│   ├── i18n/ui.ts                     # 翻译字典
+│   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
 │   ├── lib/i18n.ts                    # i18n 路由工具
 │   │
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
-│   │   ├── PageLayout.astro           # Header+Main (Footer已移除)
+│   │   ├── PageLayout.astro           # Header+Main (无Footer)
 │   │   └── PostLayout.astro           # 文章布局+TOC
 │   │
 │   ├── components/                    # 组件
 │   │   ├── layout/
-│   │   │   ├── Header.astro           # 导航栏
+│   │   │   ├── Header.astro           # 导航栏 (移动端动画菜单)
 │   │   │   └── Footer.astro           # 页脚
 │   │   ├── ui/
 │   │   │   ├── SunArc.tsx             # 天空动画 ⚛
-│   │   │   └── AwardWall.tsx          # 照片墙彩蛋 ⚛
+│   │   │   └── AwardWall.tsx          # 照片墙彩蛋 ⚛ (响应式+懒加载)
 │   │   ├── timeline/
 │   │   │   └── Timeline.tsx           # 时间线 ⚛
 │   │   ├── blog/
@@ -416,9 +429,11 @@ alidadei.github.io/
 Harry Yu (logo, 左上)                                   右移2px对齐
 ```
 
+**移动端行为：** 汉堡菜单按钮 → 展开/收起动画 (max-height + opacity transition) → 点击导航链接自动关闭菜单 → body 锁定滚动
+
 ---
 
-## 13. 首页架构（最新）
+## 13. 首页架构
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -437,6 +452,7 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  ├─ 银白头机器人 (白眼, 麦垛)                           │
 │  ├─ 每日一句打字效果 (book旁, 银白色)                    │
 │  └─ 时间联动亮度 (白天明亮/夜晚暗淡)                     │
+│  注: 移动端回退为渐变背景, 不加载3D场景                    │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
 │  最新文章 (银白色字体, pointer-events-auto)             │
@@ -447,13 +463,61 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 
 **关键数据文件：**
 - `src/data/quotes.json` — 每日一句句子库 (中英各10条)
-- `public/3d-background.html` — 3D场景 (独立HTML, CDN加载Three.js)
+- `public/3d-background.html` — 3D场景 (独立HTML, 自托管Three.js)
+- `public/vendor/three/` — Three.js + 后处理着色器 (UnrealBloom等)
 
 **层级关系：**
 - 3D iframe: `z-index: 0`, `position: fixed`
 - 页面内容: `z-index: 1`, `pointer-events: none` (空白区域穿透到3D)
 - 交互区块: `pointer-events: auto` (文章链接可点击)
 - Header: `z-index: 50` (始终在最上层)
+
+---
+
+## 14. 性能优化记录
+
+| 优化项 | 方式 |
+|--------|------|
+| 字体 | 去除 Google Fonts 外链, 自托管 Inter woff2 + 系统中文字体回退 |
+| 3D 库 | Three.js 自托管 `public/vendor/three/`，避免 CDN 依赖 |
+| 数学公式 | KaTeX 仅在文章详情页 (PostLayout) 加载 CSS |
+| 3D 背景 | 移动端回退为渐变背景，不加载 Three.js 场景 |
+| 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
+| 响应式 | AwardWall 移动端单列布局，博客时间线移动端左对齐 |
+
+---
+
+## 15. 组件详情
+
+### Header.astro — 导航栏
+- 桌面端：水平导航 + 语言切换 (无边框胶囊按钮)
+- 移动端：汉堡按钮 → 动画展开菜单 (max-height 0→300px + opacity 0→1, 300ms ease-in-out)
+- 点击导航链接自动关闭菜单
+- 菜单打开时锁定 body 滚动 (`overflow: hidden`)
+- SVG 图标：汉堡 ↔ X 切换
+
+### SunArc.tsx — 天空动画
+- 基于当前时间计算太阳位置 (日升 5:30 / 日落 18:30)
+- 动态天空渐变 (白天/黄昏/黎明/夜晚)
+- 太阳盘 + 光晕、月牙、闪烁星星
+- 农历干支日期 + 五行 (wuxing) 配色 + 打字机动画
+- 时段问候语
+
+### AwardWall.tsx — 照片墙彩蛋
+- 触发方式：奖杯图标按钮
+- 全屏覆盖层 + 居中精选图 (湘慧奖学金, 金色边框光晕)
+- 桌面端：3列网格 (1fr 2fr 1fr)
+- 移动端：单列布局 (`grid-cols-1`)
+- 底部水平滚动行展示额外证书
+- 交错入场动画 + ESC 关闭
+- 所有图片懒加载 (`loading="lazy"`)
+
+### AdminApp.tsx — CMS 管理面板
+- 单文件 React SPA (~744行)
+- GitHub OAuth 登录
+- 文章编辑器 (Markdown + 实时预览)
+- 标签管理 / 分类管理 / 图片管理 / 部署状态
+- 自动保存到 localStorage
 
 ---
 

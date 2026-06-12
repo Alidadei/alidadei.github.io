@@ -65,6 +65,16 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     </header>
 
     <!-- Article body with TOC sidebar -->
+    <!-- Mobile TOC (collapsible, visible below lg) -->
+    <details id="toc-mobile" class="lg:hidden mb-6 border border-border rounded-lg">
+      <summary class="px-4 py-3 cursor-pointer text-sm font-semibold text-primary hover:bg-bg-secondary transition-colors">
+        {lang === 'zh' ? '📖 目录' : '📖 Table of Contents'}
+      </summary>
+      <nav id="toc-nav-mobile" class="px-4 pb-3 space-y-1 text-sm max-h-[50vh] overflow-y-auto">
+        <!-- TOC items injected by JS -->
+      </nav>
+    </details>
+
     <div class="flex gap-8 relative">
       <!-- Main content -->
       <div class="flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
@@ -104,6 +114,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       // Clear any previous TOC items (for Astro page transitions)
       tocNav.innerHTML = '';
 
+      // Also prepare mobile TOC
+      const tocNavMobile = document.getElementById('toc-nav-mobile');
+      if (tocNavMobile) tocNavMobile.innerHTML = '';
+
       // Compute the fixed header height for accurate scroll offset
       const header = document.querySelector('header') || document.querySelector('nav');
       const headerHeight = header ? header.getBoundingClientRect().height : 0;
@@ -133,7 +147,37 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         link.className = cls;
 
         tocNav.appendChild(link);
+
+        // Also populate mobile TOC
+        if (tocNavMobile) {
+          const mobileLink = link.cloneNode(true) as HTMLAnchorElement;
+          tocNavMobile.appendChild(mobileLink);
+        }
       });
+
+      // Hide mobile TOC if no headings
+      if (headings.length === 0 && tocNavMobile) {
+        const tocMobile = document.getElementById('toc-mobile');
+        if (tocMobile) tocMobile.style.display = 'none';
+      }
+
+      // Mobile TOC click: smooth scroll + close details
+      if (tocNavMobile) {
+        tocNavMobile.querySelectorAll('a').forEach((link) => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = (link as HTMLAnchorElement).getAttribute('href')?.slice(1);
+            const target = document.getElementById(targetId || '');
+            if (target) {
+              const top = target.getBoundingClientRect().top + window.scrollY - scrollOffset;
+              window.scrollTo({ top, behavior: 'smooth' });
+              // Close the <details> after navigation
+              const details = document.getElementById('toc-mobile') as HTMLDetailsElement | null;
+              if (details) details.open = false;
+            }
+          });
+        });
+      }
 
       // Scroll spy: highlight current heading
       const tocLinks = tocNav.querySelectorAll('.toc-link');

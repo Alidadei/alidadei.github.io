@@ -13,13 +13,13 @@ const currentYear = new Date().getFullYear();
       <p class="text-sm text-text-muted">
         &copy; {currentYear} {siteConfig.name}. {getUI(lang, 'footer.rights')}.
       </p>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 -m-2">
         {siteConfig.author.github && (
           <a
             href={`https://github.com/${siteConfig.author.github}`}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-text-muted hover:text-primary transition-colors"
+            class="p-2 text-text-muted hover:text-primary transition-colors"
             aria-label="GitHub"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -30,7 +30,7 @@ const currentYear = new Date().getFullYear();
         {siteConfig.author.email && (
           <a
             href={`mailto:${siteConfig.author.email}`}
-            class="text-text-muted hover:text-primary transition-colors"
+            class="p-2 text-text-muted hover:text-primary transition-colors"
             aria-label="Email"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

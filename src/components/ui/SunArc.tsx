@@ -257,7 +257,7 @@ export default function SunArc({ lang }: SunArcProps) {
       {/* Top left: lunar date + greeting */}
       <div className="absolute top-3 left-4">
         <LunarDate lang={lang} />
-        <p className="text-xs" style={{ color: 'var(--color-text-muted)', opacity: 0.5 }}>
+        <p className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.7 }}>
           {greeting}
         </p>
       </div>

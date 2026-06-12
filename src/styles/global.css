@@ -118,6 +118,8 @@ body {
   margin: 2em 0;
 }
 .prose img {
+  max-width: 100%;
+  height: auto;
   border-radius: 0.75rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   margin: 2em 0;
@@ -155,6 +157,9 @@ body {
   padding-left: 0.25em;
 }
 .prose table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   width: 100%;
   border-collapse: collapse;
   margin: 2em 0;

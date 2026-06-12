@@ -27,11 +27,11 @@ export default function Timeline({ items, lang }: { items: TimelineItem[]; lang:
 
   return (
     <div>
-      <div className="relative border-l-2 border-accent/30 ml-4 space-y-6">
+      <div className="relative border-l-2 border-accent/30 ml-3 sm:ml-4 space-y-6">
         {visible.map((item, i) => {
           const config = typeConfig[item.type];
           return (
-            <div key={i} className="relative pl-8 fade-in">
+            <div key={i} className="relative pl-6 sm:pl-8 fade-in">
               <div className={`absolute -left-2 top-1 w-4 h-4 rounded-full ${config.color} border-2 border-bg`} />
               <div className="p-4 rounded-lg border border-border hover:border-accent/30 transition-all">
                 <div className="flex items-start gap-2 mb-1">
@@ -48,7 +48,7 @@ export default function Timeline({ items, lang }: { items: TimelineItem[]; lang:
       {items.length > 4 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-4 ml-12 text-sm text-accent hover:text-accent-light transition-colors"
+          className="mt-4 ml-6 sm:ml-12 text-sm text-accent hover:text-accent-light transition-colors"
         >
           {expanded ? t.showLess : t.showMore} ({items.length - 4} {lang === 'zh' ? '项' : 'items'})
         </button>

@@ -37,7 +37,7 @@ const topCategories = categoryTree;
 <PageLayout title={t('nav.blog')}>
   <!-- Title row with inline search -->
   <div class="flex items-center gap-3 mb-6 flex-wrap">
-    <h1 class="text-3xl font-bold text-primary">{t('nav.blog')}</h1>
+    <h1 class="text-2xl md:text-3xl font-bold text-primary">{t('nav.blog')}</h1>
     <button
       id="search-toggle"
       class="text-text-muted hover:text-accent transition-colors cursor-pointer"
@@ -141,6 +141,9 @@ const topCategories = categoryTree;
       justify-content: flex-start !important;
       padding-left: 28px !important;
       padding-right: 4px !important;
+    }
+    h2 {
+      text-align: left !important;
     }
   }
 </style>

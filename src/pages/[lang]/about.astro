@@ -26,7 +26,7 @@ const newsItems = lang === 'zh' ? [
 ---
 
 <PageLayout title={lang === 'zh' ? '关于我' : 'About Me'}>
-  <h1 class="text-3xl font-bold text-primary mb-10">
+  <h1 class="text-2xl md:text-3xl font-bold text-primary mb-10">
     {lang === 'zh' ? '关于我' : 'About Me'}
   </h1>
 
@@ -60,13 +60,13 @@ const newsItems = lang === 'zh' ? [
 
   <!-- News -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '近期动态' : 'News'}
     </h2>
     <div class="space-y-3">
       {newsItems.map((item) => (
-        <div class="flex gap-4 items-baseline py-2">
-          <span class="shrink-0 text-sm text-text-muted font-mono w-32">{item.date}</span>
+        <div class="flex gap-3 sm:gap-4 items-baseline py-2 flex-wrap">
+          <span class="shrink-0 text-sm text-text-muted font-mono w-24 sm:w-32">{item.date}</span>
           <span class="text-text-secondary">{item.text}</span>
         </div>
       ))}
@@ -75,7 +75,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Education -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '教育经历' : 'Education'}
     </h2>
     <div class="space-y-6">
@@ -110,7 +110,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Internship -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '实习经历' : 'Internship'}
     </h2>
     <div class="border-l-4 border-accent pl-5">
@@ -130,7 +130,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Research / Projects -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '研究 & 项目' : 'Research & Projects'}
     </h2>
     <div class="space-y-8">
@@ -181,7 +181,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Awards -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '获奖荣誉' : 'Awards & Honors'}
     </h2>
     <div class="space-y-3">
@@ -209,7 +209,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Skills -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '专业技能' : 'Skills'}
     </h2>
     <div class="grid md:grid-cols-3 gap-6">
@@ -242,7 +242,7 @@ const newsItems = lang === 'zh' ? [
 
   <!-- Contact -->
   <section class="mb-12">
-    <h2 class="text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
       {lang === 'zh' ? '联系方式' : 'Contact'}
     </h2>
     <div class="space-y-3">
