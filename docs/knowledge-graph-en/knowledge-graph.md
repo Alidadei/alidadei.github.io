@@ -253,6 +253,8 @@ global.css
 ├── 基础排版 (body 字体/行高/平滑)
 ├── 动画 (.fade-in / .stagger-in)
 ├── 文章排版 (.prose h1-h4 / blockquote / table / code)
+│   ├── img: max-width:100% + height:auto (防溢出)
+│   └── table: display:block + overflow-x:auto (横向滚动)
 ├── 组件样式 (.post-card / .tag-chip / .toc-link)
 ├── 滚动条美化
 └── prefers-reduced-motion 适配
@@ -367,11 +369,11 @@ alidadei.github.io/
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
 │   │   ├── PageLayout.astro           # Header+Main (无Footer)
-│   │   └── PostLayout.astro           # 文章布局+TOC
+│   │   └── PostLayout.astro           # 文章布局+TOC (桌面端侧栏 / 移动端折叠式)
 │   │
 │   ├── components/                    # 组件
 │   │   ├── layout/
-│   │   │   ├── Header.astro           # 导航栏 (移动端动画菜单)
+│   │   │   ├── Header.astro           # 导航栏 (移动端动画菜单+触摸友好)
 │   │   │   └── Footer.astro           # 页脚
 │   │   ├── ui/
 │   │   │   ├── SunArc.tsx             # 天空动画 ⚛
@@ -484,6 +486,11 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 3D 背景 | 移动端回退为渐变背景，不加载 Three.js 场景 |
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端左对齐 |
+| 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
+| 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端 `<details>` 折叠式 TOC |
+| 触摸目标 | Header 汉堡按钮 `p-2.5`，导航链接 `py-3`，Footer 图标 `p-2`，AwardWall `p-3` |
+| 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
+| Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |
 
 ---
 
