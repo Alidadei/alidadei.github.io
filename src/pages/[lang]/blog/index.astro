@@ -21,86 +21,105 @@ const enrichPosts = posts.map((p) => {
   return { ...p, _categories: cats };
 });
 
+// Group posts by year
+const postsByYear = enrichPosts.reduce<Record<string, typeof enrichPosts>>((acc, post) => {
+  const year = post.data.date.getFullYear().toString();
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(post);
+  return acc;
+}, {});
+
+const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a));
+
 const topCategories = categoryTree;
 ---
 
 <PageLayout title={t('nav.blog')}>
-  <div class="mb-10">
-    <h1 class="text-3xl font-bold text-primary mb-2">{t('nav.blog')}</h1>
-    <div class="w-12 h-0.5 bg-accent rounded-full"></div>
+  <!-- Title row with inline search -->
+  <div class="flex items-center gap-3 mb-6">
+    <h1 class="text-3xl font-bold text-primary">{t('nav.blog')}</h1>
+    <button
+      id="search-toggle"
+      class="text-text-muted hover:text-accent transition-colors cursor-pointer"
+      aria-label={lang === 'zh' ? '搜索' : 'Search'}
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </button>
+    <!-- Expandable search input -->
+    <div id="search-wrapper" class="overflow-hidden transition-all duration-300" style="max-width:0; opacity:0">
+      <input
+        id="blog-search"
+        type="text"
+        placeholder={lang === 'zh' ? '搜索...' : 'Search...'}
+        class="w-48 px-3 py-1 text-sm bg-bg-secondary rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+      />
+    </div>
+    <p id="search-count" class="text-xs text-text-muted hidden"></p>
   </div>
 
   <!-- Category Tabs -->
-  <div class="flex flex-wrap gap-2 mb-6">
+  <div class="flex flex-wrap gap-2 mb-4">
     <button
       data-category="all"
-      class="category-tab px-4 py-2 text-sm rounded-full bg-accent text-white transition-colors cursor-pointer"
+      class="category-tab px-3 py-1.5 text-xs rounded-full bg-accent text-white transition-colors cursor-pointer"
     >
       {t('blog.category.all')}
     </button>
     {topCategories.map((cat) => (
       <button
         data-category={cat.slug}
-        class="category-tab px-4 py-2 text-sm rounded-full border border-border text-text-secondary hover:border-accent/50 hover:text-accent transition-colors cursor-pointer"
+        class="category-tab px-3 py-1.5 text-xs rounded-full border border-border text-text-secondary hover:border-accent/50 hover:text-accent transition-colors cursor-pointer"
       >
         {cat.label[lang]}
       </button>
     ))}
   </div>
 
-  <!-- Search -->
-  <div class="mb-6">
-    <input
-      id="blog-search"
-      type="text"
-      placeholder={lang === 'zh' ? '搜索文章...' : 'Search posts...'}
-      class="w-full px-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-colors"
-    />
-    <p id="search-count" class="text-sm text-[var(--color-text-muted)] mt-2 hidden"></p>
-  </div>
-
+  <!-- Timeline -->
   {enrichPosts.length === 0 ? (
     <p class="text-text-muted">{lang === 'zh' ? '暂无文章' : 'No posts yet.'}</p>
   ) : (
-    <div class="space-y-5 stagger-in" id="posts-list">
-      {enrichPosts.map((post) => {
-        const slug = post.id.split('/').slice(1).join('/');
-        return (
-          <a
-            href={`/${lang}/blog/${slug}/`}
-            data-categories={JSON.stringify(post._categories)}
-            class="post-card block p-6 rounded-lg border border-border hover:border-accent/50 hover:shadow-sm transition-all group"
-          >
-            <div class="flex items-center gap-2 mb-2">
-              {post._categories.length > 0 && (
-                <span class="px-2 py-0.5 text-xs rounded bg-accent/10 text-accent">
-                  {getCategoryLabel(post._categories, lang)}
-                </span>
-              )}
-            </div>
-            <h2 class="text-xl font-semibold text-primary group-hover:text-accent transition-colors mb-2">
-              {post.data.title}
-            </h2>
-            {post.data.description && (
-              <p class="text-text-muted text-sm mb-3">{post.data.description}</p>
-            )}
-            <div class="flex items-center justify-between">
-              <time class="text-xs text-text-muted">
-                {post.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
-                  year: 'numeric', month: 'long', day: 'numeric'
-                })}
-              </time>
-              {post.data.tags.length > 0 && (
-                <div class="flex gap-1">
-                  {post.data.tags.slice(0, 3).map((tag) => (
-                    <span class="px-2 py-0.5 text-xs rounded bg-bg-tertiary text-text-muted">{tag}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </a>
-        );
-      })}
+    <div id="posts-list" class="max-w-3xl mx-auto">
+      {years.map((year) => (
+        <div class="year-group mb-8">
+          <h2 class="text-xl font-bold text-primary mb-4 text-center">{year}</h2>
+          <div class="relative">
+            <!-- Center line -->
+            <div class="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-border"></div>
+            {postsByYear[year].map((post, idx) => {
+              const slug = post.id.split('/').slice(1).join('/');
+              const isLeft = idx % 2 === 0;
+              return (
+                <a
+                  href={`/${lang}/blog/${slug}/`}
+                  data-categories={JSON.stringify(post._categories)}
+                  class:list={[
+                    'post-card relative flex items-baseline gap-2 py-2 group',
+                    isLeft
+                      ? 'justify-end pr-[calc(50%+16px)]'
+                      : 'justify-start pl-[calc(50%+16px)]',
+                  ]}
+                >
+                  <!-- Timeline dot -->
+                  <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border group-hover:bg-accent group-hover:scale-125 transition-all"></span>
+                  <!-- Title -->
+                  <span class="text-base text-primary group-hover:text-accent transition-colors truncate">
+                    {post.data.title}
+                  </span>
+                  <!-- Date -->
+                  <span class="shrink-0 text-sm text-text-muted">
+                    {post.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                      month: 'short', day: 'numeric'
+                    })}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )}
 
@@ -111,11 +130,43 @@ const topCategories = categoryTree;
   function initBlogPage() {
     const tabs = document.querySelectorAll<HTMLButtonElement>('.category-tab');
     const cards = document.querySelectorAll<HTMLElement>('.post-card');
+    const yearGroups = document.querySelectorAll<HTMLElement>('.year-group');
+    const searchToggle = document.getElementById('search-toggle');
+    const searchWrapper = document.getElementById('search-wrapper') as HTMLElement | null;
     const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
     const searchCount = document.getElementById('search-count');
     const noResults = document.getElementById('no-results');
     const postsList = document.getElementById('posts-list');
     let activeCategory = 'all';
+    let searchOpen = false;
+
+    // Toggle search input
+    searchToggle?.addEventListener('click', () => {
+      searchOpen = !searchOpen;
+      if (searchWrapper) {
+        searchWrapper.style.maxWidth = searchOpen ? '200px' : '0';
+        searchWrapper.style.opacity = searchOpen ? '1' : '0';
+      }
+      if (searchOpen) {
+        searchInput?.focus();
+      } else {
+        if (searchInput) searchInput.value = '';
+        filterPosts();
+      }
+    });
+
+    // Close on Escape
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && searchOpen) {
+        searchOpen = false;
+        if (searchWrapper) {
+          searchWrapper.style.maxWidth = '0';
+          searchWrapper.style.opacity = '0';
+        }
+        searchInput.value = '';
+        filterPosts();
+      }
+    });
 
     // Tab switching
     tabs.forEach(tab => {
@@ -136,32 +187,38 @@ const topCategories = categoryTree;
 
     function filterPosts() {
       const query = (searchInput?.value || '').toLowerCase().trim();
-      let visible = 0;
+      let totalVisible = 0;
 
-      cards.forEach(card => {
-        const cats: string[] = JSON.parse(card.dataset.categories || '[]');
-        const categoryMatch = activeCategory === 'all' || cats.includes(activeCategory);
+      yearGroups.forEach(group => {
+        const groupCards = group.querySelectorAll<HTMLElement>('.post-card');
+        let groupVisible = 0;
 
-        const title = card.querySelector('h2')?.textContent?.toLowerCase() || '';
-        const desc = card.querySelector('.text-text-muted')?.textContent?.toLowerCase() || '';
-        const tags = Array.from(card.querySelectorAll('.text-xs.bg-bg-tertiary')).map(t => t.textContent?.toLowerCase() || '');
-        const textMatch = !query || title.includes(query) || desc.includes(query) || tags.some(t => t.includes(query));
+        groupCards.forEach(card => {
+          const cats: string[] = JSON.parse(card.dataset.categories || '[]');
+          const categoryMatch = activeCategory === 'all' || cats.includes(activeCategory);
 
-        if (categoryMatch && textMatch) {
-          card.classList.remove('hidden');
-          visible++;
-        } else {
-          card.classList.add('hidden');
-        }
+          const title = card.textContent?.toLowerCase() || '';
+          const textMatch = !query || title.includes(query);
+
+          if (categoryMatch && textMatch) {
+            card.classList.remove('hidden');
+            groupVisible++;
+            totalVisible++;
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        group.classList.toggle('hidden', groupVisible === 0);
       });
 
-      if (postsList) postsList.classList.toggle('hidden', visible === 0);
-      if (noResults) noResults.classList.toggle('hidden', visible > 0);
+      if (postsList) postsList.classList.toggle('hidden', totalVisible === 0);
+      if (noResults) noResults.classList.toggle('hidden', totalVisible > 0);
 
       if (searchCount && query) {
         const isZh = document.documentElement.lang?.startsWith('zh');
-        searchCount.textContent = visible > 0
-          ? `${visible} ${isZh ? '条结果' : 'results'}`
+        searchCount.textContent = totalVisible > 0
+          ? `${totalVisible} ${isZh ? '条结果' : 'results'}`
           : (isZh ? '没有找到匹配的文章' : 'No matching posts found');
         searchCount.classList.remove('hidden');
       } else if (searchCount) {

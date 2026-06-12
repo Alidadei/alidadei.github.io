@@ -28,13 +28,13 @@ export const siteConfig = {
       { label: '首页', href: '/zh/' },
       { label: '博客', href: '/zh/blog/' },
       { label: '项目', href: '/zh/projects/' },
-      { label: '简历', href: '/zh/cv/' },
+      { label: '关于我', href: '/zh/about/' },
     ],
     en: [
       { label: 'Home', href: '/en/' },
       { label: 'Blog', href: '/en/blog/' },
       { label: 'Projects', href: '/en/projects/' },
-      { label: 'CV', href: '/en/cv/' },
+      { label: 'About', href: '/en/about/' },
     ],
   },
 } as const;
