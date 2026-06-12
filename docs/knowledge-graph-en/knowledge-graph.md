@@ -335,6 +335,8 @@ alidadei.github.io/
 │   ├── MAINTENANCE.md
 │   ├── PRD-blog-category.md
 │   ├── plan-blog-category.md
+│   ├── posts-writing-guide.md          # 博客写作规范 (原posts/README.md)
+│   ├── 问题.md                          # 待修复问题清单
 │   └── ...
 │
 ├── public/                            # 静态资源
@@ -371,7 +373,7 @@ alidadei.github.io/
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
 │   │   ├── PageLayout.astro           # Header+Main (无Footer)
-│   │   └── PostLayout.astro           # 文章布局+TOC (桌面端侧栏 / 移动端折叠式)
+│   │   └── PostLayout.astro           # 文章布局+TOC (桌面端侧栏 / 移动端悬浮面板, header mb-4)
 │   │
 │   ├── components/                    # 组件
 │   │   ├── layout/
@@ -456,7 +458,7 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  ├─ 银白头机器人 (白眼, 麦垛)                           │
 │  ├─ 每日一句打字效果 (book旁, 银白色)                    │
 │  └─ 时间联动亮度 (白天明亮/夜晚暗淡)                     │
-│  注: 移动端回退为渐变背景, 不加载3D场景                    │
+│  注: 移动端也加载3D场景(跳过Bloom), 每日一句使用楷体字体    │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
 │  最新文章 (银白色字体, pointer-events-auto)             │
@@ -494,6 +496,9 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
 | Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |
 | 每日一句 | `3d-background.html` 通过 `fetch('/quotes.json')` 动态加载，`npm run build` 自动从 `src/data/` 同步到 `public/` |
+| 每日一句字体 | 楷体字族 (STKaiti / KaiTi / 华文楷体)，全设备统一 |
+| 博客正文行距 | PostLayout header `mb-4` 紧凑间距（原 `mb-10` 太宽） |
+| 首页移动端间距 | spacer `h-48 md:h-72` + section `pt-12`，避免"最新文章"遮挡每日一句 |
 
 ---
 
