@@ -301,12 +301,12 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 |------|------|----------|
 | 首页 | 天空动画 (实时太阳位置/日升日落) | React SunArc (client:idle) |
 | 首页 | 干支日期逐字打出 | React useState + setInterval |
-| 首页 | 每日一句轮换 | Vanilla JS (按日期取模) |
-| 首页 | 3D背景场景 (warm-storybook风格) | Three.js iframe (桌面端) / 渐变回退 (手机端) |
+| 首页 | 每日一句轮换 | Vanilla JS (fetch `/quotes.json` + 按日期取模) |
+| 首页 | 3D背景场景 (warm-storybook风格) | Three.js iframe (桌面端含Bloom / 移动端跳过Bloom) |
 | 博客列表 | 搜索过滤 | Vanilla JS (标题匹配) |
 | 博客列表 | 分类标签切换 | Vanilla JS (DOM toggle) |
 | 博客列表 | 搜索框展开/收起 | Vanilla JS (max-width transition) |
-| 文章详情 | TOC 侧边栏生成 + 滚动追踪 | Vanilla JS (Intersection + RAF) |
+| 文章详情 | TOC 侧边栏生成 + 滚动追踪 | 桌面端: 固定侧栏 / 移动端: 右侧悬浮按钮+滑出面板 |
 | 文章详情 | 平滑跳转 | Vanilla JS (getBoundingClientRect) |
 | 简历 | 折叠面板展开/收起 | Vanilla JS (max-height transition) |
 | 简历 | 全部展开/收起 | Vanilla JS |
@@ -483,14 +483,15 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 字体 | 去除 Google Fonts 外链, 自托管 Inter woff2 + 系统中文字体回退 |
 | 3D 库 | Three.js 自托管 `public/vendor/three/`，避免 CDN 依赖 |
 | 数学公式 | KaTeX 仅在文章详情页 (PostLayout) 加载 CSS |
-| 3D 背景 | 移动端回退为渐变背景，不加载 Three.js 场景 |
+| 3D 背景 | 移动端加载 Three.js 但跳过 Bloom 后处理，减轻 GPU 负担 |
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
-| 响应式 | AwardWall 移动端单列布局，博客时间线移动端左对齐 |
+| 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
-| 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端 `<details>` 折叠式 TOC |
+| 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端右侧悬浮按钮 + 滑出面板 + scroll spy |
 | 触摸目标 | Header 汉堡按钮 `p-2.5`，导航链接 `py-3`，Footer 图标 `p-2`，AwardWall `p-3` |
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
 | Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |
+| 每日一句 | `3d-background.html` 通过 `fetch('/quotes.json')` 动态加载，`npm run build` 自动从 `src/data/` 同步到 `public/` |
 
 ---
 
