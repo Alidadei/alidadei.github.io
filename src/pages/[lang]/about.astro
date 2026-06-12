@@ -13,7 +13,7 @@ const { lang } = Astro.params as { lang: Lang };
 const newsItems = lang === 'zh' ? [
   { date: '2026.04', text: '启动医疗大模型多模态融合与可解释性研究课题' },
   { date: '2026.01 - 2026.04', text: '华为多媒体智能协作实验室实习，参与 Multi-Agent 会议助手研发' },
-  { date: '2025.09', text: '入职复旦大学，攻读生物医学工程（人工智能方向）博士学位' },
+  { date: '2025.09', text: '入职复旦大学，攻读人工智能博士学位' },
   { date: '2024.09', text: '复旦大学直博录取' },
   { date: '2023.08 - 2024.08', text: '"智能自主系统"课题组，参与 LLM+RL 机器人学习研究' },
 ] : [
@@ -88,7 +88,7 @@ const newsItems = lang === 'zh' ? [
         </div>
         <p class="text-text-secondary mt-1">
           {lang === 'zh'
-            ? '生物医学工程（人工智能方向）博士研究生'
+            ? '人工智能博士研究生'
             : 'Ph.D. in Biomedical Engineering (AI)'}
         </p>
       </div>
