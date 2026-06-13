@@ -21,50 +21,66 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
   </style>
 
   <script>
-    // ── Instant 2D Starry Sky Background ──
+    // ── Animated 2D Starry Sky Background ──
+    // Static elements (gradient, milky way, nebulae, dust, vignette) cached on offscreen canvas.
+    // Animated elements (twinkling stars, sliding shooting stars) redrawn each frame.
     (function() {
       const c = document.getElementById('bg-2d');
       if (!c) return;
       const ctx = c.getContext('2d');
       const dpr = Math.min(devicePixelRatio, 2);
-      let W, H;
+      let W, H, animId;
 
-      // Seeded pseudo-random for consistent star positions
       let seed = 42;
       function srand(s) { seed = s; }
       function rand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
 
-      function draw() {
+      const starColors = [[255,240,200],[200,220,255],[255,200,150],[180,200,255],[255,255,230]];
+      const medColors = ['200,215,255','255,245,220','180,200,255','255,220,180'];
+
+      let staticCanvas = null;
+      let twinkleStars = [];
+      let shooters = [];
+      let shootTimer = 1 + Math.random() * 2;
+      let lastTime = 0;
+
+      function init() {
         W = window.innerWidth; H = window.innerHeight;
         c.width = W * dpr; c.height = H * dpr;
-        ctx.scale(dpr, dpr);
+        twinkleStars = [];
+        srand(42);
 
-        // ── Deep space background (pure black → deep blue) ──
-        const grad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.4, Math.max(W, H) * 0.8);
+        // ── Static offscreen canvas ──
+        staticCanvas = document.createElement('canvas');
+        staticCanvas.width = W * dpr; staticCanvas.height = H * dpr;
+        const sctx = staticCanvas.getContext('2d');
+        sctx.scale(dpr, dpr);
+
+        // Deep space background
+        const grad = sctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.4, Math.max(W,H)*0.8);
         grad.addColorStop(0,   '#080c20');
         grad.addColorStop(0.3, '#060a18');
         grad.addColorStop(0.6, '#040812');
         grad.addColorStop(1,   '#020408');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
+        sctx.fillStyle = grad;
+        sctx.fillRect(0, 0, W, H);
 
-        // ── Milky Way core (bright band across the sky) ──
-        ctx.save();
-        ctx.translate(W * 0.45, H * 0.3);
-        ctx.rotate(-0.55);
+        // Milky Way
+        sctx.save();
+        sctx.translate(W * 0.45, H * 0.3);
+        sctx.rotate(-0.55);
         for (let layer = 0; layer < 3; layer++) {
-          const mwGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, W * (0.3 + layer * 0.1));
+          const mwGrad = sctx.createRadialGradient(0, 0, 0, 0, 0, W * (0.3 + layer * 0.1));
           const intensity = 0.07 - layer * 0.015;
-          const hue = [210, 230, 260][layer];
           mwGrad.addColorStop(0, `rgba(${140+layer*20},${150+layer*15},${200-layer*20},${intensity})`);
           mwGrad.addColorStop(0.4, `rgba(${100+layer*15},${120+layer*10},${180-layer*15},${intensity * 0.5})`);
           mwGrad.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = mwGrad;
-          ctx.fillRect(-W * 0.55, -H * (0.04 + layer * 0.02), W * 1.1, H * (0.08 + layer * 0.04));
+          sctx.fillStyle = mwGrad;
+          sctx.fillRect(-W * 0.55, -H * (0.04 + layer * 0.02), W * 1.1, H * (0.08 + layer * 0.04));
         }
-        ctx.restore();
+        sctx.restore();
 
-        // ── Nebulae (cosmic dust clouds) ──
+        // Nebulae
         const nebulae = [
           { x: 0.15, y: 0.2,  rx: 0.22, ry: 0.12, color: [100, 60, 160], a: 0.06 },
           { x: 0.8,  y: 0.12, rx: 0.16, ry: 0.10, color: [60, 100, 180], a: 0.05 },
@@ -74,111 +90,32 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
           { x: 0.25, y: 0.5,  rx: 0.10, ry: 0.14, color: [180, 100, 80], a: 0.03 },
         ];
         for (const n of nebulae) {
-          ctx.save();
-          ctx.translate(W * n.x, H * n.y);
-          ctx.scale(1, n.ry / n.rx);
-          const ng = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.min(W, H) * n.rx);
+          sctx.save();
+          sctx.translate(W * n.x, H * n.y);
+          sctx.scale(1, n.ry / n.rx);
+          const ng = sctx.createRadialGradient(0, 0, 0, 0, 0, Math.min(W, H) * n.rx);
           ng.addColorStop(0, `rgba(${n.color[0]},${n.color[1]},${n.color[2]},${n.a})`);
           ng.addColorStop(0.5, `rgba(${n.color[0]},${n.color[1]},${n.color[2]},${n.a * 0.4})`);
           ng.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = ng;
-          ctx.beginPath();
-          ctx.arc(0, 0, Math.min(W, H) * n.rx, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
+          sctx.fillStyle = ng;
+          sctx.beginPath(); sctx.arc(0, 0, Math.min(W, H) * n.rx, 0, Math.PI * 2); sctx.fill();
+          sctx.restore();
         }
 
-        // ── Dense star field (5 layers for depth) ──
-        srand(42);
-
-        // Layer 1: Ultra-faint dust stars (400)
+        // Dust stars (400) — static, too faint to need twinkle
         for (let i = 0; i < 400; i++) {
           const x = rand() * W, y = rand() * H;
-          const size = 0.2 + rand() * 0.5;
-          const alpha = 0.1 + rand() * 0.25;
-          ctx.fillStyle = `rgba(180,190,220,${alpha})`;
-          ctx.fillRect(x, y, size, size);
+          sctx.fillStyle = `rgba(180,190,220,${0.1 + rand() * 0.25})`;
+          sctx.fillRect(x, y, 0.2 + rand() * 0.5, 0.2 + rand() * 0.5);
         }
-
-        // Layer 2: Small stars (150)
+        // Small stars (150) — static
         for (let i = 0; i < 150; i++) {
           const x = rand() * W, y = rand() * H;
-          const size = 0.5 + rand() * 1;
-          const alpha = 0.2 + rand() * 0.4;
-          ctx.fillStyle = `rgba(200,210,240,${alpha})`;
-          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+          sctx.fillStyle = `rgba(200,210,240,${0.2 + rand() * 0.4})`;
+          sctx.beginPath(); sctx.arc(x, y, 0.5 + rand(), 0, Math.PI * 2); sctx.fill();
         }
 
-        // Layer 3: Medium stars (60)
-        for (let i = 0; i < 60; i++) {
-          const x = rand() * W, y = rand() * H;
-          const size = 1 + rand() * 1.2;
-          const alpha = 0.4 + rand() * 0.4;
-          // Color variety: blue-white, warm yellow, cool blue
-          const colors = ['200,215,255','255,245,220','180,200,255','255,220,180'];
-          const col = colors[Math.floor(rand() * colors.length)];
-          ctx.fillStyle = `rgba(${col},${alpha})`;
-          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-        }
-
-        // Layer 4: Bright stars with glow (25)
-        const starColors = [
-          [255,240,200], // warm white
-          [200,220,255], // cool blue
-          [255,200,150], // orange giant
-          [180,200,255], // hot blue
-          [255,255,230], // pure white
-        ];
-        for (let i = 0; i < 25; i++) {
-          const x = rand() * W, y = rand() * H;
-          const size = 1.2 + rand() * 2;
-          const col = starColors[Math.floor(rand() * starColors.length)];
-          // Outer glow
-          const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 5);
-          glow.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},0.25)`);
-          glow.addColorStop(0.3, `rgba(${col[0]},${col[1]},${col[2]},0.06)`);
-          glow.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = glow;
-          ctx.fillRect(x - size * 5, y - size * 5, size * 10, size * 10);
-          // Core
-          ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},0.9)`;
-          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-        }
-
-        // Layer 5: Prominent stars with cross spikes (8)
-        for (let i = 0; i < 8; i++) {
-          const x = W * 0.08 + rand() * W * 0.84;
-          const y = H * 0.05 + rand() * H * 0.7;
-          const size = 2 + rand() * 2.5;
-          const col = starColors[Math.floor(rand() * starColors.length)];
-          // Large glow
-          const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 8);
-          glow.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},0.2)`);
-          glow.addColorStop(0.2, `rgba(${col[0]},${col[1]},${col[2]},0.06)`);
-          glow.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = glow;
-          ctx.fillRect(x - size * 8, y - size * 8, size * 16, size * 16);
-          // Core
-          ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},0.95)`;
-          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-          // 4-point diffraction spikes
-          ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.35)`;
-          ctx.lineWidth = 0.8;
-          const spikeLen = size * 6;
-          ctx.beginPath();
-          ctx.moveTo(x - spikeLen, y); ctx.lineTo(x + spikeLen, y);
-          ctx.moveTo(x, y - spikeLen); ctx.lineTo(x, y + spikeLen);
-          ctx.stroke();
-          // Diagonal spikes (shorter)
-          ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.15)`;
-          const dSpike = spikeLen * 0.5;
-          ctx.beginPath();
-          ctx.moveTo(x - dSpike, y - dSpike); ctx.lineTo(x + dSpike, y + dSpike);
-          ctx.moveTo(x + dSpike, y - dSpike); ctx.lineTo(x - dSpike, y + dSpike);
-          ctx.stroke();
-        }
-
-        // ── Distant galaxy clusters (tiny fuzzy patches) ──
+        // Galaxy clusters
         const galaxies = [
           { x: 0.12, y: 0.35, r: 0.025, a: 0.08 },
           { x: 0.88, y: 0.55, r: 0.02, a: 0.06 },
@@ -187,53 +124,187 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
           { x: 0.75, y: 0.28, r: 0.022, a: 0.07 },
         ];
         for (const g of galaxies) {
-          const gg = ctx.createRadialGradient(W * g.x, H * g.y, 0, W * g.x, H * g.y, Math.min(W, H) * g.r);
+          const gg = sctx.createRadialGradient(W*g.x, H*g.y, 0, W*g.x, H*g.y, Math.min(W,H)*g.r);
           gg.addColorStop(0, `rgba(200,180,220,${g.a})`);
           gg.addColorStop(0.5, `rgba(160,150,200,${g.a * 0.3})`);
           gg.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = gg;
-          ctx.beginPath(); ctx.arc(W * g.x, H * g.y, Math.min(W, H) * g.r, 0, Math.PI * 2); ctx.fill();
+          sctx.fillStyle = gg;
+          sctx.beginPath(); sctx.arc(W*g.x, H*g.y, Math.min(W,H)*g.r, 0, Math.PI*2); sctx.fill();
         }
 
-        // ── Shooting stars (2-3 at a time) ──
-        srand(Math.floor(Date.now() / 20000));
-        const shootCount = 2 + Math.floor(rand() * 2);
-        for (let s = 0; s < shootCount; s++) {
-          if (rand() > 0.35) {
-            const sx = rand() * W;
-            const sy = rand() * H * 0.6;
-            const len = 30 + rand() * 80;
-            const angle = 0.2 + rand() * 0.6;
-            const ex = sx + Math.cos(angle) * len;
-            const ey = sy + Math.sin(angle) * len;
-            const sg = ctx.createLinearGradient(sx, sy, ex, ey);
-            sg.addColorStop(0, 'rgba(255,255,255,0.8)');
-            sg.addColorStop(0.2, 'rgba(200,220,255,0.4)');
-            sg.addColorStop(1, 'rgba(150,180,255,0)');
-            ctx.strokeStyle = sg;
-            ctx.lineWidth = 1 + rand() * 0.5;
+        // Vignette
+        const vGrad = sctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.25, W/2, H/2, Math.max(W,H)*0.75);
+        vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        vGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
+        sctx.fillStyle = vGrad;
+        sctx.fillRect(0, 0, W, H);
+
+        // ── Prepare twinkle star data (layers 3-5) ──
+        // Layer 3: Medium (60)
+        for (let i = 0; i < 60; i++) {
+          twinkleStars.push({
+            x: rand()*W, y: rand()*H,
+            size: 1 + rand()*1.2, baseAlpha: 0.4 + rand()*0.4,
+            speed: 0.8 + rand()*2, phase: rand()*Math.PI*2,
+            col: medColors[Math.floor(rand()*medColors.length)],
+          });
+        }
+        // Layer 4: Bright with glow (25)
+        for (let i = 0; i < 25; i++) {
+          const raw = starColors[Math.floor(rand()*starColors.length)];
+          twinkleStars.push({
+            x: rand()*W, y: rand()*H,
+            size: 1.2 + rand()*2, baseAlpha: 0.9,
+            speed: 0.4 + rand()*1.2, phase: rand()*Math.PI*2,
+            col: `${raw[0]},${raw[1]},${raw[2]}`, glow: true,
+          });
+        }
+        // Layer 5: Prominent with spikes (8)
+        for (let i = 0; i < 8; i++) {
+          const raw = starColors[Math.floor(rand()*starColors.length)];
+          twinkleStars.push({
+            x: W*0.08 + rand()*W*0.84, y: H*0.05 + rand()*H*0.7,
+            size: 2 + rand()*2.5, baseAlpha: 0.95,
+            speed: 0.2 + rand()*0.6, phase: rand()*Math.PI*2,
+            col: `${raw[0]},${raw[1]},${raw[2]}`, spikes: true,
+          });
+        }
+      }
+
+      function spawnShooter() {
+        const angle = 0.3 + Math.random() * 0.5;
+        const speed = 280 + Math.random() * 220;
+        return {
+          x: Math.random() * W * 0.7 + W * 0.1,
+          y: Math.random() * H * 0.35,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1, decay: 0.5 + Math.random() * 0.3,
+          len: 40 + Math.random() * 60,
+        };
+      }
+
+      function animate(time) {
+        const dt = Math.min((time - lastTime) / 1000, 0.1);
+        lastTime = time;
+        const t = time / 1000;
+
+        // Blit cached static background
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(staticCanvas, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // ── Twinkle stars ──
+        for (const s of twinkleStars) {
+          const flicker = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+          const alpha = s.baseAlpha * (0.3 + 0.7 * flicker);
+
+          if (s.spikes) {
+            // Glow
+            const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 8);
+            glow.addColorStop(0, `rgba(${s.col},${0.2 * flicker})`);
+            glow.addColorStop(0.2, `rgba(${s.col},${0.06 * flicker})`);
+            glow.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(s.x - s.size*8, s.y - s.size*8, s.size*16, s.size*16);
+            // Core
+            ctx.fillStyle = `rgba(${s.col},${alpha})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+            // Cross spikes
+            const spikeA = 0.35 * flicker;
+            ctx.strokeStyle = `rgba(${s.col},${spikeA})`;
+            ctx.lineWidth = 0.8;
+            const sLen = s.size * 6;
             ctx.beginPath();
-            ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+            ctx.moveTo(s.x - sLen, s.y); ctx.lineTo(s.x + sLen, s.y);
+            ctx.moveTo(s.x, s.y - sLen); ctx.lineTo(s.x, s.y + sLen);
             ctx.stroke();
+            // Diagonal spikes
+            ctx.strokeStyle = `rgba(${s.col},${spikeA * 0.4})`;
+            const dS = sLen * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(s.x - dS, s.y - dS); ctx.lineTo(s.x + dS, s.y + dS);
+            ctx.moveTo(s.x + dS, s.y - dS); ctx.lineTo(s.x - dS, s.y + dS);
+            ctx.stroke();
+          } else if (s.glow) {
+            const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size * 5);
+            glow.addColorStop(0, `rgba(${s.col},${0.25 * flicker})`);
+            glow.addColorStop(0.3, `rgba(${s.col},${0.06 * flicker})`);
+            glow.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(s.x - s.size*5, s.y - s.size*5, s.size*10, s.size*10);
+            ctx.fillStyle = `rgba(${s.col},${alpha})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+          } else {
+            ctx.fillStyle = `rgba(${s.col},${alpha})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
           }
         }
 
-        // ── Vignette ──
-        const vGrad = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.25, W/2, H/2, Math.max(W,H)*0.75);
-        vGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        vGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
-        ctx.fillStyle = vGrad;
-        ctx.fillRect(0, 0, W, H);
+        // ── Shooting stars ──
+        shootTimer -= dt;
+        if (shootTimer <= 0) {
+          shooters.push(spawnShooter());
+          shootTimer = 2.5 + Math.random() * 4;
+        }
+        for (let i = shooters.length - 1; i >= 0; i--) {
+          const s = shooters[i];
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.life -= s.decay * dt;
+          if (s.life <= 0) { shooters.splice(i, 1); continue; }
+          const mag = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+          const tailX = s.x - (s.vx / mag) * s.len;
+          const tailY = s.y - (s.vy / mag) * s.len;
+          const sg = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+          sg.addColorStop(0, `rgba(255,255,255,${s.life * 0.9})`);
+          sg.addColorStop(0.3, `rgba(200,220,255,${s.life * 0.4})`);
+          sg.addColorStop(1, 'rgba(150,180,255,0)');
+          ctx.strokeStyle = sg;
+          ctx.lineWidth = 1.5;
+          ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tailX, tailY); ctx.stroke();
+          // Head glow
+          ctx.fillStyle = `rgba(255,255,255,${s.life * 0.6})`;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 1.5, 0, Math.PI*2); ctx.fill();
+        }
+
+        animId = requestAnimationFrame(animate);
       }
 
-      draw();
-      window.addEventListener('resize', draw);
+      init();
+      lastTime = performance.now();
+      animId = requestAnimationFrame(animate);
+
+      window.addEventListener('resize', () => {
+        init();
+        shooters = [];
+      });
+
+      // ── Daily quote overlay ──
+      const quoteEl = document.createElement('div');
+      quoteEl.style.cssText = 'position:fixed;bottom:18%;left:0;right:0;text-align:center;z-index:1;pointer-events:none;opacity:0;transition:opacity 1.5s ease;';
+      quoteEl.innerHTML = '<p id="quote-2d" style="display:inline-block;max-width:70vw;padding:0 1em;font-size:clamp(14px,2.5vw,20px);color:rgba(220,215,205,0.75);font-family:serif;letter-spacing:0.08em;line-height:1.8;"></p>';
+      c.parentElement.insertBefore(quoteEl, c.nextSibling);
+
+      const langParam = location.pathname.startsWith('/en') ? 'en' : 'zh';
+      fetch('/quotes.json').then(r => r.json()).then(data => {
+        const list = data[langParam] || data['zh'] || [];
+        if (!list.length) return;
+        // Pick today's quote (deterministic by date)
+        const dayIndex = (new Date().getFullYear() * 366 + new Date().getMonth() * 31 + new Date().getDate()) % list.length;
+        const p = document.getElementById('quote-2d');
+        if (p) p.textContent = list[dayIndex];
+        quoteEl.style.opacity = '1';
+      }).catch(() => {});
 
       // Fade out when 3D is ready
       window._fade2d = function() {
+        if (animId) cancelAnimationFrame(animId);
         c.style.transition = 'opacity 1.5s ease';
         c.style.opacity = '0';
-        setTimeout(() => { c.style.display = 'none'; }, 1600);
+        quoteEl.style.opacity = '0';
+        setTimeout(() => { c.style.display = 'none'; quoteEl.remove(); }, 1600);
       };
     })();
 

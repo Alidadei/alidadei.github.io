@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-13
+> 生成时间：2026-06-13 (最后更新: commit aac2053)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -262,7 +262,7 @@ global.css
 └── prefers-reduced-motion 适配
 ```
 
-**字体**：Inter (自托管 woff2) + Noto Sans SC (系统回退) + PingFang SC + Microsoft YaHei
+**字体**：Inter (自托管 woff2) + Noto Sans SC (系统回退) + PingFang SC + Microsoft YaHei + Caveat (Google Fonts, 仅Logo)
 
 ---
 
@@ -301,8 +301,8 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 
 | 页面 | 交互 | 实现方式 |
 |------|------|----------|
-| 首页 | 天空动画 (实时太阳位置/日升日落) | React SunArc (client:idle) |
-| 首页 | 干支日期逐字打出 | React useState + setInterval |
+| 首页 | 天空动画 (实时太阳位置/日升日落) | React SunArc (client:idle)，太阳Y位置大幅提升避免遮挡3D物体 (移动端range 30%→2%, 桌面端range 40%→2%)，spacer无overflow:hidden防太阳截断；iframe架构导致太阳无法自然遮挡3D，因此通过抬高太阳位置解决 |
+| 首页 | 干支日期3列竖排 (年/月/日, 天干+地支+标签, 五行配色) | React useState + flex布局，移动端 gap-0.5/left-1，桌面端 gap-3/left-4 (commit 288e0d9) |
 | 首页 | 每日一句轮换 | Vanilla JS (fetch `/quotes.json` + 按日期取模) |
 | 首页 | 3D背景场景 (warm-storybook风格) | Three.js iframe (桌面端含Bloom / 移动端跳过Bloom) |
 | 博客列表 | 搜索过滤 | Vanilla JS (标题匹配) |
@@ -324,6 +324,7 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 ```
 alidadei.github.io/
 ├── .github/workflows/deploy.yml      # CI/CD
+├── .githooks/pre-commit               # Git pre-commit hook (自动更新3D缓存版本号)
 ├── astro.config.mjs                   # Astro 配置
 ├── package.json                       # 依赖
 ├── tsconfig.json                      # TS 配置
@@ -432,7 +433,7 @@ alidadei.github.io/
 │  首页     │  关于我    │  博客     │  项目     │ English  │
 │  /zh/    │/zh/about/│ /zh/blog/│/zh/proj/ │ (无边框) │
 └──────────┴──────────┴──────────┴──────────┴─────────┘
-Harry Yu (logo, 左上)                                   右移2px对齐
+Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 ```
 
 **移动端行为：** 汉堡菜单按钮 → 展开/收起动画 (max-height + opacity transition) → 点击导航链接自动关闭菜单 → body 锁定滚动
@@ -446,8 +447,11 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  Header (透明, 导航右对齐, z-index: 50)               │
 ├─────────────────────────────────────────────────────┤
 │  SunArc 天空动画 (渐变背景, 含干支+问候语)              │
+│  注: 太阳Y位置抬高至3D物体之上，因iframe架构无法实现自然遮挡 │
 │  ┌──────────────────────────────┐                    │
-│  │ 丙午年 甲午月 丁巳日          │                    │
+│  │ 丙午年   甲午月   丁巳日      │ ← 3列竖排干支       │
+│  │  丙       甲       丁        │   (天干+地支+标签)    │
+│  │  午        午       巳       │   五行配色着色        │
 │  │ 下午好                       │                    │
 │  └──────────────────────────────┘                    │
 ├─────────────────────────────────────────────────────┤
@@ -461,11 +465,12 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 │  3D背景 iframe (fixed, 全屏, z-index: 0)              │
 │  ├─ warm-storybook风格 Three.js场景                    │
 │  ├─ 农田星球地面 (绿色+PLANET 07土黄色块)               │
-│  ├─ 云朵色头机器人 (白眼, 扁平眼球, 棕色眉毛, 麦垛)       │
+│  ├─ 云朵色头机器人 (白眼, 扁平眼球, 肉色眼皮0xf5c6a8, 棕色眉毛, 麦垛) │
 │  ├─ 每日一句打字效果 (book旁, 银白色)                    │
 │  └─ 时间联动亮度 (白天明亮/夜晚暗淡)                     │
 │  注: iframe src 带版本号 ?v=YYYYMMDD 强制长期缓存         │
 │  注: 移动端也加载3D场景(跳过Bloom, 额外环境光补偿, 描边减弱)│
+│  注: 移动端ORBIT_RADIUS=480(桌面端350)，使行星在手机上更小  │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
 │  SunArc 太阳动画 + 最新文章                            │
@@ -500,7 +505,8 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 3D 背景 | 移动端加载 Three.js 但跳过 Bloom 后处理，额外环境光+半球光补偿，描边强度减半 |
 | 3D 懒加载 | 首页 iframe 使用 `requestIdleCallback` 加载 3D，浏览器空闲即开始，先渲染主页面内容 |
 | 2D 即时背景 | 内联 Canvas 2D 星空随 HTML 同时到达，零依赖 (~3KB)，3D加载完后淡出过渡 |
-| 3D 长期缓存 | iframe src 加版本号参数 `?v=YYYYMMDD`，浏览器永久缓存；`.githooks/pre-commit` 自动更新版本号 |
+| 3D 长期缓存 | iframe src 加版本号参数 `?v=YYYYMMDD`，浏览器永久缓存；`.githooks/pre-commit` 自动更新版本号 (pre-commit hook) |
+| Git 忽略 | `.wrangler/` 目录已加入 `.gitignore` (Cloudflare Worker 本地开发缓存) |
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
@@ -512,24 +518,33 @@ Harry Yu (logo, 左上)                                   右移2px对齐
 | 每日一句字体 | 霞鹜文楷 (LXGW WenKai Lite) Web 字体，jsDelivr CDN 加载，回退系统楷体 |
 | 博客正文行距 | PostLayout header `mb-4` 紧凑间距（原 `mb-10` 太宽） |
 | 首页移动端间距 | spacer `h-64 md:h-72` + section `pt-12`，避免"最新文章"遮挡每日一句 |
+| 移动端干支布局 | commit 288e0d9: 干支列间距 gap-0.5→sm:gap-3，定位 left-1→sm:left-4，spacer去除overflow:hidden防太阳截断 |
+| 太阳遮挡修复 | commit aac2053: SunArc太阳Y位置提升 (移动端range 30%→2%, 桌面端range 40%→2%) 避免太阳被3D物体遮挡；iframe架构无法实现自然遮挡，改用抬高太阳解决 |
+| 移动端干支容器 | commit aac2053: 干支容器移动端top改为 top-[66px] (紧贴Header下方) |
+| 移动端3D行星缩放 | commit aac2053: 3d-background.html 移动端ORBIT_RADIUS从350增至480，使行星在手机屏幕上更小 |
 
 ---
 
 ## 15. 组件详情
 
 ### Header.astro — 导航栏
-- 桌面端：水平导航 + 语言切换 (无边框胶囊按钮)
+- Logo "Harry Yu" 使用 Caveat 手写字体 (Google Fonts)，棕色 (#8d6e63)，2rem 大小
+- 桌面端：水平导航 + 语言切换 (无边框胶囊按钮)，导航字体 text-base (16px)
 - 移动端：汉堡按钮 → 动画展开菜单 (max-height 0→300px + opacity 0→1, 300ms ease-in-out)
 - 点击导航链接自动关闭菜单
 - 菜单打开时锁定 body 滚动 (`overflow: hidden`)
 - SVG 图标：汉堡 ↔ X 切换
 
 ### SunArc.tsx — 天空动画
-- 基于当前时间计算太阳位置 (日升 5:30 / 日落 18:30)
+- 基于当前时间计算太阳位置 (日升 5:30 / 日落 18:30)，太阳Y位置大幅提升避免遮挡3D物体 (移动端range 30%→2%, 桌面端range 40%→2%) (commit aac2053)
+- 注: 因iframe架构无法实现太阳对3D物体的自然遮挡，故采用抬高太阳位置的方案
 - 动态天空渐变 (白天/黄昏/黎明/夜晚)
 - 太阳盘 + 光晕、月牙、闪烁星星
-- 农历干支日期 + 五行 (wuxing) 配色 + 打字机动画
+- 农历干支日期：3竖列布局 (年/月/日)，每列天干+地支+标签垂直堆叠，五行 (wuxing) 配色
+- LunarDate 移动端列间距 `gap-0.5 sm:gap-3`，定位 `left-1 sm:left-4` (commit 288e0d9 压缩移动端间距)
+- 干支容器移动端 `top-[66px]` (紧贴Header下方，commit aac2053)
 - 时段问候语
+- spacer 容器不含 overflow:hidden，防止移动端太阳被截断 (commit 288e0d9 修复)
 
 ### AwardWall.tsx — 照片墙彩蛋
 - 触发方式：奖杯图标按钮

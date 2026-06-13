@@ -225,6 +225,29 @@ export default function SunArc({ lang }: SunArcProps) {
         </div>
       )}
 
+      {/* Shooting stars at night */}
+      {(isNight || (isDusk && brightness < 0.1)) && (
+        <div className="absolute inset-0" style={{ opacity: isNight ? 0.8 : 0.3, overflow: 'hidden' }}>
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${25 + i * 25}%`,
+                top: `${5 + i * 12}%`,
+                width: '2px',
+                height: '2px',
+                background: '#fff',
+                borderRadius: '50%',
+                boxShadow: '0 0 4px 1px rgba(255,255,255,0.6), -8px 0 6px rgba(255,255,255,0.3), -20px 0 8px rgba(255,255,255,0.15)',
+                animation: `shootingStar ${4 + i * 2}s ease-in infinite`,
+                animationDelay: `${i * 5 + 3}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Moon */}
       {(isNight || isDusk) && (
         <div
@@ -287,6 +310,13 @@ export default function SunArc({ lang }: SunArcProps) {
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 0.9; }
+        }
+        @keyframes shootingStar {
+          0% { transform: translate(0, 0) rotate(-35deg); opacity: 0; }
+          2% { opacity: 1; }
+          15% { opacity: 1; }
+          30% { transform: translate(-160px, 90px) rotate(-35deg); opacity: 0; }
+          100% { transform: translate(-160px, 90px) rotate(-35deg); opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
