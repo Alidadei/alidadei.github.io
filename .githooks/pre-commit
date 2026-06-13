@@ -10,7 +10,7 @@ if echo "$STAGED" | grep -qE "^public/3d-background\.html|^public/vendor/three/"
   TARGET="src/pages/[lang]/index.astro"
 
   if [ -f "$TARGET" ]; then
-    sed -i "s|/3d-background\.html?v=[^\"]*|/3d-background.html?v=${VERSION}|" "$TARGET"
+    sed -i "s|/3d-background\.html?v=[^'\"]*|/3d-background.html?v=${VERSION}|g" "$TARGET"
     git add "$TARGET"
     echo "✓ 3D cache version auto-updated to v=${VERSION}"
   fi
