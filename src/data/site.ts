@@ -10,11 +10,11 @@ export const siteConfig = {
     name: 'Harry Yu',
     avatar: '/images/my_profile.png',
     bio: {
-      zh: '复旦大学生物医学工程（人工智能方向）博士研究生',
-      en: 'Ph.D. student in Biomedical Engineering (AI) at Fudan University',
+      zh: 'FDU PHD',
+      en: 'Ph.D. @ FDU',
     },
     location: 'Shanghai, China',
-    email: 'yuhl@stu.ouc.edu.cn',
+    email: '13427917163@163.com',
     github: 'Alidadei',
     researchInterests: [
       'Large Language Models',

@@ -209,7 +209,7 @@ const { lang } = Astro.params as { lang: Lang };
         </svg>
         <div>
           <p class="text-sm text-text-muted">Email</p>
-          <a href="mailto:13427917163@163.com" class="text-accent hover:text-accent-light">13427917163@163.com</a>
+          <a href={`mailto:${siteConfig.author.email}`} class="text-accent hover:text-accent-light">{siteConfig.author.email}</a>
         </div>
       </div>
       <div class="flex items-center gap-3 p-4 rounded-lg border border-border">

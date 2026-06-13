@@ -1,6 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
 import { type Lang, siteConfig } from '../../data/site';
+import { getCollection, render } from 'astro:content';
 import AwardWall from '../../components/ui/AwardWall.tsx';
 
 export function getStaticPaths() {
@@ -9,276 +10,217 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Lang };
 
-// News timeline data
-const newsItems = lang === 'zh' ? [
-  { date: '2026.04', text: '启动医疗大模型多模态融合与可解释性研究课题' },
-  { date: '2026.01 - 2026.04', text: '华为多媒体智能协作实验室实习，参与 Multi-Agent 会议助手研发' },
-  { date: '2025.09', text: '入职复旦大学，攻读人工智能博士学位' },
-  { date: '2024.09', text: '复旦大学直博录取' },
-  { date: '2023.08 - 2024.08', text: '"智能自主系统"课题组，参与 LLM+RL 机器人学习研究' },
-] : [
-  { date: '2026.04', text: 'Launched medical LLM multimodal fusion & interpretability research' },
-  { date: '2026.01 - 2026.04', text: 'Interned at Huawei Multimedia Intelligent Collaboration Lab, built Multi-Agent meeting assistant' },
-  { date: '2025.09', text: 'Started Ph.D. in Biomedical Engineering (AI) at Fudan University' },
-  { date: '2024.09', text: 'Admitted to Fudan University Ph.D. program' },
-  { date: '2023.08 - 2024.08', text: 'Joined "Intelligent Autonomous Systems" group, LLM + RL robotics research' },
-];
+// 内容来自 src/content/about/{zh,en}.md —— 只改 .md 即可更新页面
+const entries = await getCollection('about', ({ data }) => data.lang === lang);
+const entry = entries[0];
+const { Content } = await render(entry);
+const d = entry.data;
 ---
 
 <PageLayout title={lang === 'zh' ? '关于我' : 'About Me'}>
-  <h1 class="text-2xl md:text-3xl font-bold text-primary mb-10">
-    {lang === 'zh' ? '关于我' : 'About Me'}
-  </h1>
+  <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
 
-  <!-- ============================================================
-       📝 自我介绍区 — 请在此处填写你的个人介绍内容
-       支持中英双语，每段之间用空行分隔
-       ============================================================ -->
-  <section class="mb-12 prose max-w-none">
-    {lang === 'zh' ? (
-      <div class="space-y-4 text-text-secondary leading-relaxed">
-        <!-- ✏️ 中文介绍 — 替换下方占位内容 -->
-        <p class="text-text-muted italic">
-          [在这里写一段简短的自我介绍，比如：你是谁、在做什么研究、对什么感兴趣。]
-        </p>
-        <p class="text-text-muted italic">
-          [第二段可以写个人兴趣、性格特点、或者你想让招聘方了解的其他方面。]
-        </p>
-      </div>
-    ) : (
-      <div class="space-y-4 text-text-secondary leading-relaxed">
-        <!-- ✏️ English intro — replace the placeholders below -->
-        <p class="text-text-muted italic">
-          [Write a brief self-introduction here: who you are, what you research, what interests you.]
-        </p>
-        <p class="text-text-muted italic">
-          [Second paragraph: personal interests, personality, or anything else you want potential employers to know.]
-        </p>
-      </div>
-    )}
-  </section>
-
-  <!-- News -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '近期动态' : 'News'}
-    </h2>
-    <div class="space-y-3">
-      {newsItems.map((item) => (
-        <div class="flex gap-3 sm:gap-4 items-baseline py-2 flex-wrap">
-          <span class="shrink-0 text-sm text-text-muted font-mono w-24 sm:w-32">{item.date}</span>
-          <span class="text-text-secondary">{item.text}</span>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <!-- Education -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '教育经历' : 'Education'}
-    </h2>
-    <div class="space-y-6">
-      <div class="border-l-4 border-accent pl-5">
-        <div class="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 class="font-bold text-lg text-primary">
-            {lang === 'zh' ? '复旦大学' : 'Fudan University'}
-          </h3>
-          <span class="text-sm text-text-muted">2025.09 - 2030.06</span>
-        </div>
-        <p class="text-text-secondary mt-1">
-          {lang === 'zh'
-            ? '人工智能博士研究生'
-            : 'Ph.D. in Biomedical Engineering (AI)'}
-        </p>
-      </div>
-      <div class="border-l-4 border-accent pl-5">
-        <div class="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 class="font-bold text-lg text-primary">
-            {lang === 'zh' ? '中国海洋大学（985）' : 'Ocean University of China (985)'}
-          </h3>
-          <span class="text-sm text-text-muted">2021.08 - 2025.07</span>
-        </div>
-        <p class="text-text-secondary mt-1">
-          {lang === 'zh'
-            ? '电子信息工程 · 专业第4名保研'
-            : 'Electronic Information Engineering (Top 4, recommended for Ph.D.)'}
-        </p>
+    <!-- 📱 手机端:小提琴 + 联系方式 小卡片(桌面隐藏) -->
+    <div class="lg:hidden flex items-center gap-4 p-4 rounded-xl bg-bg-secondary border border-border">
+      <div class="w-14 h-14 rounded-full bg-bg-tertiary flex items-center justify-center text-3xl shrink-0">🎻</div>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-text-secondary min-w-0">
+        <a href={`mailto:${siteConfig.author.email}`} class="flex items-center gap-1.5 hover:text-accent min-w-0">
+          <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <span class="truncate">{siteConfig.author.email}</span>
+        </a>
+        <a href={`https://github.com/${siteConfig.author.github}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-accent">
+          <svg class="w-4 h-4 text-accent shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          <span>@{siteConfig.author.github}</span>
+        </a>
+        <span class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>{siteConfig.author.location}</span>
+        </span>
       </div>
     </div>
-  </section>
 
-  <!-- Internship -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '实习经历' : 'Internship'}
-    </h2>
-    <div class="border-l-4 border-accent pl-5">
-      <div class="flex items-baseline justify-between flex-wrap gap-2">
-        <h3 class="font-bold text-lg text-primary">
-          {lang === 'zh' ? '华为 · 多媒体智能协作实验室' : 'Huawei · Multimedia Intelligent Collaboration Lab'}
-        </h3>
-        <span class="text-sm text-text-muted">2026.01 - 2026.04</span>
-      </div>
-      <p class="text-text-secondary mt-2">
-        {lang === 'zh'
-          ? '参与 Multi-Agent 协作会议助手项目。基于 LangGraph 编排执行流，落地 A2A 协议实现跨 Agent 动态服务注册发现与解耦调用；实现语义路由优化与防误触发策略；搭建基于 LLM-as-a-Judge 的自动化评测流水线。'
-          : 'Worked on a Multi-Agent collaborative meeting assistant. Built with LangGraph orchestration, implemented A2A protocol for cross-agent dynamic service discovery and decoupled invocation; optimized semantic routing to prevent false triggers; built LLM-as-a-Judge automated evaluation pipeline.'}
-      </p>
-    </div>
-  </section>
+    <!-- ═══ 左栏:头像 + 联系方式(桌面端 sticky,手机隐藏) ═══ -->
+    <aside class="hidden lg:block w-60 lg:shrink-0">
+      <div class="lg:sticky lg:top-24 space-y-5">
+        <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full mx-auto lg:mx-0 ring-4 ring-bg-secondary shadow-sm flex items-center justify-center bg-bg-tertiary text-6xl">🎻</div>
+        <div class="text-center lg:text-left">
+          <p class="font-bold text-lg text-primary">{siteConfig.author.name}</p>
+          <p class="text-sm text-text-muted leading-snug mt-0.5">{siteConfig.author.bio[lang]}</p>
+        </div>
 
-  <!-- Research / Projects -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '研究 & 项目' : 'Research & Projects'}
-    </h2>
-    <div class="space-y-8">
-      <div class="border-l-4 border-accent pl-5">
-        <div class="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 class="font-bold text-lg text-primary">
-            {lang === 'zh' ? '医疗大模型多模态信息融合与可解释性研究' : 'Medical LLM Multimodal Fusion & Interpretability Research'}
-          </h3>
-          <span class="text-sm text-text-muted">{lang === 'zh' ? '课题负责人' : 'Principal Investigator'}</span>
+        <div class="pt-3 border-t border-border">
+          <h2 class="text-xs font-semibold text-text-muted uppercase tracking-widest mb-3">
+            {lang === 'zh' ? '联系方式' : 'Contact'}
+          </h2>
+          <ul class="space-y-2.5 text-sm">
+            <li>
+              <a href={`mailto:${siteConfig.author.email}`} class="flex items-center gap-2.5 text-text-secondary hover:text-accent transition-colors">
+                <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span class="truncate">{siteConfig.author.email}</span>
+              </a>
+            </li>
+            <li>
+              <a href={`https://github.com/${siteConfig.author.github}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2.5 text-text-secondary hover:text-accent transition-colors">
+                <svg class="w-4 h-4 text-accent shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                <span>@{siteConfig.author.github}</span>
+              </a>
+            </li>
+            <li class="flex items-center gap-2.5 text-text-secondary">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>{siteConfig.author.location}</span>
+            </li>
+          </ul>
         </div>
-        <p class="text-sm text-text-muted mb-2">2025.09 - {lang === 'zh' ? '至今' : 'Present'}</p>
-        <p class="text-text-secondary">
-          {lang === 'zh'
-            ? '针对特殊罕见病用药疗效难以预测的现象，构建基于医疗大模型和多模态信息融合方法的可解释性算法架构。基于 Agent Workflow 进行医学数据清洗，使用预训练医学大模型提取各模态特征，构建中期融合架构实现跨模态信息互补。'
-            : 'Building an interpretable algorithm architecture based on medical LLMs and multimodal fusion for predicting rare disease treatment efficacy. Using Agent Workflow for medical data preprocessing, pretrained medical LLMs for feature extraction, and mid-fusion architecture for cross-modal information complementarity.'}
-        </p>
       </div>
-      <div class="border-l-4 border-accent pl-5">
-        <div class="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 class="font-bold text-lg text-primary">
-            {lang === 'zh' ? '"智能自主系统"课题组' : '"Intelligent Autonomous Systems" Research Group'}
-          </h3>
-          <span class="text-sm text-text-muted">{lang === 'zh' ? '核心成员' : 'Core Member'}</span>
-        </div>
-        <p class="text-sm text-text-muted mb-2">2023.08 - 2024.08</p>
-        <p class="text-text-secondary">
-          {lang === 'zh'
-            ? '参与"结合大语言模型和强化学习的机器人学习方法"文献调研，初步形成综述文章。同时参与"基于大语言模型的社交机器人Haru的自主行为学习方法"项目，完成ROS环境搭建和Gazebo仿真实验。'
-            : 'Engaged in literature research on "Robot Learning Methods Combining LLMs and RL". Participated in the "Autonomous Behavioral Learning for Social Robot Haru" project, setting up ROS environment and conducting Gazebo simulations.'}
-        </p>
-      </div>
-      <div class="border-l-4 border-accent pl-5">
-        <div class="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 class="font-bold text-lg text-primary">
-            {lang === 'zh' ? '校级大创：基于 STM32 的智能桌面系统' : 'Innovation Project: STM32 Intelligent Desktop System'}
-          </h3>
-          <span class="text-sm text-text-muted">{lang === 'zh' ? '负责人' : 'Project Leader'}</span>
-        </div>
-        <p class="text-sm text-text-muted mb-2">2022.11 - 2023.11</p>
-        <p class="text-text-secondary">
-          {lang === 'zh'
-            ? '主持校级大创项目，设计多功能人机交互书桌系统。用Keil C编写控制框架，利用哈希思想和函数指针优化语音控制轮询过程。'
-            : 'Led the project to design a multifunctional human-computer interaction desk system. Used Keil C for the control framework, optimizing voice control polling with hash thinking and function pointers.'}
-        </p>
-      </div>
-    </div>
-  </section>
+    </aside>
 
-  <!-- Awards -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '获奖荣誉' : 'Awards & Honors'}
-    </h2>
-    <div class="space-y-3">
-      {(lang === 'zh' ? [
-        { title: '复旦大学相辉博士奖学金', desc: '复旦大学' },
-        { title: '一等奖学金', desc: '中国海洋大学' },
-        { title: '优秀学生称号', desc: '中国海洋大学' },
-        { title: '华为HSD证书', desc: '' },
-      ] : [
-        { title: 'Fudan University Xianghui Doctoral Scholarship', desc: 'Fudan University' },
-        { title: 'First-Class Scholarship', desc: 'Ocean University of China' },
-        { title: 'Outstanding Student', desc: 'Ocean University of China' },
-        { title: 'Huawei HSD Certificate', desc: '' },
-      ]).map((award) => (
-        <div class="flex items-center gap-3 p-3 rounded-lg border border-border">
-          <span class="text-lg">🎖</span>
-          <div>
-            <p class="font-medium text-primary">{award.title}</p>
-            {award.desc && <p class="text-sm text-text-muted">{award.desc}</p>}
+    <!-- ═══ 右栏:主要内容 ═══ -->
+    <div class="flex-1 min-w-0 max-w-3xl">
+      <h1 class="text-2xl md:text-3xl font-bold text-primary mb-10">
+        {lang === 'zh' ? '关于我' : 'About Me'}
+      </h1>
+
+      <!-- 自我介绍:渲染 Markdown 正文,复用 .prose 排版样式 -->
+      <section class="mb-12 prose max-w-none text-lg sm:text-xl">
+        <Content />
+      </section>
+
+      <!-- News -->
+      {d.news.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '近期动态' : 'News'}
+          </h2>
+          <div class="space-y-3">
+            {d.news.map((item) => (
+              <div class="flex gap-3 sm:gap-4 items-baseline py-2 flex-wrap">
+                <span class="shrink-0 text-sm text-text-muted font-mono w-36 sm:w-44 whitespace-nowrap text-left">{item.date}</span>
+                <span class="text-text-secondary">{item.text}</span>
+              </div>
+            ))}
           </div>
-        </div>
-      ))}
-    </div>
-  </section>
+        </section>
+      )}
 
-  <!-- Skills -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '专业技能' : 'Skills'}
-    </h2>
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="p-4 rounded-lg bg-bg-secondary">
-        <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? 'AI-Native 开发' : 'AI-Native Dev'}</h3>
-        <div class="flex flex-wrap gap-2">
-          {['AI Coding', 'CC/Codex', 'LangGraph', 'Agent', 'A2A'].map((s) => (
-            <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
-          ))}
-        </div>
-      </div>
-      <div class="p-4 rounded-lg bg-bg-secondary">
-        <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '深度学习' : 'Deep Learning'}</h3>
-        <div class="flex flex-wrap gap-2">
-          {['PyTorch', 'TensorFlow', 'Python', 'LaTeX', 'Git'].map((s) => (
-            <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
-          ))}
-        </div>
-      </div>
-      <div class="p-4 rounded-lg bg-bg-secondary">
-        <h3 class="font-semibold text-primary mb-3">{lang === 'zh' ? '通用技能' : 'General'}</h3>
-        <div class="flex flex-wrap gap-2">
-          {['C/C++', 'MATLAB', 'CET-6: 622', 'CET-4: 657', lang === 'zh' ? '普通话二甲' : 'Putonghua 2A'].map((s) => (
-            <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  </section>
+      <!-- Education -->
+      {d.education.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '教育经历' : 'Education'}
+          </h2>
+          <div class="space-y-6">
+            {d.education.map((e) => (
+              <div class="border-l-4 border-accent pl-5">
+                <div class="flex items-baseline justify-between flex-wrap gap-2">
+                  <h3 class="font-bold text-lg text-primary">{e.school}</h3>
+                  <span class="text-sm text-text-muted whitespace-nowrap">{e.period}</span>
+                </div>
+                <p class="text-text-secondary mt-1">{e.degree}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-  <!-- Contact -->
-  <section class="mb-12">
-    <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
-      {lang === 'zh' ? '联系方式' : 'Contact'}
-    </h2>
-    <div class="space-y-3">
-      <div class="flex items-center gap-3 p-4 rounded-lg border border-border">
-        <svg class="w-5 h-5 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        <div>
-          <p class="text-sm text-text-muted">Email</p>
-          <a href="mailto:13427917163@163.com" class="text-accent hover:text-accent-light">13427917163@163.com</a>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 p-4 rounded-lg border border-border">
-        <svg class="w-5 h-5 text-accent shrink-0" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-        </svg>
-        <div>
-          <p class="text-sm text-text-muted">GitHub</p>
-          <a href={`https://github.com/${siteConfig.author.github}`} target="_blank" rel="noopener noreferrer" class="text-accent hover:text-accent-light">
-            @{siteConfig.author.github}
-          </a>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 p-4 rounded-lg border border-border">
-        <svg class="w-5 h-5 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <div>
-          <p class="text-sm text-text-muted">{lang === 'zh' ? '位置' : 'Location'}</p>
-          <p class="text-text-secondary">{siteConfig.author.location}</p>
-        </div>
-      </div>
-    </div>
-  </section>
+      <!-- Internship -->
+      {d.internship.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '实习经历' : 'Internship'}
+          </h2>
+          <div class="space-y-6">
+            {d.internship.map((i) => (
+              <div class="border-l-4 border-accent pl-5">
+                <div class="flex items-baseline justify-between flex-wrap gap-2">
+                  <h3 class="font-bold text-lg text-primary">{i.company}</h3>
+                  <span class="text-sm text-text-muted whitespace-nowrap">{i.period}</span>
+                </div>
+                <p class="text-text-secondary mt-2">{i.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-  <!-- Award wall easter egg -->
-  <AwardWall client:load lang={lang} />
+      <!-- Research / Projects -->
+      {d.research.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '研究 & 项目' : 'Research & Projects'}
+          </h2>
+          <div class="space-y-8">
+            {d.research.map((r) => (
+              <div class="border-l-4 border-accent pl-5">
+                <div class="flex items-baseline justify-between flex-wrap gap-2">
+                  <h3 class="font-bold text-lg text-primary">{r.title}</h3>
+                  {r.role && <span class="text-sm text-text-muted whitespace-nowrap">{r.role}</span>}
+                </div>
+                {r.period && <p class="text-sm text-text-muted mb-2">{r.period}</p>}
+                <p class="text-text-secondary">{r.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- Awards -->
+      {d.awards.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '获奖荣誉' : 'Awards & Honors'}
+          </h2>
+          <div class="space-y-3">
+            {d.awards.map((award) => (
+              <div class="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <span class="text-lg">🎖</span>
+                <div>
+                  <p class="font-medium text-primary">{award.title}</p>
+                  {award.desc && <p class="text-sm text-text-muted">{award.desc}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- Skills -->
+      {d.skills.length > 0 && (
+        <section class="mb-12">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+            {lang === 'zh' ? '专业技能' : 'Skills'}
+          </h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            {d.skills.map((group) => (
+              <div class="p-4 rounded-lg bg-bg-secondary">
+                <h3 class="font-semibold text-primary mb-3">{group.name}</h3>
+                <div class="flex flex-wrap gap-2">
+                  {group.items.map((s) => (
+                    <span class="px-2 py-1 text-sm rounded bg-bg-tertiary text-text-secondary">{s}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- Award wall easter egg -->
+      <AwardWall client:load lang={lang} />
+    </div>
+
+  </div>
 </PageLayout>

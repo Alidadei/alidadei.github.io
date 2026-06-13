@@ -17,21 +17,6 @@ const posts = defineCollection({
   }),
 });
 
-const projects = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
-  schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    date: z.date(),
-    tags: z.array(z.string()).default([]),
-    github: z.string().optional(),
-    demo: z.string().optional(),
-    image: z.string().optional(),
-    featured: z.boolean().default(false),
-    lang: z.enum(['zh', 'en']).default('zh'),
-  }),
-});
-
 const portfolio = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/portfolio' }),
   schema: z.object({
@@ -43,8 +28,43 @@ const portfolio = defineCollection({
   }),
 });
 
+const about = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/about' }),
+  schema: z.object({
+    lang: z.enum(['zh', 'en']).default('zh'),
+    news: z.array(z.object({
+      date: z.string(),
+      text: z.string(),
+    })).default([]),
+    education: z.array(z.object({
+      school: z.string(),
+      period: z.string(),
+      degree: z.string(),
+    })).default([]),
+    internship: z.array(z.object({
+      company: z.string(),
+      period: z.string(),
+      description: z.string(),
+    })).default([]),
+    research: z.array(z.object({
+      title: z.string(),
+      role: z.string().optional(),
+      period: z.string().optional(),
+      description: z.string(),
+    })).default([]),
+    awards: z.array(z.object({
+      title: z.string(),
+      desc: z.string().optional(),
+    })).default([]),
+    skills: z.array(z.object({
+      name: z.string(),
+      items: z.array(z.string()),
+    })).default([]),
+  }),
+});
+
 export const collections = {
   posts,
-  projects,
   portfolio,
+  about,
 };
