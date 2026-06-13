@@ -1,0 +1,17 @@
+#!/bin/bash
+# Auto-update 3D background cache version when 3D files change
+# When 3d-background.html or vendor/three/ is modified, this hook
+# automatically updates the ?v= parameter in index.astro and stages it.
+
+STAGED=$(git diff --cached --name-only)
+
+if echo "$STAGED" | grep -qE "^public/3d-background\.html|^public/vendor/three/"; then
+  VERSION=$(date +%Y%m%d%H%M)
+  TARGET="src/pages/[lang]/index.astro"
+
+  if [ -f "$TARGET" ]; then
+    sed -i "s|/3d-background\.html?v=[^\"]*|/3d-background.html?v=${VERSION}|" "$TARGET"
+    git add "$TARGET"
+    echo "✓ 3D cache version auto-updated to v=${VERSION}"
+  fi
+fi

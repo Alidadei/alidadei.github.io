@@ -159,8 +159,11 @@ export default function SunArc({ lang }: SunArcProps) {
     return `linear-gradient(180deg, rgba(10,10,35,0.35) 0%, rgba(15,15,45,0.2) 40%, rgba(20,20,50,0.08) 70%, rgba(250,246,240,0) 100%)`;
   })();
 
-  // Sun Y position — larger canvas means sun can go higher
-  const sunY = 65 - altitude * 55; // range: 65% (horizon) → 10% (noon peak)
+  // Sun Y position — higher on mobile for better visibility
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const sunY = isMobile
+    ? 62 - altitude * 52   // range: 62% (horizon) → 10% (noon peak)
+    : 65 - altitude * 53;  // range: 65% (horizon) → 12% (noon peak)
 
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
