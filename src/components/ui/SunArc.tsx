@@ -80,7 +80,7 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
 
   return (
     <div className="py-3 select-none" style={{ minHeight: '28px' }}>
-      <div className="flex items-start gap-3" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="flex items-start gap-0.5 sm:gap-3" style={{ color: 'var(--color-text-muted)' }}>
         {pillars.map((p, idx) => {
           const text = colChars[idx];
           const isTyping = !done && text.length > 0 && text.length < 3;
@@ -199,7 +199,7 @@ export default function SunArc({ lang }: SunArcProps) {
       />
 
       {/* Content spacer */}
-      <div style={{ height: 'clamp(120px, 25vw, 200px)', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', overflow: 'hidden' }} className="relative">
+      <div style={{ height: 'clamp(120px, 25vw, 200px)', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} className="relative">
 
       {/* Stars at night */}
       {(isNight || (isDusk && brightness < 0.1) || (isDawn && brightness < 0.1)) && (
@@ -272,7 +272,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Top left: lunar date + greeting */}
-      <div className="fixed top-20 left-4 pointer-events-none" style={{ zIndex: 10 }}>
+      <div className="fixed top-20 left-1 sm:left-4 pointer-events-none" style={{ zIndex: 10 }}>
         <LunarDate lang={lang} />
         <p className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.7 }}>
           {greeting}
