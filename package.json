@@ -6,8 +6,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "cp src/data/quotes.json public/quotes.json && astro build",
+    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && astro dev",
+    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && cp src/data/quotes.json public/quotes.json && astro build",
+    "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -25,10 +26,12 @@
     "react-dom": "^19.2.4",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@fontsource/inter": "^5.2.8",
-    "@fontsource/noto-sans-sc": "^5.2.9"
+    "@fontsource/noto-sans-sc": "^5.2.9",
+    "esbuild": "^0.28.1"
   }
 }

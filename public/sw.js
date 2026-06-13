@@ -5,7 +5,7 @@
 //   - 其他静态 (JS/CSS/图片/字体): Stale While Revalidate
 //
 // 升级 vendor 资源(如换 Three.js 版本)后:把下面 VERSION 改 v1→v2,旧缓存自动清理重下。
-const VERSION = 'v1';
+const VERSION = 'v20260613195430';
 const HEAVY = `heavy-${VERSION}`;    // 重资源缓存
 const RUNTIME = `runtime-${VERSION}`; // 其他静态运行时缓存
 
@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // 仅同源
 
   // ① 重资源:Cache First(强制缓存,连硬刷新也命中)
-  const isHeavy = url.pathname.startsWith('/vendor/') || url.pathname === '/3d-background.html';
+  const isHeavy = url.pathname === '/three-bg.js' || url.pathname === '/3d-background.html';
   if (isHeavy) {
     event.respondWith(
       caches.open(HEAVY).then(cache =>
