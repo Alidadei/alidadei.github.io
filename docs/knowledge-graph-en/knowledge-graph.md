@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-13 (最后更新: commit 9063300)
+> 生成时间：2026-06-13 (最后更新: commit 1d979da)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -345,6 +345,7 @@ alidadei.github.io/
 │
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
+│   ├── sw.js                          # Service Worker (强制缓存3D重资源)
 │   ├── favicon.ico / favicon.svg
 │   ├── robots.txt
 │   ├── fonts/                         # 自托管 Inter 字体 (woff2)
@@ -526,6 +527,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 太阳遮挡修复 | commit aac2053: SunArc太阳Y位置提升 (移动端range 30%→2%, 桌面端range 40%→2%) 避免太阳被3D物体遮挡；iframe架构无法实现自然遮挡，改用抬高太阳解决 |
 | 移动端干支容器 | commit aac2053: 干支容器移动端top改为 top-[66px] (紧贴Header下方) |
 | 移动端3D行星缩放 | commit aac2053: 3d-background.html 移动端ORBIT_RADIUS从350增至480，使行星在手机屏幕上更小 |
+| Service Worker 强制缓存 | commit 1d979da: public/sw.js 重资源(vendor/*, 3d-background.html)Cache First,连硬刷新也秒开;HTML Network First;其他静态 SWR。BaseLayout 注册(仅生产,dev 不注册)。pre-commit hook 在 vendor/three/ 改时自动 bump sw.js VERSION 清旧库缓存;3d-background.html 改时自动更新 iframe ?v= |
 
 ---
 
