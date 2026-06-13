@@ -434,7 +434,7 @@ let isDragging = false, prevMX = 0, prevMY = 0;
 let orbitH = 0, orbitH_target = 0;
 let orbitV = 0.35, orbitV_target = 0.35; // vertical angle (0=top-down, 1=low)
 const ORBIT_CENTER = new THREE.Vector3(20, 35, 0);
-const ORBIT_RADIUS = 350;
+const ORBIT_RADIUS = _mobile ? 480 : 350;
 
 container.addEventListener('mousedown', (e) => { isDragging = true; prevMX = e.clientX; prevMY = e.clientY; });
 window.addEventListener('mousemove', (e) => {

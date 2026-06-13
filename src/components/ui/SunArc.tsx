@@ -176,8 +176,8 @@ export default function SunArc({ lang }: SunArcProps) {
   // Sun Y position — higher on mobile for better visibility
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const sunY = isMobile
-    ? 40 - altitude * 38   // range: 40% (horizon) → 2% (noon peak)
-    : 50 - altitude * 46;  // range: 50% (horizon) → 4% (noon peak)
+    ? 30 - altitude * 28   // range: 30% (horizon) → 2% (noon peak)
+    : 40 - altitude * 38;  // range: 40% (horizon) → 2% (noon peak)
 
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
@@ -272,7 +272,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Top left: lunar date + greeting */}
-      <div className="fixed top-20 left-1 sm:left-4 pointer-events-none" style={{ zIndex: 10 }}>
+      <div className="fixed top-[66px] sm:top-20 left-1 sm:left-4 pointer-events-none" style={{ zIndex: 10 }}>
         <LunarDate lang={lang} />
         <p className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.7 }}>
           {greeting}
