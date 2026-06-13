@@ -13,7 +13,7 @@ const switchLabel = getUI(lang, 'lang.switch');
 <header class="sticky top-0 z-50 backdrop-blur-sm bg-transparent">
   <div class="flex items-center justify-between h-16 px-6 sm:px-8 lg:px-12">
       <!-- Logo -->
-      <a href={`/${lang}/`} class="text-lg font-bold text-primary hover:text-primary-light transition-colors">
+      <a href={`/${lang}/`} class="logo-text text-2xl font-bold transition-colors">
         {siteConfig.name}
       </a>
 
@@ -26,7 +26,7 @@ const switchLabel = getUI(lang, 'lang.switch');
               <a
                 href={item.href}
                 class:list={[
-                  'px-3 py-2 text-sm rounded-md transition-colors',
+                  'px-3 py-2 text-base rounded-md transition-colors',
                   isActive
                     ? 'text-accent font-medium'
                     : 'text-text-muted hover:text-text-secondary',
@@ -39,7 +39,7 @@ const switchLabel = getUI(lang, 'lang.switch');
         </nav>
         <a
           href={altUrl}
-          class="px-3 py-1.5 text-sm text-text-muted hover:text-accent transition-colors"
+          class="px-3 py-1.5 text-base text-text-muted hover:text-accent transition-colors"
         >
           {switchLabel}
         </a>
@@ -114,3 +114,15 @@ const switchLabel = getUI(lang, 'lang.switch');
     link.addEventListener('click', closeMenu);
   });
 </script>
+
+<style is:global>
+  .logo-text {
+    font-family: 'Caveat', cursive;
+    color: #8d6e63;
+    font-size: 2rem;
+  }
+
+  .logo-text:hover {
+    color: #a1887f;
+  }
+</style>

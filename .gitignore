@@ -32,3 +32,4 @@ pnpm-debug.log*
 *-reference.png
 storybook-source.js
 *-source.txt
+.wrangler/

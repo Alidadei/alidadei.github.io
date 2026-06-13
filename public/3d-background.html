@@ -297,7 +297,7 @@ for (const side of [-1, 1]) {
   eye.position.set(side * 4, 19, 9); eye.scale.set(1, 1, 0.6); robot.add(eye);
   const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.9, 6, 4), new THREE.MeshBasicMaterial({ color: 0x1a237e }));
   pupil.position.set(side * 4, 18.5, 10.0); pupil.scale.set(1, 1, 0.6); robot.add(pupil);
-  const lidMat = new THREE.MeshToonMaterial({ color: 0xc8a8e9, gradientMap: toonGradient, side: THREE.DoubleSide });
+  const lidMat = new THREE.MeshToonMaterial({ color: 0xf5c6a8, gradientMap: toonGradient, side: THREE.DoubleSide });
   const upper = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), lidMat);
   const upPivot = new THREE.Group(); upPivot.position.set(side * 4, 19, 9); upPivot.add(upper); upPivot.scale.set(1, 1, 0.6); upPivot.rotation.x = -LID_OPEN; robot.add(upPivot); lidPivotsU.push(upPivot);
   const lower = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), lidMat);

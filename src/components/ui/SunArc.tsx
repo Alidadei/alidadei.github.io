@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Solar } from 'lunar-javascript';
 
 interface SunArcProps {
@@ -23,6 +23,7 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
   const [now, setNow] = useState(() => new Date());
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
+  const mounted = useRef(false);
 
   // 每分钟检查日期是否变化，跨日自动更新干支
   useEffect(() => {
@@ -39,9 +40,23 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
   const yearGZ = lunar.getYearInGanZhi();
   const monthGZ = lunar.getMonthInGanZhi();
   const dayGZ = lunar.getDayInGanZhi();
-  const fullText = `${yearGZ}年 ${monthGZ}月 ${dayGZ}日`;
+
+  // 三列数据：干支 + 标签
+  const pillars = [
+    { stem: yearGZ[0], branch: yearGZ[1], label: '年' },
+    { stem: monthGZ[0], branch: monthGZ[1], label: '月' },
+    { stem: dayGZ[0], branch: dayGZ[1], label: '日' },
+  ];
+
+  // 逐字打字机效果
+  const fullChars = pillars.flatMap(p => [p.stem, p.branch, p.label]);
+  const fullText = fullChars.join('');
 
   useEffect(() => {
+    // 跳过 SSR，只在客户端水合后执行
+    if (!mounted.current) {
+      mounted.current = true;
+    }
     setDisplayed('');
     setDone(false);
     let i = 0;
@@ -56,38 +71,37 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
     return () => clearInterval(timer);
   }, [fullText]);
 
-  // Render each character with wuxing color if applicable
-  const renderChars = (text: string) => {
-    return text.split('').map((char, i) => (
-      <span
-        key={i}
-        style={{
-          color: wuxingColor[char] || 'inherit',
-          fontWeight: wuxingColor[char] ? 600 : 400,
-        }}
-      >
-        {char}
-      </span>
-    ));
-  };
+  // 将 displayed 映射回三列，每列 3 个字符
+  const colChars = [
+    displayed.slice(0, 3),
+    displayed.slice(3, 6),
+    displayed.slice(6, 9),
+  ];
 
   return (
-    <div className="text-center py-3 select-none" style={{ minHeight: '28px' }}>
-      <p className="text-sm tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
-        {renderChars(displayed)}
-        {!done && (
-          <span
-            className="inline-block ml-0.5"
-            style={{
-              animation: 'blink 0.8s step-end infinite',
-              color: 'var(--color-accent)',
-              fontWeight: 300,
-            }}
-          >
-            |
-          </span>
-        )}
-      </p>
+    <div className="py-3 select-none" style={{ minHeight: '28px' }}>
+      <div className="flex items-start gap-3" style={{ color: 'var(--color-text-muted)' }}>
+        {pillars.map((p, idx) => {
+          const text = colChars[idx];
+          const isTyping = !done && text.length > 0 && text.length < 3;
+          return (
+            <div key={p.label} className="text-center">
+              <div className="text-sm tracking-widest flex flex-col items-center leading-relaxed">
+                {text.split('').map((char, ci) => (
+                  <span key={ci} style={{ color: wuxingColor[char] || 'inherit', fontWeight: wuxingColor[char] ? 600 : 400 }}>
+                    {char}
+                  </span>
+                ))}
+                {isTyping && (
+                  <span style={{ animation: 'blink 0.8s step-end infinite', color: 'var(--color-accent)', fontWeight: 300 }}>
+                    |
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -162,8 +176,8 @@ export default function SunArc({ lang }: SunArcProps) {
   // Sun Y position — higher on mobile for better visibility
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const sunY = isMobile
-    ? 62 - altitude * 52   // range: 62% (horizon) → 10% (noon peak)
-    : 65 - altitude * 53;  // range: 65% (horizon) → 12% (noon peak)
+    ? 40 - altitude * 38   // range: 40% (horizon) → 2% (noon peak)
+    : 50 - altitude * 46;  // range: 50% (horizon) → 4% (noon peak)
 
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
@@ -258,7 +272,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Top left: lunar date + greeting */}
-      <div className="absolute top-3 left-4">
+      <div className="fixed top-20 left-4 pointer-events-none" style={{ zIndex: 10 }}>
         <LunarDate lang={lang} />
         <p className="text-sm" style={{ color: 'var(--color-text-muted)', opacity: 0.7 }}>
           {greeting}
