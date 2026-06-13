@@ -1,17 +1,31 @@
 #!/bin/bash
-# Auto-update 3D background cache version when 3D files change
-# When 3d-background.html or vendor/three/ is modified, this hook
-# automatically updates the ?v= parameter in index.astro and stages it.
+# Auto-update caches when 3D files change:
+#  - 3d-background.html 改 → 更新 iframe ?v= 版本号 (SW 自动刷新该 HTML)
+#  - vendor/three/ 改 (升级 Three.js) → 额外 bump sw.js VERSION (清旧库缓存)
 
 STAGED=$(git diff --cached --name-only)
 
-if echo "$STAGED" | grep -qE "^public/3d-background\.html|^public/vendor/three/"; then
+CHANGED_3D_HTML=$(echo "$STAGED" | grep -qE "^public/3d-background\.html" && echo yes)
+CHANGED_VENDOR=$(echo "$STAGED" | grep -qE "^public/vendor/three/" && echo yes)
+
+# 任意 3D 文件改 → 更新 iframe ?v=
+if [ -n "$CHANGED_3D_HTML" ] || [ -n "$CHANGED_VENDOR" ]; then
   VERSION=$(date +%Y%m%d%H%M)
   TARGET="src/pages/[lang]/index.astro"
-
   if [ -f "$TARGET" ]; then
     sed -i "s|/3d-background\.html?v=[^'\"]*|/3d-background.html?v=${VERSION}|g" "$TARGET"
     git add "$TARGET"
-    echo "✓ 3D cache version auto-updated to v=${VERSION}"
+    echo "✓ 3D iframe version auto-updated to ?v=${VERSION}"
+  fi
+fi
+
+# vendor/three/ 改 → bump sw.js VERSION (清旧 Three.js 库缓存)
+if [ -n "$CHANGED_VENDOR" ]; then
+  SW="public/sw.js"
+  if [ -f "$SW" ]; then
+    SW_VER="v$(date +%Y%m%d%H%M%S)"
+    sed -i "s|const VERSION = '[^']*'|const VERSION = '${SW_VER}'|" "$SW"
+    git add "$SW"
+    echo "✓ Service Worker VERSION auto-bumped to ${SW_VER} (vendor/three changed → purge stale lib cache)"
   fi
 fi
