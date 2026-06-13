@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-13 (最后更新: commit aac2053)
+> 生成时间：2026-06-13 (最后更新: commit 9063300)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -63,7 +63,7 @@
 /rss.xml                    RSS 订阅源
 
 /[lang]/                    首页 (SunArc天空+3D背景+最新文章)
-/[lang]/about/              关于我 (自我介绍/News/教育/实习/项目/获奖/联系/AwardWall彩蛋)
+/[lang]/about/              关于我 (双栏布局;内容由 content/about/*.md 维护;含AwardWall彩蛋)
 /[lang]/cv/                 简历 (折叠面板，旧版保留)
 /[lang]/projects/           项目展示
 /[lang]/blog/               博客列表 (时间线 + 分类 + 搜索)
@@ -154,7 +154,7 @@ graph TB
 │  src/content/                                          │
 │  ├── posts/zh/        10篇博客文章 (Markdown)            │
 │  ├── portfolio/       2个作品集项目                      │
-│  └── (projects/)      空 (待填充)                       │
+│  └── about/           关于我 (zh.md/en.md, Markdown)                       │
 │                                                        │
 │  src/i18n/                                             │
 │  ├── ui.ts            UI翻译字典 (38 key × 2语言)       │
@@ -168,7 +168,7 @@ graph TB
 │  页面组件 (Astro frontmatter)                           │
 │                                                        │
 │  getCollection('posts')  ──→  文章列表/排序/过滤         │
-│  getCollection('projects') ──→ 项目列表                 │
+│  getCollection('about')   ──→ 关于我内容 (zh/en md)                 │
 │  import siteConfig      ──→  导航/作者信息              │
 │  import categories.json ──→  分类树渲染                 │
 │  import quotes.json     ──→  每日一句数据               │
@@ -202,18 +202,20 @@ lang: zh | en          语言 (默认 zh)
 
 > **写作规范：** 标题只在 frontmatter 的 `title` 字段中声明，PostLayout 会自动渲染为页面 H1。正文内容从 `##` (h2) 开始写，**不要在正文中写 `# 标题`**，否则会与页面标题重复。
 
-### projects (项目)
+### about (关于我) — 内容集合,只改 .md 即可更新页面 (commit 9063300)
 ```
-title: string          项目名称
-description: string    项目描述
-date: Date             日期
-tags: string[]         标签
-github?: string        GitHub 链接
-demo?: string          在线演示链接
-image?: string         封面图
-featured?: boolean     是否精选
-lang: zh | en          语言
+lang: zh | en              语言 (zh.md / en.md)
+news: [{date, text}]       近期动态
+education: [{school, period, degree}]
+internship: [{company, period, description}]
+research: [{title, role?, period?, description}]
+awards: [{title, desc?}]   desc 可省略
+skills: [{name, items: string[]}]
++ Markdown 正文             自我介绍 → 渲染到页面顶部 .prose 区
 ```
+> 所有板块可选,省略则整块(含标题)隐藏。
+> 布局:桌面端左栏(头像🎻+联系方式 sticky)+ 右栏内容;手机端顶部紧凑小卡片。
+> 邮箱/GitHub/位置统一读 site.ts author 字段。维护指南:docs/about-page-update-guide.md
 
 ### portfolio (作品集)
 ```
@@ -337,6 +339,7 @@ alidadei.github.io/
 │   ├── PRD-blog-category.md
 │   ├── plan-blog-category.md
 │   ├── posts-writing-guide.md          # 博客写作规范 (原posts/README.md)
+│   ├── about-page-update-guide.md      # 关于我维护指南 (Markdown更新流程)
 │   ├── 问题.md                          # 待修复问题清单
 │   └── ...
 │
@@ -411,7 +414,8 @@ alidadei.github.io/
 │   │
 │   └── content/                       # 内容
 │       ├── posts/zh/                  # 10篇博客
-│       └── portfolio/                 # 2个作品
+│       ├── portfolio/                 # 2个作品
+│       └── about/                     # 关于我 (zh.md/en.md)
 │
 └── worker/                            # CMS 后端
     ├── wrangler.toml
