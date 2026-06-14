@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-13 (最后更新: commit 1d979da)
+> 生成时间：2026-06-14 (最后更新: commit 00377fb)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -217,13 +217,17 @@ skills: [{name, items: string[]}]
 > 布局:桌面端左栏(头像🎻+联系方式 sticky)+ 右栏内容;手机端顶部紧凑小卡片。
 > 邮箱/GitHub/位置统一读 site.ts author 字段。维护指南:docs/about-page-update-guide.md
 
-### portfolio (作品集)
+### portfolio (作品集) — 分类 + 缩略图 + 无限滚动 (commit 00377fb)
 ```
 title: string          标题
 excerpt?: string       摘要
-image?: string         图片
-link?: string          外链
+image?: string         缩略图原图 (/images/xxx.png → sharp 压成 webp)
+link?: string          详情外链 (独立 HTML 或外链)
+categories?: string[]  分类标签 (前端自动聚合成 tabs)
 ```
+> projects.astro: 分类 tabs(自定义标签动态聚合)+ sharp 压缩缩略图卡片 + 无限滚动(每批6, IntersectionObserver)。
+> 缩略图: `scripts/gen-portfolio-thumbs.mjs`(sharp)→ `public/images/thumbs/*.webp`(gitignore),`npm run thumbs`/build/CI 自动生成。
+> 详情页: 独立 HTML(`public/portfolio/*.html`),md 正文闲置。维护文档: `docs/portfolio-maintenance.md`。
 
 ---
 
@@ -462,10 +466,12 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 ├─────────────────────────────────────────────────────┤
 │                                                      │
 │  2D 宇宙星空 Canvas (body直子级, fixed全屏, z-index: 0)  │
-│  ├─ 内联 JS (~3KB)，随 HTML 同时到达，零额外请求          │
+│  ├─ 内联 JS，随 HTML 同时到达，零额外请求                │
 │  ├─ 深空背景 + 银河带 + 星云 + 5层星场(643颗) + 流星     │
-│  ├─ 远处星系团(5个模糊光斑)                              │
+│  ├─ warp 飞行星 (桌面150/手机80颗, 中心向外辐射+拖尾)     │
+│  ├─ 手机端 DPR≤1.5 + warp星减半 (commit 00377fb)        │
 │  └─ 3D加载完后 1.5s 淡出，释放资源                       │
+│  2D阶段 stage-2d (立即): 光年进度文字 + "关于我→"按钮    │
 │                                                      │
 │  3D背景 iframe (fixed, 全屏, z-index: 0)              │
 │  ├─ warm-storybook风格 Three.js场景                    │
@@ -478,13 +484,17 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 │  注: 移动端ORBIT_RADIUS=480(桌面端350)，使行星在手机上更小  │
 │                                                      │
 ├─────────────────────────────────────────────────────┤
-│  SunArc 太阳动画 + 最新文章                            │
-│  ├─ 3D加载完后1.2s淡入 (opacity 0→1, 2s transition)  │
-│  └─ 最新文章 (银白色字体, pointer-events-auto)        │
+│  SunArc 太阳动画 + 最新文章 (stage-3d, 3D后淡入)        │
+│  ├─ SunArc 完整 (天空/太阳/星星/月亮 + 干支打字机)       │
+│  │  ready 闸门: 水合前不渲染时段视觉 (commit 00377fb)    │
+│  ├─ 3D加载完后1.2s淡入 (opacity 0→1, 2s transition)     │
+│  └─ 最新文章 (银白色字体, pointer-events-auto)           │
 └─────────────────────────────────────────────────────┘
 无 Footer
 
-加载叙事：宇宙星空(2D) → 降临星球(3D) → 星球天空(SunArc+内容)
+加载叙事 (三层渐进, CLAUDE.local.md 铁律):
+宇宙星空(2D + 光年进度 + 关于我) → 降临星球(3D) → 星球天空(SunArc太阳动画 + 干支 + 最新文章)
+注: 首页 main 不挂 fade-in, 避免 transform 成为 fixed 元素定位参照 (修复 travel-overlay 下滑)
 ```
 
 **关键数据文件：**
