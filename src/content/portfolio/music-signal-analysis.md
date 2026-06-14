@@ -1,9 +1,9 @@
 ---
-title: "Music Analysis & Visualization / 音乐分析可视化"
-excerpt: "A Python-based music signal processing system for timbre analysis, instrument classification, and melody visualization — with CLI, one-click launcher, and Gradio web deployment. / 基于 Python 的音乐信号处理系统，实现音色分析、乐器分类与旋律可视化。"
-collection: portfolio
+title: "Music timbre Analysis & Visualization / 音色量化分析&可视化"
+excerpt: "本人爱好小提琴，一般小提琴音色的古法判断方法是依靠演奏者自己感受，受场地、演奏者水平和周围噪声影响较大，于是我便设计了一种音色分析系统，来实现客观量化的音色频率成分分析、乐器分类与旋律可视化等功能/The traditional method for judging the timbre of a violin relies on the combined experience of the performer , which is greatly influenced by the venue & performer's level. Therefore, I designed a timbre analysis system "
 image: "/images/music-signal-analysis.png"
 link: "/portfolio/music-signal-analysis.html"
+categories: ["个人实践"]
 ---
 
 [GitHub Repository](https://github.com/Alidadei/Music_signal_analysis) | [Live Demo (Hugging Face Spaces)](https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis)

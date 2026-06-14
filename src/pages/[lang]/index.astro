@@ -13,11 +13,16 @@ const { lang } = Astro.params as { lang: Lang };
 // Get the latest post
 const allPosts = await getCollection('posts', ({ data }) => data.lang === lang && !data.draft);
 const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())[0];
+
+// 光年进度基数(2D 阶段「星际航行」叙事;与末尾 <script> 内 TRAVEL_BASE 保持一致)
+const TRAVEL_BASE = 888;
 ---
 
 <PageLayout title={lang === 'zh' ? '首页' : 'Home'} homeBg={true}>
   <style is:global>
     body { background: transparent !important; }
+    .hero-btn { color: rgba(235,238,242,0.92); transition: color 0.3s ease; }
+    .hero-btn:hover { color: rgba(255,240,200,0.95); }
   </style>
 
   <script>
@@ -28,7 +33,10 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
       const c = document.getElementById('bg-2d');
       if (!c) return;
       const ctx = c.getContext('2d');
-      const dpr = Math.min(devicePixelRatio, 2);
+      // 手机端:降低 DPR 上限 + 减少 warp 星数,减轻 canvas 绘制负担
+      const isMobileDevice = Math.min(window.innerWidth, window.innerHeight) < 768;
+      const dpr = Math.min(devicePixelRatio, isMobileDevice ? 1.5 : 2);
+      const warpCount = isMobileDevice ? 80 : 150;
       let W, H, animId;
 
       let seed = 42;
@@ -40,6 +48,7 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
 
       let staticCanvas = null;
       let twinkleStars = [];
+      let warpStars = [];
       let shooters = [];
       let shootTimer = 1 + Math.random() * 2;
       let lastTime = 0;
@@ -169,6 +178,12 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
             col: `${raw[0]},${raw[1]},${raw[2]}`, spikes: true,
           });
         }
+
+        // ── Warp stars (向前飞行视角:星点从中心向外辐射) ──
+        warpStars = [];
+        for (let i = 0; i < warpCount; i++) {
+          warpStars.push({ x: (rand()-0.5)*2, y: (rand()-0.5)*2, z: rand(), pz: 0 });
+        }
       }
 
       function spawnShooter() {
@@ -241,6 +256,26 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
           }
         }
 
+        // ── Warp stars (向前飞行视角:星点从中心向外辐射 + 拖尾) ──
+        const cx = W/2, cy = H/2, spread = 0.55, warpSpeed = 0.3;
+        for (const s of warpStars) {
+          s.pz = s.z;
+          s.z -= warpSpeed * dt;
+          if (s.z < 0.02) {
+            s.z = 1; s.pz = 1;
+            s.x = (rand()-0.5)*2; s.y = (rand()-0.5)*2;
+          }
+          const sx = cx + (s.x / s.z) * cx * spread;
+          const sy = cy + (s.y / s.z) * cy * spread;
+          const psx = cx + (s.x / s.pz) * cx * spread;
+          const psy = cy + (s.y / s.pz) * cy * spread;
+          const r = 1 - s.z;
+          ctx.strokeStyle = `rgba(200,220,255,${Math.min(1, r*1.3)*0.85})`;
+          ctx.lineWidth = Math.max(0.5, r * 2);
+          ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(psx, psy); ctx.lineTo(sx, sy); ctx.stroke();
+        }
+
         // ── Shooting stars ──
         shootTimer -= dt;
         if (shootTimer <= 0) {
@@ -308,18 +343,37 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
       };
     })();
 
-    // ── Loading sequence: 2D (instant) → 3D (idle) → SunArc + content (after 3D) ──
+    // ── 光年进度模拟:立即启动,不等 3D ──
+    const TRAVEL_BASE = 888;            // 光年基数(与 frontmatter 的 TRAVEL_BASE 保持一致)
+    const lyEl = document.getElementById('travel-ly');
+    const travelOverlay = document.querySelector('.travel-overlay');
+    let arrived = false;
+    const startT = performance.now();
+    const DURATION = 4000;              // 4 秒 ease-out 到 ~95%,然后等 iframe load 兜底
+    function tickTravel(now) {
+      if (arrived) return;
+      const t = Math.min(1, (now - startT) / DURATION);
+      const p = 0.95 * (1 - Math.pow(1 - t, 3));   // ease-out cubic,封顶 0.95
+      if (lyEl) lyEl.textContent = Math.max(1, Math.round(TRAVEL_BASE * (1 - p)));
+      if (t < 1) requestAnimationFrame(tickTravel); // 到 0.95 后停下,等抵达
+    }
+    requestAnimationFrame(tickTravel);
+
+    // ── Loading sequence: 2D 立即(星空+干支+光年+hero) → 3D (idle) → 最新文章淡入 ──
     const bg3d = document.getElementById('bg-3d');
-    const pageContent = document.getElementById('page-content');
+    const stage3d = document.getElementById('stage-3d');
     if (bg3d) {
       function load3d() {
         bg3d.src = '/3d-background.html?v=202606131954';
         bg3d.addEventListener('load', () => {
-          // Step 1: 3D fades in, 2D fades out
           bg3d.style.opacity = '1';
+          // 抵达 07 星球:光年归 0,2D 加载元素(星空/每日一句/光年文字/hero 按钮)淡出
+          arrived = true;
+          if (lyEl) lyEl.textContent = '0';
+          if (travelOverlay) travelOverlay.style.opacity = '0';
           if (window._fade2d) setTimeout(window._fade2d, 500);
-          // Step 2: SunArc + page content fades in (planet sky reveals)
-          if (pageContent) setTimeout(() => { pageContent.style.opacity = '1'; }, 1200);
+          // 最新文章淡入
+          if (stage3d) setTimeout(() => { stage3d.style.opacity = '1'; }, 1200);
         });
       }
       // Start loading 3D as soon as browser is idle
@@ -331,9 +385,26 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
     }
   </script>
 
-  <!-- All page content — hidden until 3D scene arrives, then fades in -->
-  <div id="page-content" class="relative pointer-events-none" style="z-index: 1; opacity: 0; transition: opacity 2s ease;">
-    <!-- Layer: Sun Arc Animation (planet sky) -->
+  <!-- ── stage-2d:立即显示,常驻 ── 中心「星际航行」进度文字 + hero 按钮(干支留到 3D 阶段) -->
+  <div id="stage-2d" class="relative" style="z-index: 1;">
+    <!-- 中心 overlay:光年进度 + hero 按钮(3D 抵达后整体淡出) -->
+    <div class="travel-overlay" style="position:fixed; top:34%; left:0; right:0; text-align:center; z-index:1; pointer-events:none; opacity:1; transition:opacity 1s ease;">
+      <p style="margin:0; font-family:serif; letter-spacing:0.12em; font-size:clamp(15px,2.6vw,22px); color:rgba(220,225,230,0.82); text-shadow:0 1px 8px rgba(0,0,0,0.5);">
+        {lang === 'zh' ? '距离 07 星球还有 ' : 'Light-years to Planet 07: '}<span id="travel-ly" style="font-family:ui-monospace,monospace; color:rgba(255,240,200,0.95);">{TRAVEL_BASE}</span>{lang === 'zh' ? ' 光年' : ''}
+      </p>
+      <a
+        href={`/${lang}/about/`}
+        class="hero-btn"
+        style="display:inline-block; margin-top:1.5rem; padding:0.6rem 1.7rem; font-size:clamp(14px,2vw,16px); letter-spacing:0.08em; pointer-events:auto; text-decoration:none;"
+      >
+        {lang === 'zh' ? '关于我 →' : 'About me →'}
+      </a>
+    </div>
+  </div>
+
+  <!-- ── stage-3d:等 3D 加载完成后淡入 ── 干支(打字机) + 最新文章 -->
+  <div id="stage-3d" class="relative pointer-events-none" style="z-index: 1; opacity: 0; transition: opacity 2s ease;">
+    <!-- SunArc 完整保留(2D 天空/太阳/星星/月亮 + 干支打字机),整体在 3D 之后淡入 -->
     <SunArc client:idle lang={lang} />
 
     <!-- Spacer — enough room for daily quote on mobile -->

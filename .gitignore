@@ -1,6 +1,7 @@
 # build output
 dist/
 public/three-bg.js
+public/images/thumbs/
 # generated types
 .astro/
 
@@ -26,6 +27,9 @@ pnpm-debug.log*
 
 # Playwright MCP debug logs
 .playwright-mcp/
+
+# Local Claude instructions (private, not for repo)
+CLAUDE.local.md
 
 # Debug / reference screenshots and dumps
 *.debug.png

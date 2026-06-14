@@ -107,7 +107,7 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
 }
 
 export default function SunArc({ lang }: SunArcProps) {
-  const [time, setTime] = useState({ hour: 12, min: 0 });
+  const [time, setTime] = useState<{ hour: number; min: number } | null>(null);
 
   useEffect(() => {
     const now = new Date();
@@ -119,7 +119,9 @@ export default function SunArc({ lang }: SunArcProps) {
     return () => clearInterval(timer);
   }, []);
 
-  const h = time.hour + time.min / 60;
+  // 水合前 ready=false:不渲染任何依赖时间的视觉(SSR 用 null,避免闪现错误时段的太阳/天空)
+  const ready = time !== null;
+  const h = ready ? time.hour + time.min / 60 : 0;
 
   const sunRise = 5.5;
   const sunSet = 18.5;
@@ -186,23 +188,25 @@ export default function SunArc({ lang }: SunArcProps) {
     ? `rgba(255,240,180,${0.15 + 0.2 * altitude})`
     : `rgba(255,140,40,${0.1 + 0.15 * altitude})`;
 
-  const greeting = lang === 'zh'
-    ? (h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好')
-    : (h < 6 ? 'Good Night' : h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening');
+  const greeting = ready
+    ? (lang === 'zh'
+        ? (h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好')
+        : (h < 6 ? 'Good Night' : h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening'))
+    : '';
 
   return (
     <>
       {/* Fixed sky background behind navbar */}
       <div
         className="fixed top-0 left-0 right-0 pointer-events-none"
-        style={{ height: 'clamp(160px, 35vw, 280px)', background: skyGradient, transition: 'background 2s ease', zIndex: 0 }}
+        style={{ height: 'clamp(160px, 35vw, 280px)', background: ready ? skyGradient : 'none', transition: 'background 2s ease', zIndex: 0 }}
       />
 
       {/* Content spacer */}
       <div style={{ height: 'clamp(120px, 25vw, 200px)', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }} className="relative">
 
       {/* Stars at night */}
-      {(isNight || (isDusk && brightness < 0.1) || (isDawn && brightness < 0.1)) && (
+      {ready && (isNight || (isDusk && brightness < 0.1) || (isDawn && brightness < 0.1)) && (
         <div className="absolute inset-0" style={{ opacity: isNight ? 0.6 : 0.25 }}>
           {Array.from({ length: 24 }).map((_, i) => {
             const seed = i * 137.5;
@@ -226,7 +230,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Shooting stars at night */}
-      {(isNight || (isDusk && brightness < 0.1)) && (
+      {ready && (isNight || (isDusk && brightness < 0.1)) && (
         <div className="absolute inset-0" style={{ opacity: isNight ? 0.8 : 0.3, overflow: 'hidden' }}>
           {[0, 1, 2].map(i => (
             <div
@@ -249,7 +253,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Moon */}
-      {(isNight || isDusk) && (
+      {ready && (isNight || isDusk) && (
         <div
           className="absolute transition-all duration-[2000ms]"
           style={{
@@ -266,7 +270,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Sun glow */}
-      {isDay && (
+      {ready && isDay && (
         <div
           className="absolute rounded-full transition-all duration-[2000ms]"
           style={{
@@ -280,7 +284,7 @@ export default function SunArc({ lang }: SunArcProps) {
       )}
 
       {/* Sun disc */}
-      {isDay && (
+      {ready && isDay && (
         <div
           className="absolute rounded-full transition-all duration-[2000ms]"
           style={{

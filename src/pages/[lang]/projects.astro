@@ -11,37 +11,147 @@ const { lang } = Astro.params as { lang: Lang };
 
 // 项目来自 portfolio 集合
 const portfolioItems = await getCollection('portfolio');
+
+// 聚合所有 categories(去重)→ 分类 tabs(用户自定义标签)
+const categorySet = new Set<string>();
+portfolioItems.forEach(item => {
+  (item.data.categories || []).forEach(c => categorySet.add(c));
+});
+const categories = Array.from(categorySet);
+
+const INITIAL = 6; // SSR 初始显示数(无 JS 也能看到前 N 个)
+
+// 缩略图路径:/images/foo.png → /images/thumbs/foo.webp(sharp 脚本生成)
+function thumb(image?: string) {
+  if (!image) return '';
+  return image.replace('/images/', '/images/thumbs/').replace(/\.\w+$/, '.webp');
+}
+// 清理 excerpt 成纯文本(去 HTML 标签)
+function cleanExcerpt(s?: string) {
+  return (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
 ---
 
 <PageLayout title={lang === 'zh' ? '项目' : 'Projects'}>
-  <h1 class="text-2xl md:text-3xl font-bold text-primary mb-8">{lang === 'zh' ? '项目' : 'Projects'}</h1>
+  <h1 class="text-2xl md:text-3xl font-bold text-primary mb-6">{lang === 'zh' ? '项目' : 'Projects'}</h1>
+
+  <!-- 分类 tabs -->
+  <div class="flex flex-wrap gap-2 mb-6">
+    <button data-category="all" class="category-tab px-3 py-1.5 text-xs rounded-full bg-accent text-white transition-colors cursor-pointer">
+      {lang === 'zh' ? '全部' : 'All'}
+    </button>
+    {categories.map(cat => (
+      <button data-category={cat} class="category-tab px-3 py-1.5 text-xs rounded-full border border-border text-text-secondary hover:border-accent/50 hover:text-accent transition-colors cursor-pointer">
+        {cat}
+      </button>
+    ))}
+  </div>
 
   {portfolioItems.length === 0 ? (
     <p class="text-text-muted">{lang === 'zh' ? '暂无项目' : 'No projects yet.'}</p>
   ) : (
-    <div class="space-y-6">
-      {portfolioItems.map((item) => {
-        const Tag = item.data.link ? 'a' : 'div';
-        const linkProps = item.data.link
-          ? { href: item.data.link, target: '_blank', rel: 'noopener noreferrer' }
-          : {};
-        return (
-          <Tag {...linkProps} class="block p-6 rounded-lg border border-border hover:border-accent/50 transition-all">
-            <h2 class="text-xl font-semibold text-primary mb-2">{item.data.title}</h2>
-            {item.data.excerpt && (
-              <p class="text-text-secondary text-sm mb-4">{item.data.excerpt}</p>
-            )}
-            {item.data.image && (
-              <img src={item.data.image} alt={item.data.title} class="w-full rounded-lg mb-4" />
-            )}
-            {item.data.link && (
-              <span class="text-sm text-accent hover:text-accent-light">
-                {lang === 'zh' ? '查看详情' : 'View Details'} &rarr;
-              </span>
-            )}
-          </Tag>
-        );
-      })}
-    </div>
+    <>
+      <div id="projects-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {portfolioItems.map((item, idx) => {
+          const Tag = item.data.link ? 'a' : 'div';
+          const linkProps = item.data.link
+            ? { href: item.data.link, target: '_blank', rel: 'noopener noreferrer' }
+            : {};
+          const cats = item.data.categories || [];
+          const t = thumb(item.data.image);
+          const excerpt = cleanExcerpt(item.data.excerpt);
+          return (
+            <Tag
+              {...linkProps}
+              data-categories={JSON.stringify(cats)}
+              class="project-card p-4 rounded-lg border border-border hover:border-accent/50 transition-all bg-bg-secondary/30 overflow-hidden"
+              style={idx >= INITIAL ? 'display:none' : undefined}
+            >
+              {t && (
+                <img src={t} alt={item.data.title} loading="lazy" decoding="async" class="w-full h-40 object-cover rounded-md mb-3" />
+              )}
+              <h2 class="text-lg font-semibold text-primary mb-1">{item.data.title}</h2>
+              {excerpt && (
+                <p class="text-text-secondary text-sm line-clamp-3">{excerpt}</p>
+              )}
+              {item.data.link && (
+                <span class="inline-block text-sm text-accent mt-2">{lang === 'zh' ? '查看详情' : 'View Details'} →</span>
+              )}
+            </Tag>
+          );
+        })}
+      </div>
+
+      <!-- 无限滚动哨兵 + 状态提示 -->
+      <div id="sentinel" class="h-10"></div>
+      <p id="status" class="text-center text-text-muted text-sm py-4"></p>
+    </>
   )}
 </PageLayout>
+
+<script>
+  function initProjectsPage() {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.category-tab');
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.project-card'));
+    const sentinel = document.getElementById('sentinel');
+    const status = document.getElementById('status');
+    const BATCH = 6;
+    let activeCategory = 'all';
+    let visibleCount = BATCH;
+    const isZh = document.documentElement.lang?.startsWith('zh');
+
+    // 当前分类下的候选卡片(DOM 顺序)
+    function candidates() {
+      return cards.filter(c => {
+        const cats: string[] = JSON.parse(c.dataset.categories || '[]');
+        return activeCategory === 'all' || cats.includes(activeCategory);
+      });
+    }
+
+    function applyView() {
+      const list = candidates();
+      const inList = new Set(list);
+      list.forEach((c, i) => { c.style.display = i < visibleCount ? '' : 'none'; });
+      cards.forEach(c => { if (!inList.has(c)) c.style.display = 'none'; });
+      const total = list.length;
+      if (status) {
+        if (total === 0) status.textContent = isZh ? '该分类暂无项目' : 'No projects in this category';
+        else if (visibleCount >= total) status.textContent = isZh ? '没有更多了' : 'No more';
+        else status.textContent = isZh ? '滚动加载更多…' : 'Scroll for more…';
+      }
+    }
+
+    // 分类切换 → 重置到第一批
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        activeCategory = tab.dataset.category || 'all';
+        visibleCount = BATCH;
+        tabs.forEach(t => {
+          t.classList.remove('bg-accent', 'text-white');
+          t.classList.add('border', 'border-border', 'text-text-secondary');
+        });
+        tab.classList.remove('border', 'border-border', 'text-text-secondary');
+        tab.classList.add('bg-accent', 'text-white');
+        applyView();
+      });
+    });
+
+    // 无限滚动:哨兵进入视口 → 加载下一批
+    if (sentinel && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) {
+          const total = candidates().length;
+          if (visibleCount < total) {
+            visibleCount += BATCH;
+            applyView();
+          }
+        }
+      }, { rootMargin: '200px' });
+      io.observe(sentinel);
+    }
+
+    applyView();
+  }
+
+  initProjectsPage();
+</script>
