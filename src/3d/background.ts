@@ -22,7 +22,7 @@ bgCtx.fillStyle = grad; bgCtx.fillRect(0, 0, 2, 512);
 scene.background = new THREE.CanvasTexture(bgCanvas);
 
 // ── Camera ──
-const camera = new THREE.PerspectiveCamera(45, W / H, 1, 2000);
+const camera = new THREE.PerspectiveCamera(45, W / H, 1, 8000);
 camera.position.set(0, 50, 350); camera.lookAt(0, 30, 0);
 
 // ── Renderer ──
@@ -38,6 +38,48 @@ const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2); dirLight.position.se
 const fillLight = new THREE.DirectionalLight(0xd4c0f0, 0.4); fillLight.position.set(-200, -100, 200); scene.add(fillLight);
 if (_mobile) { scene.add(new THREE.HemisphereLight(0xfff8f0, 0xe8d8c8, 0.5)); }
 
+// ── Sun（随真实时间东升西落）──
+// 挂在相机上 → 水平旋转视角时太阳完全不动（只认时间）；俯视时手动隐藏（和云一样消失）。
+// 大小随高度变（中午最大、早晚最小）。toneMapped:false 压在 bloom 阈值下 → 纯 3D → 云能挡
+const SUN_DIST = 3000, SUN_X_R = 1800, SUN_Y_BASE = 350, SUN_Y_AMP = 600;
+const sun = new THREE.Mesh(
+  new THREE.SphereGeometry(30, 20, 14),
+  new THREE.MeshBasicMaterial({ color: 0xffb300, toneMapped: false })
+);
+const sunGlow = new THREE.Mesh(  // 内层柔光晕（3D，云可挡）
+  new THREE.SphereGeometry(55, 20, 14),
+  new THREE.MeshBasicMaterial({ color: 0xffb300, transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false })
+);
+const sunGlow2 = new THREE.Mesh(  // 外层大光晕（3D，云可挡）
+  new THREE.SphereGeometry(85, 20, 14),
+  new THREE.MeshBasicMaterial({ color: 0xff9966, transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false })
+);
+sun.add(sunGlow); sun.add(sunGlow2);
+camera.add(sun);
+scene.add(camera);  // 相机入场景图，其子节点(太阳)才会渲染
+const _sunDay = new THREE.Color(0xff9000);   // 高空暖橙黄（Rec.709 lum≈0.62 < 0.75）
+const _sunDusk = new THREE.Color(0xff7043);  // 地平线橙红（lum≈0.55 < 0.75）
+// ?suntest=1：太阳 30 秒跑完一天，预览升落（验证完删除）
+const SUN_TEST = new URLSearchParams(location.search).has('suntest');
+function sunTheta() {
+  if (SUN_TEST) return (performance.now() / 30000) * Math.PI * 2;  // 30s 一圈
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  return (h - 6) / 12 * Math.PI;
+}
+function updateSun() {
+  const θ = sunTheta();            // 6点东升(θ=0)→12点头顶(π/2)→18点西落(π)
+  if (θ < -0.12 || θ > Math.PI + 0.12) { sun.visible = false; return; }  // 夜晚藏到地下
+  sun.visible = true;
+  sun.position.set(-Math.cos(θ) * SUN_X_R, SUN_Y_BASE + Math.sin(θ) * SUN_Y_AMP, -SUN_DIST);
+  sun.userData.sunBaseY = sun.position.y;  // 记录时间高度，供 animate 叠加俯视上移
+  sun.scale.setScalar(0.7 + 0.8 * Math.sin(θ));  // 大小随高度：中午最大、早晚最小
+  const alt01 = Math.pow(Math.max(0, Math.sin(θ)), 2);   // 平方：低空(日出日落)保持红，正午附近才黄
+  const c = new THREE.Color().lerpColors(_sunDusk, _sunDay, alt01);
+  sun.material.color.copy(c);
+  sunGlow.material.color.copy(c);
+  sunGlow2.material.color.copy(c);
+}
+
 // ── Time-of-day brightness sync ──
 function getSunAltitude() {
   const h = new Date().getHours() + new Date().getMinutes() / 60;
@@ -50,13 +92,13 @@ function applyTimeBrightness() {
   const alt = getSunAltitude();
   const day = 0.4 + 0.6 * alt;
   if (_mobile) {
-    renderer.toneMappingExposure = 0.7 + 1.0 * day;
-    dirLight.intensity = 0.5 + 1.2 * day;
-    fillLight.intensity = 0.2 + 0.5 * day;
+    renderer.toneMappingExposure = 0.45 + 0.5 * day;
+    dirLight.intensity = 0.25 + 0.65 * day;
+    fillLight.intensity = 0.08 + 0.2 * day;
   } else {
-    renderer.toneMappingExposure = 0.6 + 0.8 * day;
-    dirLight.intensity = 0.4 + 1.0 * day;
-    fillLight.intensity = 0.15 + 0.35 * day;
+    renderer.toneMappingExposure = 0.35 + 0.4 * day;
+    dirLight.intensity = 0.2 + 0.6 * day;
+    fillLight.intensity = 0.06 + 0.18 * day;
   }
   const bgC = bgCtx.createLinearGradient(0, 0, 0, 512);
   if (alt < 0.15) {
@@ -64,12 +106,20 @@ function applyTimeBrightness() {
     bgC.addColorStop(0.5, lerpColor('#1e1a30', '#e8c8d8', alt / 0.15));
     bgC.addColorStop(1, lerpColor('#141225', '#b8d0f0', alt / 0.15));
   } else {
-    bgC.addColorStop(0, '#f5e6d3'); bgC.addColorStop(0.25, '#f0d4c0');
-    bgC.addColorStop(0.55, '#e8c8d8'); bgC.addColorStop(0.80, '#d4c0e8');
-    bgC.addColorStop(1, '#b8d0f0');
+    // 白天：低空(晨/昏)偏暖橙，高空(正午)偏亮蓝，随太阳高度渐变
+    const t = Math.min(1, (alt - 0.15) / 0.55);
+    bgC.addColorStop(0, lerpColor('#f5b888', '#f5e6d3', t));
+    bgC.addColorStop(0.25, lerpColor('#f0a888', '#f0d4c0', t));
+    bgC.addColorStop(0.55, lerpColor('#e0a0b0', '#e8c8d8', t));
+    bgC.addColorStop(0.80, lerpColor('#b8a8d8', '#d4c0e8', t));
+    bgC.addColorStop(1, lerpColor('#98b0e0', '#b8d0f0', t));
   }
   bgCtx.fillStyle = bgC; bgCtx.fillRect(0, 0, 2, 512);
+  bgCtx.globalCompositeOperation = 'multiply';   // 整体压暗背景（exposure 对 scene.background 无效）
+  bgCtx.fillStyle = '#f2f2f2'; bgCtx.fillRect(0, 0, 2, 512);
+  bgCtx.globalCompositeOperation = 'source-over';
   scene.background.needsUpdate = true;
+  updateSun();   // 同步太阳位置/颜色（东升西落）
 }
 function lerpColor(a, b, t) {
   const pa = [parseInt(a.slice(1,3),16), parseInt(a.slice(3,5),16), parseInt(a.slice(5,7),16)];
@@ -282,7 +332,7 @@ const isMobile = window.innerWidth < 768;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 if (!isMobile) {
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.4, 0.8, 0.75));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.18, 0.6, 0.9));
 }
 const OutlineShader = {
   uniforms: { tDiffuse: { value: null }, resolution: { value: new THREE.Vector2(W, H) }, edgeStrength: { value: isMobile ? 0.15 : 0.35 }, edgeColor: { value: new THREE.Vector3(0.227, 0.184, 0.271) } },
@@ -299,6 +349,7 @@ const OutlineShader = {
       float br=dot(texture2D(tDiffuse,vUv+tx*vec2(1,-1)).rgb,vec3(.299,.587,.114));
       float gx=-tl-2.0*l-bl+tr+2.0*r+br; float gy=-tl-2.0*t-tr+bl+2.0*b+br;
       float edge=length(vec2(gx,gy)); float ef=smoothstep(0.05,0.15,edge)*edgeStrength;
+      float sun=step(0.85,c.r)*step(0.1,c.r-c.g)*step(c.b,c.g); ef*=(1.0-sun);  // 太阳及光晕(偏橙黄)不描边
       gl_FragColor=vec4(mix(c.rgb,edgeColor,ef),c.a); }`,
 };
 composer.addPass(new ShaderPass(OutlineShader));
@@ -387,6 +438,8 @@ function animate() {
   }
   for (const c of clouds) { c.position.x = c.userData.bx + Math.sin(t * c.userData.sp) * 30; }
 
+  if (SUN_TEST) updateSun();  // 加速预览：每帧更新太阳位置
+  sun.position.y = (sun.userData.sunBaseY || 0) + orbitV * 1500;  // 俯视越多太阳越往上飘，移出画面顶部（像云）
   composer.render();
 }
 animate();

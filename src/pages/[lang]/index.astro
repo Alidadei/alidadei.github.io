@@ -308,7 +308,7 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
       };
     })();
 
-    // ── Loading sequence: 2D (instant) → 3D (idle) → SunArc + content (after 3D) ──
+    // ── Loading sequence: 2D (instant) → 3D (idle) → content (after 3D) ──
     const bg3d = document.getElementById('bg-3d');
     const pageContent = document.getElementById('page-content');
     if (bg3d) {
@@ -318,7 +318,7 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
           // Step 1: 3D fades in, 2D fades out
           bg3d.style.opacity = '1';
           if (window._fade2d) setTimeout(window._fade2d, 500);
-          // Step 2: SunArc + page content fades in (planet sky reveals)
+          // Step 2: page content fades in (planet sky reveals)
           if (pageContent) setTimeout(() => { pageContent.style.opacity = '1'; }, 1200);
         });
       }
@@ -333,11 +333,11 @@ const latestPost = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.g
 
   <!-- All page content — hidden until 3D scene arrives, then fades in -->
   <div id="page-content" class="relative pointer-events-none" style="z-index: 1; opacity: 0; transition: opacity 2s ease;">
-    <!-- Layer: Sun Arc Animation (planet sky) -->
+    <!-- 左上角：干支 + 问候 -->
     <SunArc client:idle lang={lang} />
 
     <!-- Spacer — enough room for daily quote on mobile -->
-    <div class="h-64 md:h-72"></div>
+    <div class="h-[34rem] md:h-[40rem]"></div>
 
     <!-- Recent Post -->
     {latestPost && (

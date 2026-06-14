@@ -5,7 +5,7 @@
 //   - 其他静态 (JS/CSS/图片/字体): Stale While Revalidate
 //
 // 升级 vendor 资源(如换 Three.js 版本)后:把下面 VERSION 改 v1→v2,旧缓存自动清理重下。
-const VERSION = 'v20260613195430';
+const VERSION = 'v202606141533';
 const HEAVY = `heavy-${VERSION}`;    // 重资源缓存
 const RUNTIME = `runtime-${VERSION}`; // 其他静态运行时缓存
 
