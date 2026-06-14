@@ -7,18 +7,15 @@ lang: en
 news:
   - date: "2026.01 - 2026.04"
     text: Interned at Huawei Multimedia Intelligent Collaboration Lab, built Multi-Agent meeting assistant
-  - date: "2025.09"
-    text: Started Ph.D. in Biomedical Engineering (AI) at Fudan University
-  - date: "2024.09"
-    text: Admitted to Fudan University Ph.D. program
-  - date: "2023.08 - 2024.08"
-    text: 'Joined "Intelligent Autonomous Systems" group, LLM + RL robotics research'
+  - date: "2025.10"
+    text: Earned Fudan University Xianghui Doctoral Scholarship(2%) 
+  
 
 # Education
 education:
   - school: Fudan University
     period: "2025.09 - 2030.06"
-    degree: Ph.D. in Biomedical Engineering (AI)
+    degree: Ph.D. 
   - school: Ocean University of China (985)
     period: "2021.08 - 2025.07"
     degree: Electronic Information Engineering (Top 4, recommended for Ph.D.)
