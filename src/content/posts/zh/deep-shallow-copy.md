@@ -3,9 +3,7 @@ title: '深浅拷贝'
 date: 2026-01-01
 tags:
   - Python
-  - 深浅拷贝
-  - 编程基础
-categories: ['tech-learning', 'data-structure']
+categories: ['note', 'data-structure']
 lang: zh
 ---
 

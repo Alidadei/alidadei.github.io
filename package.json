@@ -10,6 +10,7 @@
     "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && cp src/data/quotes.json public/quotes.json && npm run thumbs && astro build",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
+    "cms": "node scripts/cms.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/noto-sans-sc": "^5.2.9",
+    "@inquirer/prompts": "^8.5.2",
     "esbuild": "^0.28.1",
     "sharp": "^0.35.1"
   }

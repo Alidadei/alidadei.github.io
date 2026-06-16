@@ -3,9 +3,7 @@ title: 'Claude Code CLI - Bypass Permission 配置指南'
 date: 2026-01-23
 tags:
   - Claude Code
-  - CLI
-  - 配置
-categories: ['personal-practice']
+categories: ['practice']
 lang: zh
 ---
 

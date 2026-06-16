@@ -1,20 +1,38 @@
 [
   {
-    "slug": "tech-learning",
-    "label": { "zh": "学习笔记", "en": "Study Notes" },
-    "description": { "zh": "论文阅读、技术调研、知识点总结等", "en": "Paper reading, tech research, knowledge summaries" },
+    "slug": "note",
+    "label": {
+      "zh": "学习笔记",
+      "en": "Study Notes"
+    },
+    "description": {
+      "zh": "论文阅读、技术调研、知识点总结等",
+      "en": "Paper reading, tech research, knowledge summaries"
+    },
     "aliases": [],
     "children": [
       {
-        "slug": "deep-learning",
-        "label": { "zh": "深度学习", "en": "Deep Learning" },
-        "description": { "zh": "神经网络、深度学习相关", "en": "Neural networks & deep learning" },
+        "slug": "ai",
+        "label": {
+          "zh": "AI",
+          "en": "AI"
+        },
+        "description": {
+          "zh": "深度学习，大模型，算法",
+          "en": "DL,LLM"
+        },
         "aliases": [],
         "children": [
           {
             "slug": "transformer",
-            "label": { "zh": "Transformer", "en": "Transformer" },
-            "description": { "zh": "Transformer 架构相关", "en": "Transformer architecture" },
+            "label": {
+              "zh": "Transformer",
+              "en": "Transformer"
+            },
+            "description": {
+              "zh": "Transformer 架构相关",
+              "en": "Transformer architecture"
+            },
             "aliases": [],
             "children": []
           }
@@ -22,31 +40,55 @@
       },
       {
         "slug": "embedded",
-        "label": { "zh": "嵌入式开发", "en": "Embedded Development" },
-        "description": { "zh": "单片机、嵌入式系统", "en": "MCU & embedded systems" },
+        "label": {
+          "zh": "嵌入式开发",
+          "en": "Embedded Development"
+        },
+        "description": {
+          "zh": "单片机、嵌入式系统",
+          "en": "MCU & embedded systems"
+        },
         "aliases": [],
         "children": []
       },
       {
         "slug": "data-structure",
-        "label": { "zh": "数据结构与算法", "en": "Data Structures & Algorithms" },
-        "description": { "zh": "数据结构、算法学习笔记", "en": "Data structures & algorithm notes" },
+        "label": {
+          "zh": "数据结构与算法",
+          "en": "Data Structures & Algorithms"
+        },
+        "description": {
+          "zh": "数据结构、算法学习笔记",
+          "en": "Data structures & algorithm notes"
+        },
         "aliases": [],
         "children": []
       }
     ]
   },
   {
-    "slug": "personal-practice",
-    "label": { "zh": "个人实践", "en": "Personal Practice" },
-    "description": { "zh": "个人动手实践项目记录", "en": "Hands-on project records" },
+    "slug": "practice",
+    "label": {
+      "zh": "个人调研&实践",
+      "en": "Research&Practice"
+    },
+    "description": {
+      "zh": "个人动手实践项目记录",
+      "en": "Hands-on project records"
+    },
     "aliases": [],
     "children": []
   },
   {
-    "slug": "personal-views",
-    "label": { "zh": "个人调研&感悟", "en": "Research & Insights" },
-    "description": { "zh": "基于调研实践的领域观点", "en": "Domain perspectives based on research & practice" },
+    "slug": "insights",
+    "label": {
+      "zh": "个人感悟",
+      "en": "Insights"
+    },
+    "description": {
+      "zh": "基于调研实践的领域观点",
+      "en": "Domain perspectives based on research & practice"
+    },
     "aliases": [],
     "children": []
   }

@@ -3,10 +3,8 @@ title: 'Temperature 的数学本质'
 date: 2026-04-23
 tags:
   - LLM
-  - Temperature
-  - Softmax
   - 深度学习
-categories: ['tech-learning', 'deep-learning', 'transformer']
+categories: ['note', 'ai', 'transformer']
 lang: zh
 ---
 

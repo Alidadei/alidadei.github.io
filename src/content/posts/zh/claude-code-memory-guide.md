@@ -3,9 +3,7 @@ title: 'Claude Code Memory 与 CLAUDE.md 配置指南'
 date: 2026-03-16
 tags:
   - Claude Code
-  - Memory
-  - 配置
-categories: ['personal-practice']
+categories: ['practice']
 lang: zh
 ---
 

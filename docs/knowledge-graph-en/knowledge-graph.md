@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-14 (最后更新: commit 00377fb)
+> 生成时间：2026-06-16 (最后更新: 新增 cms CLI 维护工具 + 分类 slug 重命名)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -148,7 +148,8 @@ graph TB
 │  src/data/                                             │
 │  ├── site.ts          站点配置 (作者/导航/社交链接)       │
 │  ├── categories.json  分类树 (3顶级 + 子分类)            │
-│  ├── categories.ts    分类工具函数                       │
+│  ├── categories.ts    分类工具函数
+│  ├── redirects.json   分类旧URL→新URL重定向 (cms改名时自动生成)                       │
 │  └── quotes.json      每日一句 (中英各10条)               │
 │                                                        │
 │  src/content/                                          │
@@ -193,7 +194,7 @@ description?: string   摘要描述
 date: Date             发布日期
 updated?: Date         更新日期
 tags: string[]         标签列表
-categories?: string[]  分类路径 (如 ["tech-learning", "deep-learning"])
+categories?: string[]  分类路径 (如 ["note", "ai"])
 category?: string      旧版分类 (兼容)
 image?: string         封面图
 draft?: boolean        草稿 (默认 false)
@@ -234,14 +235,17 @@ categories?: string[]  分类标签 (前端自动聚合成 tabs)
 ## 7. 分类体系
 
 ```
-博客分类树
-├── tech-learning (学习笔记)
-│   └── deep-learning (深度学习)
-│       └── transformer
-│   └── embedded (嵌入式)
-│   └── data-structure (数据结构)
-├── personal-practice (个人实践)
-└── personal-views (个人调研&感悟)
+博客分类树 (slug 即 URL 段,/zh/blog/category/<slug>/)
+├── note (学习笔记)
+│   ├── ai (AI)
+│   │   └── transformer (Transformer)
+│   ├── embedded (嵌入式开发)
+│   └── data-structure (数据结构与算法)
+├── practice (个人调研&实践)
+└── insights (个人感悟)
+
+> 旧 slug (tech-learning / deep-learning / personal-practice / personal-views) 已重命名;
+> 旧 URL 通过 redirects.json 自动跳转到新 slug。
 ```
 
 ---
@@ -331,10 +335,16 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 alidadei.github.io/
 ├── .github/workflows/deploy.yml      # CI/CD
 ├── .githooks/pre-commit               # Git pre-commit hook (自动更新3D缓存版本号)
-├── astro.config.mjs                   # Astro 配置
-├── package.json                       # 依赖
+├── astro.config.mjs                   # Astro 配置 (含 redirects 字段)
+├── package.json                       # 依赖 (含 cms script + devDep @inquirer/prompts)
 ├── tsconfig.json                      # TS 配置
 ├── CLAUDE.md                          # Claude Code 指令 (精简版)
+│
+├── scripts/                           # 构建/维护脚本
+│   ├── gen-portfolio-thumbs.mjs       # 作品集缩略图 (sharp)
+│   └── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
+├── tests/                             # 验证脚本
+│   └── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
 │
 ├── docs/                              # 文档
 │   ├── knowledge-graph-en/            # 知识图谱
@@ -374,6 +384,7 @@ alidadei.github.io/
 │   │   ├── site.ts                    # 站点配置
 │   │   ├── categories.ts             # 分类工具
 │   │   ├── categories.json           # 分类树
+│   │   ├── redirects.json            # 分类旧URL→新URL重定向 (astro redirects)
 │   │   └── quotes.json               # 每日一句
 │   │
 │   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
@@ -577,6 +588,29 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 - 文章编辑器 (Markdown + 实时预览)
 - 标签管理 / 分类管理 / 图片管理 / 部署状态
 - 自动保存到 localStorage
+
+---
+
+## 16. 本地维护工具 (cms CLI)
+
+> `npm run cms` — 交互式管理博客分类/标签,直接读写本地仓库文件(不依赖远程 Worker)。
+> 文件: `scripts/cms.mjs`(零运行时依赖,仅 devDep `@inquirer/prompts`)。
+> 测试: `tests/cms-functions.test.mjs`(61 项,覆盖解析/改写/匹配/截断/重定向逻辑)。
+
+**功能**
+- 分类:列出 / 新增 / 重命名 slug / 改中英文名称 / 删除 / 批量删除
+- 标签:列出 / 重命名 / 删除 / 批量删除
+- 全程 dry-run 预览 + 确认;列表显示中文名;输入步骤 Ctrl+C 返回菜单;列表用「← 返回」
+
+**分类 slug = URL 段**:`categories.json` 的 slug 直接构成 `/zh/blog/category/<slug>/`。
+- 改**中文名/描述**(label):只动 categories.json,**不影响 URL**。
+- 改 **slug**:才换 URL,脚本会 ① 改 categories.json ② 同步所有文章 frontmatter `categories` 数组里该 slug(任意位置)③ 往 `src/data/redirects.json` 写旧→新 URL(中英各一条)。
+
+**重定向机制**:`astro.config.mjs` import `redirects.json` 并设 `redirects` 字段 → Astro static 模式为每条生成 `<meta http-equiv="refresh">` 客户端重定向页(对正常访问零负担,只有访问旧 URL 的请求触发)。
+
+**frontmatter 改写策略**:行级替换、不重序列化(`categories` 单行内联数组、`tags` YAML 多行块各自处理),保留单引号/缩进/字段顺序,最小化 git diff。
+
+**删除分类**:批量/单个删除时,会把受影响文章的 `categories` 路径截断到被删节点的父级(纯函数 `truncateForDeletedPaths`),避免悬空 slug 导致文章从分类页消失。
 
 ---
 

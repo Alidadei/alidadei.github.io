@@ -5,7 +5,7 @@ tags:
   - Claude Code
   - Codex
   - AI Agent
-categories: ['personal-practice']
+categories: ['practice']
 lang: zh
 ---
 

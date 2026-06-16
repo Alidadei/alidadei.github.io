@@ -2,9 +2,8 @@
 title: '微机原理学习笔记'
 date: 2023-04-01
 tags:
-  - microcomputer
   - 微机原理
-categories: ['tech-learning', 'embedded']
+categories: ['note', 'embedded']
 lang: zh
 ---
 

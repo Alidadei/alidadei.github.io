@@ -3,10 +3,7 @@ title: 'Git Rebase 与 Merge 完全指南：图解、对比与冲突解决'
 date: 2026-03-02
 tags:
   - Git
-  - Rebase
-  - Merge
-  - 版本控制
-categories: ['tech-learning']
+categories: ['note']
 lang: zh
 ---
 

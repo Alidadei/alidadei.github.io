@@ -1,0 +1,20 @@
+{
+  "/zh/blog/category/tech-learning/": "/zh/blog/category/note/",
+  "/en/blog/category/tech-learning/": "/en/blog/category/note/",
+  "/zh/blog/category/tech-learning/deep-learning/": "/zh/blog/category/note/deep-learning/",
+  "/en/blog/category/tech-learning/deep-learning/": "/en/blog/category/note/deep-learning/",
+  "/zh/blog/category/tech-learning/deep-learning/transformer/": "/zh/blog/category/note/deep-learning/transformer/",
+  "/en/blog/category/tech-learning/deep-learning/transformer/": "/en/blog/category/note/deep-learning/transformer/",
+  "/zh/blog/category/tech-learning/embedded/": "/zh/blog/category/note/embedded/",
+  "/en/blog/category/tech-learning/embedded/": "/en/blog/category/note/embedded/",
+  "/zh/blog/category/tech-learning/data-structure/": "/zh/blog/category/note/data-structure/",
+  "/en/blog/category/tech-learning/data-structure/": "/en/blog/category/note/data-structure/",
+  "/zh/blog/category/note/deep-learning/": "/zh/blog/category/note/ai/",
+  "/en/blog/category/note/deep-learning/": "/en/blog/category/note/ai/",
+  "/zh/blog/category/note/deep-learning/transformer/": "/zh/blog/category/note/ai/transformer/",
+  "/en/blog/category/note/deep-learning/transformer/": "/en/blog/category/note/ai/transformer/",
+  "/zh/blog/category/personal-practice/": "/zh/blog/category/practice/",
+  "/en/blog/category/personal-practice/": "/en/blog/category/practice/",
+  "/zh/blog/category/personal-views/": "/zh/blog/category/insights/",
+  "/en/blog/category/personal-views/": "/en/blog/category/insights/"
+}

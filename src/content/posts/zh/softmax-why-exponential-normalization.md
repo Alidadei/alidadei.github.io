@@ -2,11 +2,8 @@
 title: 'Softmax 结构：为什么指数归一化如此普遍？'
 date: 2026-01-01
 tags:
-  - Softmax
   - 深度学习
-  - 机器学习
-  - 数学
-categories: ['tech-learning', 'deep-learning']
+categories: ['note', 'ai']
 lang: zh
 ---
 

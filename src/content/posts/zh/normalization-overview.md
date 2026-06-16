@@ -4,9 +4,7 @@ date: 2026-01-01
 tags:
   - 深度学习
   - 归一化
-  - BatchNorm
-  - LayerNorm
-categories: ['tech-learning', 'deep-learning']
+categories: ['note', 'ai']
 lang: zh
 ---
 
