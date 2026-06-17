@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-16 (最后更新: 新增 cms CLI 维护工具 + 分类 slug 重命名)
+> 生成时间：2026-06-17 (最后更新: 新增博客文章代码块复制按钮 + 浅色主题;清理废弃 docs)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -216,7 +216,7 @@ skills: [{name, items: string[]}]
 ```
 > 所有板块可选,省略则整块(含标题)隐藏。
 > 布局:桌面端左栏(头像🎻+联系方式 sticky)+ 右栏内容;手机端顶部紧凑小卡片。
-> 邮箱/GitHub/位置统一读 site.ts author 字段。维护指南:docs/about-page-update-guide.md
+> 邮箱/GitHub/位置统一读 site.ts author 字段。
 
 ### portfolio (作品集) — 分类 + 缩略图 + 无限滚动 (commit 00377fb)
 ```
@@ -228,7 +228,7 @@ categories?: string[]  分类标签 (前端自动聚合成 tabs)
 ```
 > projects.astro: 分类 tabs(自定义标签动态聚合)+ sharp 压缩缩略图卡片 + 无限滚动(每批6, IntersectionObserver)。
 > 缩略图: `scripts/gen-portfolio-thumbs.mjs`(sharp)→ `public/images/thumbs/*.webp`(gitignore),`npm run thumbs`/build/CI 自动生成。
-> 详情页: 独立 HTML(`public/portfolio/*.html`),md 正文闲置。维护文档: `docs/portfolio-maintenance.md`。
+> 详情页: 独立 HTML(`public/portfolio/*.html`),md 正文闲置。
 
 ---
 
@@ -320,6 +320,7 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 博客列表 | 搜索框展开/收起 | Vanilla JS (max-width transition) |
 | 文章详情 | TOC 侧边栏生成 + 滚动追踪 | 桌面端: 固定侧栏 / 移动端: 右侧悬浮按钮+滑出面板 |
 | 文章详情 | 平滑跳转 | Vanilla JS (getBoundingClientRect) |
+| 文章详情 | 代码块一键复制按钮 | Vanilla JS (clipboard API + execCommand 回退);BaseLayout 注入,图标按钮,桌面 hover 显示/手机(@media hover:none)常显,点击变绿色 ✓ |
 | 简历 | 折叠面板展开/收起 | Vanilla JS (max-height transition) |
 | 简历 | 全部展开/收起 | Vanilla JS |
 | 简历 | 导出 PDF | window.print() |
@@ -349,13 +350,13 @@ alidadei.github.io/
 ├── docs/                              # 文档
 │   ├── knowledge-graph-en/            # 知识图谱
 │   │   └── knowledge-graph.md         # ← 本文件
-│   ├── MAINTENANCE.md
-│   ├── PRD-blog-category.md
-│   ├── plan-blog-category.md
+│   ├── quick-commands.md               # 常用快捷命令 (dev/build/cms/手机调试)
+│   ├── 技术博客排版规范.md              # 博客排版规范 (适配本项目:单行categories/正文从##起)
 │   ├── posts-writing-guide.md          # 博客写作规范 (原posts/README.md)
-│   ├── about-page-update-guide.md      # 关于我维护指南 (Markdown更新流程)
+│   ├── codex-review.md                 # codex 审阅提示
+│   ├── 余同学简历.md
 │   ├── 问题.md                          # 待修复问题清单
-│   └── ...
+│   └── 个人博客分类.txt
 │
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
@@ -549,6 +550,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 移动端干支容器 | commit aac2053: 干支容器移动端top改为 top-[66px] (紧贴Header下方) |
 | 移动端3D行星缩放 | commit aac2053: 3d-background.html 移动端ORBIT_RADIUS从350增至480，使行星在手机屏幕上更小 |
 | Service Worker 强制缓存 | commit 1d979da: public/sw.js 重资源(vendor/*, 3d-background.html)Cache First,连硬刷新也秒开;HTML Network First;其他静态 SWR。BaseLayout 注册(仅生产,dev 不注册)。pre-commit hook 在 vendor/three/ 改时自动 bump sw.js VERSION 清旧库缓存;3d-background.html 改时自动更新 iframe ?v= |
+| 代码块配色 | Shiki `github-light` 浅色主题(深色文字);`pre` 背景由 CSS `!important` 覆盖为浅灰 #e8e8e8(Shiki 默认注入 inline `#fff` 白底,须 !important 才能盖过);浅底配深字,与米色站点协调 |
 
 ---
 

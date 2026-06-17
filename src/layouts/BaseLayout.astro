@@ -78,5 +78,55 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         });
       }
     </script>
+
+    <!-- 代码块一键复制按钮 -->
+    <script>
+      function addCopyButton(pre) {
+        if (pre.querySelector('.copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'copy-btn';
+        btn.setAttribute('aria-label', '复制代码');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        btn.addEventListener('click', async () => {
+          const code = pre.querySelector('code');
+          const text = (code ? code.innerText : pre.innerText) || '';
+          try {
+            await navigator.clipboard.writeText(text);
+          } catch {
+            // 回退:非 HTTPS 或旧浏览器
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch {}
+            document.body.removeChild(ta);
+          }
+          btn.textContent = '✓';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+            btn.classList.remove('copied');
+          }, 1500);
+        });
+        pre.appendChild(btn);
+      }
+      function initCopyButtons() {
+        document.querySelectorAll('pre').forEach(addCopyButton);
+      }
+      initCopyButtons();
+      // 兜底:文章懒加载或 view transitions 后动态出现的代码块
+      new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          m.addedNodes.forEach((node) => {
+            if (node.nodeType !== 1) return;
+            if (node.tagName === 'PRE') addCopyButton(node);
+            node.querySelectorAll?.('pre').forEach(addCopyButton);
+          });
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+    </script>
   </body>
 </html>
