@@ -29,12 +29,14 @@ export const siteConfig = {
       { label: '关于我', href: '/zh/about/' },
       { label: '博客', href: '/zh/blog/' },
       { label: '项目', href: '/zh/projects/' },
+      { label: '友链', href: '/zh/links/' },
     ],
     en: [
       { label: 'Home', href: '/en/' },
       { label: 'About', href: '/en/about/' },
       { label: 'Blog', href: '/en/blog/' },
       { label: 'Projects', href: '/en/projects/' },
+      { label: 'Friends', href: '/en/links/' },
     ],
   },
 } as const;

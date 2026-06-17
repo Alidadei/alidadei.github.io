@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-17 (最后更新: 新增博客文章代码块复制按钮 + 浅色主题;清理废弃 docs)
+> 生成时间：2026-06-18 (最后更新: 新增友链页 + cms 友链管理;AgenticRL/GRPO 博客文章)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -66,6 +66,7 @@
 /[lang]/about/              关于我 (双栏布局;内容由 content/about/*.md 维护;含AwardWall彩蛋)
 /[lang]/cv/                 简历 (折叠面板，旧版保留)
 /[lang]/projects/           项目展示
+/[lang]/links/              友链 (玻璃质感卡片网格,数据驱动 friends.json)
 /[lang]/blog/               博客列表 (时间线 + 分类 + 搜索)
 /[lang]/blog/[slug]/        博客文章详情 (TOC侧边栏 + 面包屑)
 /[lang]/blog/category/[..]/ 分类页
@@ -386,6 +387,7 @@ alidadei.github.io/
 │   │   ├── categories.ts             # 分类工具
 │   │   ├── categories.json           # 分类树
 │   │   ├── redirects.json            # 分类旧URL→新URL重定向 (astro redirects)
+│   │   ├── friends.json              # 友链数据 (name/url/avatar/desc)
 │   │   └── quotes.json               # 每日一句
 │   │
 │   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
@@ -449,11 +451,11 @@ alidadei.github.io/
 ## 12. 导航结构
 
 ```
-当前导航 (4项 + 语言切换)
-┌──────────┬──────────┬──────────┬──────────┬─────────┐
-│  首页     │  关于我    │  博客     │  项目     │ English  │
-│  /zh/    │/zh/about/│ /zh/blog/│/zh/proj/ │ (无边框) │
-└──────────┴──────────┴──────────┴──────────┴─────────┘
+当前导航 (5项 + 语言切换)
+┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐
+│  首页     │  关于我    │  博客     │  项目     │  友链     │ English  │
+│  /zh/    │/zh/about/│ /zh/blog/│/zh/proj/ │/zh/links/│ (无边框) │
+└──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘
 Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 ```
 

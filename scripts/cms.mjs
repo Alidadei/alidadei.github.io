@@ -13,6 +13,7 @@ const ROOT = process.cwd();
 const POSTS_DIR = path.join(ROOT, 'src/content/posts/zh');
 const CATS_JSON = path.join(ROOT, 'src/data/categories.json');
 const REDIRECTS_JSON = path.join(ROOT, 'src/data/redirects.json');
+const FRIENDS_JSON = path.join(ROOT, 'src/data/friends.json');
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 const LANGS = ['zh', 'en'];
 
@@ -24,8 +25,10 @@ const deepClone = (x) => JSON.parse(JSON.stringify(x));
 // ---------- 数据加载(每次读磁盘,保证多步操作基于最新状态) ----------
 function loadCategories() { return JSON.parse(fs.readFileSync(CATS_JSON, 'utf8')); }
 function loadRedirects() { return JSON.parse(fs.readFileSync(REDIRECTS_JSON, 'utf8')); }
+function loadFriends() { return JSON.parse(fs.readFileSync(FRIENDS_JSON, 'utf8')); }
 function writeCategoriesJson(tree) { fs.writeFileSync(CATS_JSON, JSON.stringify(tree, null, 2) + '\n'); }
 function writeRedirectsJson(obj) { fs.writeFileSync(REDIRECTS_JSON, JSON.stringify(obj, null, 2) + '\n'); }
+function writeFriendsJson(arr) { fs.writeFileSync(FRIENDS_JSON, JSON.stringify(arr, null, 2) + '\n'); }
 
 // ---------- 分类树纯函数(复刻 src/data/categories.ts,不 import) ----------
 // 所有根→叶(含中间节点)路径
@@ -440,6 +443,75 @@ async function batchDeleteTags() {
   console.log(`✓ 完成。建议: git add -A && git commit -m "cms: batch delete ${selected.length} tags"`);
 }
 
+// ============ 友链功能 ============
+async function listFriends() {
+  const friends = loadFriends();
+  if (!friends.length) { console.log('\n无友链'); return; }
+  console.log(`\n友链(${friends.length} 条):`);
+  friends.forEach((f, i) => {
+    const avatar = f.avatar ? '🖼' : '🔤';
+    console.log(`  ${i + 1}. ${f.name}  ${avatar}  ${f.url}`);
+    if (f.desc) console.log(`     ${f.desc}`);
+  });
+}
+
+async function addFriend() {
+  const name = await input({ message: '名字:', validate: v => v.trim() ? true : '不能为空' });
+  const url = await input({
+    message: '网址(https://...):',
+    validate: v => /^https?:\/\//.test(v.trim()) ? true : '需以 http:// 或 https:// 开头',
+  });
+  const desc = await input({ message: '一句话简介(可空):' }) || '';
+  const avatar = await input({ message: '头像路径(如 /images/friends/x.png,留空用首字母):' }) || '';
+  const friends = loadFriends();
+  const node = { name: name.trim(), url: url.trim(), avatar: avatar.trim(), desc: desc.trim() };
+  console.log(`\n将新增友链:`);
+  console.log(`  ${node.name}  ${node.url}`);
+  if (node.desc) console.log(`  ${node.desc}`);
+  if (node.avatar) console.log(`  头像: ${node.avatar}`);
+  if (await confirm({ message: '写入 friends.json?' })) {
+    friends.push(node);
+    writeFriendsJson(friends);
+    console.log(`✓ 完成。建议: git add -A && git commit -m "cms: add friend ${node.name}"`);
+  } else console.log('已取消。');
+}
+
+async function deleteFriend() {
+  const friends = loadFriends();
+  if (!friends.length) { console.log('无友链'); return; }
+  const idx = await select({
+    message: '选择要删除的友链:',
+    choices: [BACK, ...friends.map((f, i) => ({ name: `${f.name}  (${f.url})`, value: i }))],
+  });
+  if (idx === null) return;
+  const target = friends[idx];
+  console.log(`\n将删除: ${target.name}  (${target.url})`);
+  if (await confirm({ message: '确认删除?' })) {
+    friends.splice(idx, 1);
+    writeFriendsJson(friends);
+    console.log(`✓ 完成。建议: git add -A && git commit -m "cms: delete friend ${target.name}"`);
+  } else console.log('已取消。');
+}
+
+async function batchDeleteFriends() {
+  const friends = loadFriends();
+  if (!friends.length) { console.log('无友链'); return; }
+  console.log('\n用空格勾选要删除的友链(可多选),回车确认。Ctrl+C 取消。');
+  const selected = await checkbox({
+    message: '选择要批量删除的友链:',
+    choices: friends.map((f, i) => ({ name: `${f.name}  (${f.url})`, value: i })),
+  });
+  if (!selected.length) { console.log('未选择任何友链。'); return; }
+  console.log(`\n将删除 ${selected.length} 条:`);
+  for (const i of selected) console.log(`  ${friends[i].name}  (${friends[i].url})`);
+  if (!(await confirm({ message: '确认批量删除?' }))) { console.log('已取消。'); return; }
+  // 从大到小删,避免索引错位
+  const set = new Set(selected);
+  const remaining = friends.filter((_, i) => !set.has(i));
+  writeFriendsJson(remaining);
+  console.log(`✓ 完成。建议: git add -A && git commit -m "cms: batch delete ${selected.length} friends"`);
+}
+
 // ============ 主循环 ============
 // 运行子操作;Ctrl+C(ExitPromptError)视为「取消」,返回上级菜单而非退出整个程序
 async function runOp(fn) {
@@ -461,6 +533,7 @@ async function main() {
       choices: [
         { name: '🗂  分类管理', value: 'cat' },
         { name: '🔖  标签管理', value: 'tag' },
+        { name: '🔗  友链管理', value: 'friend' },
         { name: '退出', value: 'exit' },
       ],
     });
@@ -497,6 +570,22 @@ async function main() {
         });
         if (sub === 'back') break;
         const ops = { list: listTags, rename: renameTag, del: deleteTag, batch: batchDeleteTags };
+        if (ops[sub]) await runOp(ops[sub]);
+      }
+    } else if (action === 'friend') {
+      while (true) {
+        const sub = await select({
+          message: '友链管理',
+          choices: [
+            { name: '列出友链', value: 'list' },
+            { name: '新增友链', value: 'add' },
+            { name: '删除友链', value: 'del' },
+            { name: '批量删除友链(多选)', value: 'batch' },
+            { name: '返回', value: 'back' },
+          ],
+        });
+        if (sub === 'back') break;
+        const ops = { list: listFriends, add: addFriend, del: deleteFriend, batch: batchDeleteFriends };
         if (ops[sub]) await runOp(ops[sub]);
       }
     }

@@ -1,0 +1,202 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import { type Lang } from '../../data/site';
+import friendsData from '../../data/friends.json';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
+}
+
+const { lang } = Astro.params as { lang: Lang };
+const title = lang === 'zh' ? '友链' : 'Friends';
+const emptyText = lang === 'zh' ? '暂无友链' : 'No links yet';
+const teaser = lang === 'zh'
+  ? '欢迎互换友链!加分项:颜值高的主题、有趣的灵魂!'
+  : 'Always down to be friends! Bonus points for a beautiful theme and an interesting soul.';
+---
+
+<PageLayout title={title} fullWidth>
+  <section class="links-wrap px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-bold text-primary mb-2">{title}</h1>
+    <p class="text-text-muted mb-8">{teaser}</p>
+
+    {friendsData.length === 0 ? (
+      <p class="text-text-muted">{emptyText}</p>
+    ) : (
+      <ul class="links-list">
+        {friendsData.map((f) => {
+          const initial = (f.name || '?').trim().charAt(0).toUpperCase();
+          const clickable = !!f.url && /^https?:\/\/[^\s]+/.test(f.url);
+          const Tag = clickable ? 'a' : 'div';
+          const linkProps = clickable
+            ? { href: f.url, target: '_blank', rel: 'noopener noreferrer' }
+            : {};
+          return (
+            <li>
+              <Tag class:list={['friend-card', !clickable && 'friend-card--static']} {...linkProps}>
+                <div class="friend-avatar">
+                  {f.avatar
+                    ? <img src={f.avatar} alt={f.name} loading="lazy" />
+                    : <span>{initial}</span>}
+                </div>
+                <div class="friend-body">
+                  <div class="friend-name">{f.name}</div>
+                  {f.desc && <div class="friend-desc">{f.desc}</div>}
+                </div>
+                {clickable && (
+                  <svg class="friend-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 17L17 7M17 7H8M17 7V16" />
+                  </svg>
+                )}
+              </Tag>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+    </div>
+  </section>
+</PageLayout>
+
+<style>
+/* 暖色光斑背景:给玻璃卡片提供可模糊的底色,让质感显现 */
+.links-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+
+/* —— 玻璃卡片 —— */
+.friend-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.35rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  text-decoration: none;
+  background:
+    linear-gradient(135deg,
+      rgba(255, 252, 247, 0.74) 0%,
+      rgba(248, 240, 228, 0.56) 48%,
+      rgba(238, 224, 202, 0.42) 100%);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  border: 1px solid rgba(176, 125, 79, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 6px 20px -8px rgba(91, 70, 54, 0.18),
+    0 1px 2px rgba(91, 70, 54, 0.05);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.35s ease,
+              border-color 0.35s ease;
+}
+.friend-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(176, 125, 79, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 16px 34px -10px rgba(91, 70, 54, 0.26),
+    0 3px 8px rgba(91, 70, 54, 0.08);
+}
+/* sheen:斜向高光,hover 时扫过 */
+.friend-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 65%,
+    transparent 100%);
+  transform: skewX(-18deg);
+  pointer-events: none;
+  transition: left 0.75s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.friend-card:hover::before { left: 130%; }
+
+/* 不可点击的卡片:去掉上浮与扫光,光标默认,弱化交互暗示 */
+.friend-card--static { cursor: default; }
+.friend-card--static:hover { transform: none; border-color: rgba(176, 125, 79, 0.22); }
+.friend-card--static:hover::before { left: -60%; }
+
+/* —— 头像:暖色光环 —— */
+.friend-avatar {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(235, 226, 212, 0.92), rgba(221, 210, 194, 0.7));
+  color: #5b4636;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.7),
+    0 0 0 3px rgba(176, 125, 79, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+}
+.friend-card:hover .friend-avatar {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 0 0 4px rgba(176, 125, 79, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+.friend-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.friend-body { flex: 1; min-width: 0; }
+.friend-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #5b4636;
+  transition: color 0.3s ease;
+}
+.friend-card:hover .friend-name { color: #b07d4f; }
+.friend-desc {
+  font-size: 0.875rem;
+  color: #5e4d3e;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-arrow {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #8c7b6a;
+  opacity: 0.7;
+  transition: transform 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+.friend-card:hover .friend-arrow { transform: translate(2px, -2px); color: #b07d4f; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .friend-card, .friend-card::before, .friend-avatar, .friend-arrow { transition: none; }
+  .friend-card:hover { transform: none; }
+  .friend-card:hover::before { left: -60%; }
+}
+</style>
+
+<style is:global>
+/* 友链页:整个页面背景都铺上暖色光斑(和板块同款) */
+body {
+  background-color: #faf6f0;
+  background-image:
+    radial-gradient(60% 50% at 12% 18%, rgba(176, 125, 79, 0.16), transparent 70%),
+    radial-gradient(55% 45% at 88% 55%, rgba(91, 70, 54, 0.11), transparent 72%),
+    radial-gradient(42% 35% at 50% 92%, rgba(201, 154, 107, 0.12), transparent 70%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+}
+</style>
