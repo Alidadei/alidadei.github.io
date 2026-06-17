@@ -22,6 +22,9 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
+# Windows 快捷方式
+*.lnk
+
 # jetbrains setting folder
 .idea/
 
