@@ -7,6 +7,11 @@ export type FeedPost = {
 // 构建时同一 feed 只抓一次(zh/en 两个友链页共享)
 const cache = new Map<string, FeedPost[]>();
 
+// CI 跑在 GitHub 数据中心,无 UA 的请求会被 Cloudflare 等 bot 防护拦截 →
+// 带一个真实浏览器 UA(ngaizean.com 等套 Cloudflare 的站点必须)
+const BROWSER_UA =
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 function decodeEntities(s: string): string {
   return s
     .replace(/&lt;/g, '<')
@@ -56,7 +61,10 @@ export async function getLatestPosts(
       const timer = setTimeout(() => ctrl.abort(), 8000);
       const res = await fetch(feedUrl, {
         signal: ctrl.signal,
-        headers: { accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*' },
+        headers: {
+          accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+          'user-agent': BROWSER_UA,
+        },
       });
       clearTimeout(timer);
       if (!res.ok) return [];
