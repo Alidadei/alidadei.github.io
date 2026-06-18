@@ -1,6 +1,6 @@
 ---
 import PageLayout from '../../../layouts/PageLayout.astro';
-import { type Lang } from '../../../data/site';
+import { siteConfig, type Lang } from '../../../data/site';
 import { getUI } from '../../../i18n/ui';
 import { getCollection } from 'astro:content';
 import { categoryTree, getDefaultCategories, getCategoryLabel } from '../../../data/categories';
@@ -47,6 +47,20 @@ const topCategories = categoryTree;
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
     </button>
+    <a
+      href="/rss.xml"
+      target="_blank"
+      rel="noopener"
+      id="rss-copy-btn"
+      data-rss-url={`${siteConfig.url}/rss.xml`}
+      class="text-text-muted hover:text-accent transition-colors cursor-pointer"
+      title={lang === 'zh' ? '点击复制 RSS 订阅地址' : 'Click to copy RSS URL'}
+      aria-label="RSS"
+    >
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M6.18 17.82a2.18 2.18 0 1 1-4.36 0 2.18 2.18 0 0 1 4.36 0zM2 9.5v3a8.5 8.5 0 0 1 8.5 8.5h3A11.5 11.5 0 0 0 2 9.5zM2 3v3a15 15 0 0 1 15 15h3A18 18 0 0 0 2 3z"/>
+      </svg>
+    </a>
     <!-- Expandable search input -->
     <div id="search-wrapper" class="overflow-hidden transition-all duration-300" style="max-width:0; opacity:0">
       <input
@@ -200,6 +214,31 @@ const topCategories = categoryTree;
 
     // Search
     searchInput?.addEventListener('input', () => filterPosts());
+
+    // RSS: click copies subscription URL to clipboard (Ctrl/middle-click still opens the feed)
+    const rssBtn = document.getElementById('rss-copy-btn') as HTMLElement | null;
+    if (rssBtn) {
+      const rssUrl = rssBtn.dataset.rssUrl || '';
+      const rssHTML = rssBtn.innerHTML;
+      rssBtn.addEventListener('click', async (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        try {
+          await navigator.clipboard.writeText(rssUrl);
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = rssUrl;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch {}
+          document.body.removeChild(ta);
+        }
+        rssBtn.innerHTML = '<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+        setTimeout(() => { rssBtn.innerHTML = rssHTML; }, 1500);
+      });
+    }
 
     function filterPosts() {
       const query = (searchInput?.value || '').toLowerCase().trim();

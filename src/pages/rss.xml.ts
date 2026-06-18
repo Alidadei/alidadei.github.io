@@ -9,7 +9,7 @@ export async function GET(context: any) {
 
   return rss({
     title: siteConfig.title,
-    description: siteConfig.description.en,
+    description: siteConfig.description.zh,
     site: context.site,
     items: sorted.map((post) => {
       const slug = post.id.split('/').slice(1).join('/');
