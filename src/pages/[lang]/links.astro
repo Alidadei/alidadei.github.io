@@ -165,9 +165,10 @@ const teaser = lang === 'zh'
   font-size: 0.875rem;
   color: #5e4d3e;
   margin-top: 0.15rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
+  /* 长文本换行完整显示,不再单行截断 */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .friend-arrow {
