@@ -2,8 +2,8 @@ export const siteConfig = {
   name: 'Harry Yu',
   title: 'About Harry Yu',
   description: {
-    zh: 'Harry Yu 的个人网站 - 复旦大学生物医学工程（人工智能方向）博士研究生',
-    en: 'Harry Yu\'s personal website - Ph.D. student in Biomedical Engineering (AI) at Fudan University',
+    zh: 'Harry Yu 的个人网站',
+    en: "Harry Yu's personal website",
   },
   url: 'https://alidadei.github.io',
   author: {
