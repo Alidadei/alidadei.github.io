@@ -67,11 +67,25 @@ export async function getLatestPosts(
         },
       });
       clearTimeout(timer);
-      if (!res.ok) return [];
+      if (!res.ok) {
+        // 诊断:打印真实状态码 + 响应体片段,确认是否 CF 质询(403/503)
+        const body = (await res.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
+        console.error(`[friend-feed] ${feedUrl} -> HTTP ${res.status} ${res.statusText} | body: ${body}`);
+        return [];
+      }
       const xml = await res.text();
+      // 200 但内容不是 feed:可能是 CF 的 200 质询页或空文档
+      if (!/<(rss|feed|item|entry)\b/i.test(xml)) {
+        console.error(`[friend-feed] ${feedUrl} -> 200 but not a feed (likely CF challenge page) | body: ${xml.slice(0, 200).replace(/\s+/g, ' ')}`);
+        return [];
+      }
       posts = parseFeed(xml).sort((a, b) => (b.pubDate.getTime() || 0) - (a.pubDate.getTime() || 0));
       cache.set(feedUrl, posts);
-    } catch {
+    } catch (e) {
+      // 诊断:区分超时(abort)与其它网络错误
+      const err = e as { name?: string; message?: string };
+      const reason = err?.name === 'AbortError' ? 'timeout(8s)' : (err?.message || String(e));
+      console.error(`[friend-feed] ${feedUrl} -> fetch threw: ${reason}`);
       return [];
     }
   }
