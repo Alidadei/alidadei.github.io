@@ -2,6 +2,7 @@
 import PageLayout from '../../layouts/PageLayout.astro';
 import { type Lang } from '../../data/site';
 import friendsData from '../../data/friends.json';
+import { getLatestPosts, type FeedPost } from '../../lib/feed';
 
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
@@ -13,6 +14,20 @@ const emptyText = lang === 'zh' ? '暂无友链' : 'No links yet';
 const teaser = lang === 'zh'
   ? '欢迎互换友链!加分项:颜值高的主题、有趣的灵魂!'
   : 'Always down to be friends! Bonus points for a beautiful theme and an interesting soul.';
+
+// 构建时为声明了 feed 的友链抓取最新文章(仅 /posts/ 下的真实文章,过滤 /about/ /friends/ 等非文章页)
+const POSTS_LIMIT = 3;
+const friendPosts = new Map<string, FeedPost[]>();
+await Promise.all(
+  friendsData.map(async (f) => {
+    const feedUrl = (f as { feed?: string }).feed;
+    if (!feedUrl) return;
+    const posts = await getLatestPosts(feedUrl, POSTS_LIMIT, (p) => /\/posts?\//.test(p.link));
+    if (posts.length) friendPosts.set(feedUrl, posts);
+  }),
+);
+const formatDate = (d: Date) =>
+  d.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 ---
 
 <PageLayout title={title} fullWidth>
@@ -28,6 +43,47 @@ const teaser = lang === 'zh'
         {friendsData.map((f) => {
           const initial = (f.name || '?').trim().charAt(0).toUpperCase();
           const clickable = !!f.url && /^https?:\/\/[^\s]+/.test(f.url);
+          const feedUrl = (f as { feed?: string }).feed;
+          const posts = feedUrl ? (friendPosts.get(feedUrl) || []) : [];
+          const hasPosts = posts.length > 0;
+
+          // 有最新文章:卡片改为 div 外壳(避免 a 嵌套 a),头部+文章列表各自独立链接
+          if (hasPosts) {
+            return (
+              <li>
+                <div class="friend-card friend-card--with-posts">
+                  <a class="friend-head" href={f.url} target="_blank" rel="noopener noreferrer">
+                    <div class="friend-avatar">
+                      {f.avatar
+                        ? <img src={f.avatar} alt={f.name} loading="lazy" />
+                        : <span>{initial}</span>}
+                    </div>
+                    <div class="friend-body">
+                      <div class="friend-name">{f.name}</div>
+                      {f.desc && <div class="friend-desc">{f.desc}</div>}
+                    </div>
+                    <svg class="friend-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M7 17L17 7M17 7H8M17 7V16" />
+                    </svg>
+                  </a>
+                  <div class="friend-posts">
+                    <div class="friend-posts-label">{lang === 'zh' ? '最新文章' : 'Latest posts'}</div>
+                    <ul>
+                      {posts.map((p) => (
+                        <li>
+                          <a class="friend-post" href={p.link} target="_blank" rel="noopener noreferrer">
+                            <span class="friend-post-title">{p.title}</span>
+                            <time class="friend-post-date">{formatDate(p.pubDate)}</time>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </li>
+            );
+          }
+
           const Tag = clickable ? 'a' : 'div';
           const linkProps = clickable
             ? { href: f.url, target: '_blank', rel: 'noopener noreferrer' }
@@ -123,6 +179,58 @@ const teaser = lang === 'zh'
 .friend-card--static { cursor: default; }
 .friend-card--static:hover { transform: none; border-color: rgba(176, 125, 79, 0.22); }
 .friend-card--static:hover::before { left: -60%; }
+
+/* —— 带最新文章的卡片:改为纵向布局,避免 a 嵌套 a —— */
+.friend-card--with-posts {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.friend-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+.friend-posts {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(176, 125, 79, 0.28);
+}
+.friend-posts-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: #a08974;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+.friend-posts ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.friend-post {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-decoration: none;
+  font-size: 0.86rem;
+  color: #5e4d3e;
+  padding: 0.12rem 0;
+  transition: color 0.2s ease;
+}
+.friend-post:hover { color: #b07d4f; }
+.friend-post-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friend-post-date {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #a89685;
+  white-space: nowrap;
+}
 
 /* —— 头像:暖色光环 —— */
 .friend-avatar {
