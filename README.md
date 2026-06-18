@@ -105,6 +105,12 @@ alidadei.github.io/
 
 ---
 
+## 致谢
+
+本项目的 3D 背景场景基于 [weekly-vibe-coding](https://github.com/ChenZiHong-Gavin/weekly-vibe-coding) 项目的「专题五」内容,在此向原作者表示感谢。在原作品的基础上做了修改、大小压缩以及网页加载优化,以适配本站的三层渐进加载架构与首屏性能要求。
+
+---
+
 ## License
 
 个人作品,保留所有权利。
