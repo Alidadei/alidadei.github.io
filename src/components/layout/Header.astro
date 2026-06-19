@@ -113,6 +113,13 @@ const switchLabel = getUI(lang, 'lang.switch');
   menu?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', closeMenu);
   });
+
+  // 点击菜单与按钮之外的空白处收起(按钮自身点击交由上面的 toggle 处理)
+  document.addEventListener('click', (e) => {
+    if (!menuOpen) return;
+    if (menu?.contains(e.target as Node) || btn?.contains(e.target as Node)) return;
+    closeMenu();
+  });
 </script>
 
 <style is:global>
