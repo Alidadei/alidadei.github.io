@@ -88,6 +88,31 @@ export default {
         return wrapCors(() => handleDeployStatus(request, env), request);
       }
 
+      // Feed proxy:构建时 CI 经此反代抓取被 Cloudflare 拦截的友链 feed(白名单防开放代理滥用)
+      if (path === '/api/feed-proxy' && request.method === 'GET') {
+        const target = url.searchParams.get('url');
+        const ALLOWED_FEEDS = [
+          'https://ngaizean.com/index.xml',
+          'https://ngaizean.com/posts/index.xml',
+        ];
+        if (!target || !ALLOWED_FEEDS.includes(target)) {
+          return new Response('forbidden', { status: 403 });
+        }
+        const up = await fetch(target, {
+          headers: {
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            accept: 'application/rss+xml, application/xml, text/xml, */*',
+          },
+        });
+        return new Response(up.body, {
+          status: up.status,
+          headers: {
+            'content-type': up.headers.get('content-type') || 'application/xml',
+            'cache-control': 'public, max-age=3600',
+          },
+        });
+      }
+
       if (path === '/api/health') {
         return wrapCors(async () => new Response(JSON.stringify({ status: 'ok' }), {
           headers: { 'Content-Type': 'application/json' },

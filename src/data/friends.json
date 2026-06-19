@@ -4,7 +4,7 @@
     "url": "https://ngaizean.com/",
     "avatar": "/images/friends/ngaizean.jpg",
     "desc": "港科广✌️、infra专家、体育生博士、哈士奇配色的网站，欢迎访问！",
-    "feed": "https://ngaizean.com/index.xml"
+    "feed": "https://yhl-blog-cms.yuhl.workers.dev/api/feed-proxy?url=https%3A%2F%2Fngaizean.com%2Findex.xml"
   },
   {
     "name": "神秘嘉宾",
