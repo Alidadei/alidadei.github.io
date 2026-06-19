@@ -232,6 +232,11 @@ const formatDate = (d: Date) =>
   white-space: nowrap;
 }
 
+/* 手机端:最新文章只显示 1 篇,其余隐藏 */
+@media (max-width: 767px) {
+  .friend-posts ul li:nth-child(n+2) { display: none; }
+}
+
 /* —— 头像:暖色光环 —— */
 .friend-avatar {
   flex-shrink: 0;
