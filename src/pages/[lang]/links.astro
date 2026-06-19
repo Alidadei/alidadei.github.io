@@ -16,7 +16,7 @@ const teaser = lang === 'zh'
   : 'Always down to be friends! Bonus points for a beautiful theme and an interesting soul.';
 
 // 构建时为声明了 feed 的友链抓取最新文章(仅 /posts/ 下的真实文章,过滤 /about/ /friends/ 等非文章页)
-const POSTS_LIMIT = 3;
+const POSTS_LIMIT = 1;
 const friendPosts = new Map<string, FeedPost[]>();
 await Promise.all(
   friendsData.map(async (f) => {
@@ -230,11 +230,6 @@ const formatDate = (d: Date) =>
   font-size: 0.72rem;
   color: #a89685;
   white-space: nowrap;
-}
-
-/* 手机端:最新文章只显示 1 篇,其余隐藏 */
-@media (max-width: 767px) {
-  .friend-posts ul li:nth-child(n+2) { display: none; }
 }
 
 /* —— 头像:暖色光环 —— */
