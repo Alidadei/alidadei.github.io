@@ -192,11 +192,13 @@ graph TB
 ```
 title: string          文章标题
 description?: string   摘要描述
-date: Date             发布日期
+date: Date             发布日期 (兼作 maturity 的时间锚)
 updated?: Date         更新日期
 tags: string[]         标签列表
-categories?: string[]  分类路径 (如 ["note", "ai"])
+categories?: string[]  分类路径 (如 ["note", "ai"]);第 0 段 = origin 产出方式
 category?: string      旧版分类 (兼容)
+knowledge?: string[]   知识主题路径 subject (存 knowledge.json 的 slug, 如 ["ai/llm/rl"]);构建时强校验必须存在
+maturity?: 基础|当下热点|未来展望  时效定位 (锚在 date)
 image?: string         封面图
 draft?: boolean        草稿 (默认 false)
 lang: zh | en          语言 (默认 zh)
@@ -248,6 +250,20 @@ categories?: string[]  分类标签 (前端自动聚合成 tabs)
 > 旧 slug (tech-learning / deep-learning / personal-practice / personal-views) 已重命名;
 > 旧 URL 通过 redirects.json 自动跳转到新 slug。
 ```
+
+**知识三轴**(origin × subject × maturity,详见 `docs/知识架构分类.md`)——与上面的分类树正交、各管一摊:
+- **origin** = `categories[0]`(note/practice)——产出方式,驱动时间线分类 tab。
+- **subject** = `knowledge` 字段,路径取自 `src/data/knowledge.json` 主题树(存英文 slug,显示查表取中英 label,改名只改 label):
+  ```
+  ai ├─ llm ├─ rl (强化学习)
+  │       └─ agent
+     └─ nn-math (神经网络数学)
+  programming ├─ data-structure / git
+  electronics └─ embedded
+  ```
+- **maturity** = 基础 / 当下热点 / 未来展望,锚在 `date`(随时间不腐烂)。
+- 博客页有**「时间线 / 知识树」双视图**(`src/pages/[lang]/blog/index.astro`):知识树按 subject 主题树横向展开 + maturity 透镜(基础/热点不同色点),`src/components/blog/KnowledgeNode.astro` 递归渲染,可折叠,localStorage 记住视图选择。
+- 新文章用 `npm run new-post`(`scripts/new-post.mjs`)交互式生成三轴 frontmatter;`knowledge` 路径构建时强校验。
 
 ---
 
