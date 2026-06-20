@@ -4,6 +4,8 @@ date: 2026-01-01
 tags:
   - Python
 categories: ['note', 'data-structure']
+knowledge: ['programming/data-structure']
+maturity: 基础
 lang: zh
 ---
 

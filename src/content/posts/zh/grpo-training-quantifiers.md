@@ -5,6 +5,8 @@ tags:
   - LLM
   - Agentic RL
 categories: ['note', 'ai', 'transformer']
+knowledge: ['ai/llm/rl']
+maturity: 当下热点
 lang: zh
 ---
 

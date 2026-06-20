@@ -11,6 +11,7 @@
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",
+    "new-post": "node scripts/new-post.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

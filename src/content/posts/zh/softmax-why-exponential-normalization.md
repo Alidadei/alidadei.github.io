@@ -4,6 +4,8 @@ date: 2026-01-01
 tags:
   - 深度学习
 categories: ['note', 'ai']
+knowledge: ['ai/nn-math']
+maturity: 基础
 lang: zh
 ---
 

@@ -4,6 +4,8 @@ date: 2026-03-02
 tags:
   - Git
 categories: ['note']
+knowledge: ['programming/git']
+maturity: 基础
 lang: zh
 ---
 

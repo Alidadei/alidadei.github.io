@@ -1,0 +1,56 @@
+[
+  {
+    "slug": "ai",
+    "label": { "zh": "AI", "en": "AI" },
+    "children": [
+      {
+        "slug": "llm",
+        "label": { "zh": "大模型", "en": "LLM" },
+        "children": [
+          {
+            "slug": "rl",
+            "label": { "zh": "强化学习", "en": "Reinforcement Learning" },
+            "children": []
+          },
+          {
+            "slug": "agent",
+            "label": { "zh": "Agent", "en": "Agent" },
+            "children": []
+          }
+        ]
+      },
+      {
+        "slug": "nn-math",
+        "label": { "zh": "神经网络数学", "en": "Neural Net Math" },
+        "children": []
+      }
+    ]
+  },
+  {
+    "slug": "programming",
+    "label": { "zh": "编程", "en": "Programming" },
+    "children": [
+      {
+        "slug": "data-structure",
+        "label": { "zh": "数据结构", "en": "Data Structures" },
+        "children": []
+      },
+      {
+        "slug": "git",
+        "label": { "zh": "Git", "en": "Git" },
+        "children": []
+      }
+    ]
+  },
+  {
+    "slug": "electronics",
+    "label": { "zh": "电子信息", "en": "Electronics" },
+    "children": [
+      {
+        "slug": "embedded",
+        "label": { "zh": "嵌入式", "en": "Embedded" },
+        "children": []
+      }
+    ]
+  }
+]

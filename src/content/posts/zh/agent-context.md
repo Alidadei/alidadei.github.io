@@ -6,6 +6,8 @@ tags:
   - Codex
   - AI Agent
 categories: ['practice']
+knowledge: ['ai/llm/agent']
+maturity: 当下热点
 lang: zh
 ---
 

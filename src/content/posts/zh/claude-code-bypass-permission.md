@@ -4,6 +4,8 @@ date: 2026-01-23
 tags:
   - Claude Code
 categories: ['practice']
+knowledge: ['ai/llm/agent']
+maturity: 当下热点
 lang: zh
 draft: true
 ---

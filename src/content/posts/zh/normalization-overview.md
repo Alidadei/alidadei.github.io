@@ -5,6 +5,8 @@ tags:
   - 深度学习
   - 归一化
 categories: ['note', 'ai']
+knowledge: ['ai/nn-math']
+maturity: 基础
 lang: zh
 ---
 

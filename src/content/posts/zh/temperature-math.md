@@ -5,6 +5,8 @@ tags:
   - LLM
   - 深度学习
 categories: ['note', 'ai', 'transformer']
+knowledge: ['ai/nn-math']
+maturity: 基础
 lang: zh
 ---
 

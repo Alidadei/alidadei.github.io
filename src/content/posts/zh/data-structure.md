@@ -5,6 +5,8 @@ tags:
   - Data structure
   - 数据结构
 categories: ['note', 'data-structure']
+knowledge: ['programming/data-structure']
+maturity: 基础
 lang: zh
 ---
 

@@ -4,6 +4,8 @@ import { siteConfig, type Lang } from '../../../data/site';
 import { getUI } from '../../../i18n/ui';
 import { getCollection } from 'astro:content';
 import { categoryTree, getDefaultCategories, getCategoryLabel } from '../../../data/categories';
+import knowledgeData from '../../../data/knowledge.json';
+import KnowledgeNode, { type KNode, type KLeaf } from '../../../components/blog/KnowledgeNode.astro';
 
 export function getStaticPaths() {
   return [{ params: { lang: 'zh' } }, { params: { lang: 'en' } }];
@@ -32,6 +34,29 @@ const postsByYear = enrichPosts.reduce<Record<string, typeof enrichPosts>>((acc,
 const years = Object.keys(postsByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
 const topCategories = categoryTree;
+
+// 知识树:按 knowledge 路径把文章挂到主题树节点,剪掉空分支
+const postsByPath = new Map<string, KLeaf[]>();
+for (const p of enrichPosts) {
+  const slug = p.id.split('/').slice(1).join('/');
+  for (const kp of p.data.knowledge || []) {
+    if (!postsByPath.has(kp)) postsByPath.set(kp, []);
+    postsByPath.get(kp)!.push({ title: p.data.title, slug, date: p.data.date, maturity: p.data.maturity });
+  }
+}
+function buildKTree(nodes: any[], parent: string): KNode[] {
+  const out: KNode[] = [];
+  for (const n of nodes) {
+    const path = parent ? `${parent}/${n.slug}` : n.slug;
+    const children = buildKTree(n.children || [], path);
+    const nodePosts = postsByPath.get(path) || [];
+    if (nodePosts.length || children.length) {
+      out.push({ slug: n.slug, label: n.label, path, posts: nodePosts, children });
+    }
+  }
+  return out;
+}
+const knowledgeTree = buildKTree(knowledgeData as any[], '');
 ---
 
 <PageLayout title={t('nav.blog')}>
@@ -71,10 +96,15 @@ const topCategories = categoryTree;
       />
     </div>
     <p id="search-count" class="text-xs text-text-muted hidden"></p>
+    <!-- View toggle: timeline / knowledge tree -->
+    <div class="view-toggle flex items-center gap-1 ml-auto bg-bg-secondary rounded-full p-0.5">
+      <button id="view-timeline" class="view-btn active">{lang === 'zh' ? '时间线' : 'Timeline'}</button>
+      <button id="view-tree" class="view-btn">{lang === 'zh' ? '知识树' : 'Tree'}</button>
+    </div>
   </div>
 
   <!-- Category Tabs -->
-  <div class="flex flex-wrap gap-2 mb-4">
+  <div id="category-tabs" class="flex flex-wrap gap-2 mb-4">
     <button
       data-category="all"
       class="category-tab px-3 py-1.5 text-xs rounded-full bg-accent text-white transition-colors cursor-pointer"
@@ -138,6 +168,21 @@ const topCategories = categoryTree;
   )}
 
   <p id="no-results" class="text-text-muted hidden">{lang === 'zh' ? '该分类暂无文章' : 'No posts in this category'}</p>
+
+  <!-- Knowledge tree view -->
+  <div id="knowledge-tree" class="hidden max-w-4xl mx-auto">
+    <div class="kt-legend flex flex-wrap items-center gap-4 mb-5 text-xs text-text-muted">
+      <span class="flex items-center gap-1.5"><span class="kt-legend-dot kt-legend-dot--foundation"></span>{lang === 'zh' ? '基础' : 'Foundation'}</span>
+      <span class="flex items-center gap-1.5"><span class="kt-legend-dot kt-legend-dot--hot"></span>{lang === 'zh' ? '当下热点' : 'Hot'}</span>
+      <span class="flex items-center gap-1.5"><span class="kt-legend-dot kt-legend-dot--future"></span>{lang === 'zh' ? '未来展望' : 'Future'}</span>
+      <span class="opacity-70 ml-2">{lang === 'zh' ? '点击节点可折叠' : 'Click a node to collapse'}</span>
+    </div>
+    {knowledgeTree.length === 0 ? (
+      <p class="text-text-muted">{lang === 'zh' ? '暂无知识归类' : 'No knowledge nodes.'}</p>
+    ) : (
+      knowledgeTree.map((node) => <KnowledgeNode node={node} lang={lang} />)
+    )}
+  </div>
 </PageLayout>
 
 <!-- Mobile timeline: keep desktop left-right layout, enlarge fonts -->
@@ -153,6 +198,38 @@ const topCategories = categoryTree;
       font-size: 0.9rem;
     }
   }
+
+  /* View toggle */
+  .view-toggle { border: 1px solid rgba(176,125,79,0.22); }
+  .view-btn { padding: 0.2rem 0.7rem; border-radius: 9999px; color: #8c7b6a; cursor: pointer; transition: all .2s; background: transparent; border: 0; font-weight: 600; font-size: .78rem; }
+  .view-btn.active { background: #b07d4f; color: #fff; }
+
+  /* Knowledge tree */
+  #knowledge-tree { padding-top: 0.25rem; }
+  .kt-node-head { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; padding: 0.3rem 0.4rem; font-weight: 700; color: #5b4636; border-radius: 8px; transition: background .15s, color .15s; }
+  .kt-node-head:hover { background: rgba(176,125,79,0.08); color: #b07d4f; }
+  .kt-caret { display: inline-block; transition: transform .2s; color: #a89685; font-size: .75em; }
+  .kt-node.kt-collapsed > .kt-node-head .kt-caret { transform: rotate(-90deg); }
+  .kt-node-label { font-size: 1.08rem; }
+  .kt-node-count { font-size: .68rem; color: #8c7b6a; background: rgba(176,125,79,0.14); border-radius: 9999px; padding: 0 .45rem; font-weight: 600; }
+  .kt-children { margin-left: 0.6rem; padding-left: 1rem; border-left: 1px dashed rgba(176,125,79,0.3); }
+  .kt-node.kt-collapsed > .kt-children { display: none; }
+
+  .kt-leaf { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.5rem; text-decoration: none; color: #5e4d3e; font-size: .92rem; border-radius: 8px; transition: background .15s, color .15s; }
+  .kt-leaf:hover { background: rgba(176,125,79,0.08); color: #b07d4f; }
+  .kt-leaf-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #c4b49e; }
+  .kt-leaf[data-maturity="基础"] .kt-leaf-dot { background: #8d6e63; }
+  .kt-leaf[data-maturity="当下热点"] .kt-leaf-dot { background: #c99a6b; box-shadow: 0 0 0 2px rgba(201,154,107,0.22); }
+  .kt-leaf[data-maturity="未来展望"] .kt-leaf-dot { background: transparent; border: 1.5px dashed #a89685; }
+  .kt-leaf-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kt-leaf-date { font-size: .7rem; color: #a89685; white-space: nowrap; flex-shrink: 0; }
+
+  .kt-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #c4b49e; }
+  .kt-legend-dot--foundation { background: #8d6e63; }
+  .kt-legend-dot--hot { background: #c99a6b; }
+  .kt-legend-dot--future { background: transparent; border: 1.5px dashed #a89685; }
+
+  .kt-leaf.kt-hidden, .kt-node.kt-hidden { display: none !important; }
 </style>
 
 <script>
@@ -168,6 +245,7 @@ const topCategories = categoryTree;
     const postsList = document.getElementById('posts-list');
     let activeCategory = 'all';
     let searchOpen = false;
+    let currentView = 'timeline';
 
     // Toggle search input
     searchToggle?.addEventListener('click', () => {
@@ -240,40 +318,71 @@ const topCategories = categoryTree;
       });
     }
 
+    // ---- View toggle (timeline / knowledge tree) ----
+    const viewTimeline = document.getElementById('view-timeline');
+    const viewTree = document.getElementById('view-tree');
+    const categoryTabs = document.getElementById('category-tabs');
+    const knowledgeTree = document.getElementById('knowledge-tree');
+    function setView(mode: string) {
+      currentView = mode;
+      const isTree = mode === 'tree';
+      viewTimeline?.classList.toggle('active', !isTree);
+      viewTree?.classList.toggle('active', isTree);
+      [categoryTabs, postsList, noResults].forEach(el => el?.classList.toggle('hidden', isTree));
+      knowledgeTree?.classList.toggle('hidden', !isTree);
+      try { localStorage.setItem('blog-view', mode); } catch {}
+      filterPosts();
+    }
+    viewTimeline?.addEventListener('click', () => setView('timeline'));
+    viewTree?.addEventListener('click', () => setView('tree'));
+    try { if (localStorage.getItem('blog-view') === 'tree') setView('tree'); } catch {}
+
+    // collapse knowledge-tree nodes
+    document.querySelectorAll<HTMLElement>('.kt-node-head').forEach(head => {
+      const toggle = () => head.parentElement?.classList.toggle('kt-collapsed');
+      head.addEventListener('click', toggle);
+      head.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+
     function filterPosts() {
       const query = (searchInput?.value || '').toLowerCase().trim();
-      let totalVisible = 0;
 
+      // timeline cards
+      let timelineVisible = 0;
       yearGroups.forEach(group => {
         const groupCards = group.querySelectorAll<HTMLElement>('.post-card');
         let groupVisible = 0;
-
         groupCards.forEach(card => {
           const cats: string[] = JSON.parse(card.dataset.categories || '[]');
           const categoryMatch = activeCategory === 'all' || cats.includes(activeCategory);
-
           const title = card.textContent?.toLowerCase() || '';
           const textMatch = !query || title.includes(query);
-
-          if (categoryMatch && textMatch) {
-            card.classList.remove('hidden');
-            groupVisible++;
-            totalVisible++;
-          } else {
-            card.classList.add('hidden');
-          }
+          if (categoryMatch && textMatch) { card.classList.remove('hidden'); groupVisible++; timelineVisible++; }
+          else { card.classList.add('hidden'); }
         });
-
         group.classList.toggle('hidden', groupVisible === 0);
       });
 
-      if (postsList) postsList.classList.toggle('hidden', totalVisible === 0);
-      if (noResults) noResults.classList.toggle('hidden', totalVisible > 0);
+      // knowledge-tree leaves + prune empty branches
+      let treeVisible = 0;
+      document.querySelectorAll<HTMLElement>('.kt-leaf').forEach(leaf => {
+        const title = leaf.getAttribute('data-title') || '';
+        const match = !query || title.includes(query);
+        leaf.classList.toggle('kt-hidden', !match);
+        if (match) treeVisible++;
+      });
+      document.querySelectorAll<HTMLElement>('.kt-node').forEach(node => {
+        const hasVisible = node.querySelector('.kt-leaf:not(.kt-hidden)');
+        node.classList.toggle('kt-hidden', !hasVisible);
+      });
+
+      const visible = currentView === 'tree' ? treeVisible : timelineVisible;
+      if (noResults) noResults.classList.toggle('hidden', visible > 0);
 
       if (searchCount && query) {
         const isZh = document.documentElement.lang?.startsWith('zh');
-        searchCount.textContent = totalVisible > 0
-          ? `${totalVisible} ${isZh ? '条结果' : 'results'}`
+        searchCount.textContent = visible > 0
+          ? `${visible} ${isZh ? '条结果' : 'results'}`
           : (isZh ? '没有找到匹配的文章' : 'No matching posts found');
         searchCount.classList.remove('hidden');
       } else if (searchCount) {

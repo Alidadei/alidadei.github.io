@@ -4,6 +4,8 @@ date: 2023-04-01
 tags:
   - 微机原理
 categories: ['note', 'embedded']
+knowledge: ['electronics/embedded']
+maturity: 基础
 lang: zh
 ---
 

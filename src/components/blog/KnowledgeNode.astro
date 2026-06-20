@@ -1,0 +1,52 @@
+---
+import KnowledgeNode from './KnowledgeNode.astro';
+import type { Lang } from '../../data/site';
+
+export interface KLeaf {
+  title: string;
+  slug: string;
+  date: Date;
+  maturity?: string;
+}
+export interface KNode {
+  slug: string;
+  label: { zh: string; en: string };
+  path: string;
+  posts: KLeaf[];
+  children: KNode[];
+}
+interface Props {
+  node: KNode;
+  lang: Lang;
+}
+const { node, lang } = Astro.props;
+const label = node.label[lang] || node.label.zh;
+const dateStr = (d: Date) =>
+  d.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short' });
+const childCount = node.posts.length + node.children.length;
+---
+
+<div class:list={['kt-node', childCount === 0 && 'kt-node--empty']}>
+  <div class="kt-node-head" role="button" tabindex="0" aria-label={label}>
+    <span class="kt-caret">▾</span>
+    <span class="kt-node-label">{label}</span>
+    {node.posts.length > 0 && <span class="kt-node-count">{node.posts.length}</span>}
+  </div>
+  <div class="kt-children">
+    {node.posts.map((p) => (
+      <a
+        class="kt-leaf"
+        href={`/${lang}/blog/${p.slug}/`}
+        data-title={p.title.toLowerCase()}
+        data-maturity={p.maturity || ''}
+      >
+        <span class="kt-leaf-dot"></span>
+        <span class="kt-leaf-title">{p.title}</span>
+        <time class="kt-leaf-date">{dateStr(p.date)}</time>
+      </a>
+    ))}
+    {node.children.map((child) => (
+      <KnowledgeNode node={child} lang={lang} />
+    ))}
+  </div>
+</div>
