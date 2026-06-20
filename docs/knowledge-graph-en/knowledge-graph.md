@@ -365,7 +365,7 @@ alidadei.github.io/
 ├── scripts/                           # 构建/维护脚本
 │   ├── gen-portfolio-thumbs.mjs       # 作品集缩略图 (sharp)
 │   ├── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
-│   └── new-post.mjs                   # 新建文章脚手架 (origin/knowledge/maturity, npm run new-post)
+│   └── new-post.mjs                   # 给已有内容 md(无 frontmatter)补 frontmatter (npm run new-post <文件>)
 ├── tests/                             # 验证脚本
 │   └── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
 │
