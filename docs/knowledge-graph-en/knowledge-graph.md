@@ -311,6 +311,7 @@ Cloudflare Worker (yhl-blog-cms)
     ├── /api/images           → 上传/删除图片
     ├── /api/batch            → 批量操作 (GraphQL commit)
     ├── /api/deploy/status    → 查看 GitHub Actions 部署状态
+    ├── /api/feed-proxy       → 友链 RSS 反代 (白名单, 绕过 CF 对 CI 数据中心 IP 的拦截)
     │
     ▼
 GitHub Contents API
@@ -335,6 +336,9 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 博客列表 | 搜索过滤 | Vanilla JS (标题匹配) |
 | 博客列表 | 分类标签切换 | Vanilla JS (DOM toggle) |
 | 博客列表 | 搜索框展开/收起 | Vanilla JS (max-width transition) |
+| 博客列表 | 时间线/知识树 双视图切换 (localStorage 记忆) | Vanilla JS (DOM toggle; 知识树按 subject 主题树展开 + maturity 透镜, KnowledgeNode.astro 递归渲染) |
+| 博客列表 | RSS 复制订阅地址 (Ctrl/中键仍打开 feed) | Vanilla JS (clipboard + ✓ 反馈) |
+| 友链页 | 友链卡片展示对方最新文章 (1 篇) | 构建时 fetch RSS (经 Worker /api/feed-proxy 反代绕过 CF) |
 | 文章详情 | TOC 侧边栏生成 + 滚动追踪 | 桌面端: 固定侧栏 / 移动端: 右侧悬浮按钮+滑出面板 |
 | 文章详情 | 平滑跳转 | Vanilla JS (getBoundingClientRect) |
 | 文章详情 | 代码块一键复制按钮 | Vanilla JS (clipboard API + execCommand 回退);BaseLayout 注入,图标按钮,桌面 hover 显示/手机(@media hover:none)常显,点击变绿色 ✓ |
@@ -360,7 +364,8 @@ alidadei.github.io/
 │
 ├── scripts/                           # 构建/维护脚本
 │   ├── gen-portfolio-thumbs.mjs       # 作品集缩略图 (sharp)
-│   └── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
+│   ├── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
+│   └── new-post.mjs                   # 新建文章脚手架 (origin/knowledge/maturity, npm run new-post)
 ├── tests/                             # 验证脚本
 │   └── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
 │
@@ -403,11 +408,13 @@ alidadei.github.io/
 │   │   ├── categories.ts             # 分类工具
 │   │   ├── categories.json           # 分类树
 │   │   ├── redirects.json            # 分类旧URL→新URL重定向 (astro redirects)
-│   │   ├── friends.json              # 友链数据 (name/url/avatar/desc)
+│   │   ├── friends.json              # 友链数据 (name/url/avatar/desc/feed=反代URL 拉最新文章)
+│   │   ├── knowledge.json            # 知识主题树 subject (slug + 中英 label)
 │   │   └── quotes.json               # 每日一句
 │   │
 │   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
 │   ├── lib/i18n.ts                    # i18n 路由工具
+│   └── lib/feed.ts                    # RSS 解析 (构建时抓友链 feed, 失败回退不破坏构建)
 │   │
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
@@ -424,7 +431,8 @@ alidadei.github.io/
 │   │   ├── timeline/
 │   │   │   └── Timeline.tsx           # 时间线 ⚛
 │   │   ├── blog/
-│   │   │   └── SearchBar.tsx          # 搜索 ⚛
+│   │   │   ├── SearchBar.tsx          # 搜索 ⚛
+│   │   │   └── KnowledgeNode.astro    # 知识树递归节点 (subject 展开 + maturity 透镜)
 │   │   ├── resume/
 │   │   │   └── InteractiveResume.tsx  # 简历交互 ⚛
 │   │   └── admin/
@@ -448,14 +456,14 @@ alidadei.github.io/
 │   │           └── index.astro        # CMS后台
 │   │
 │   └── content/                       # 内容
-│       ├── posts/zh/                  # 10篇博客
+│       ├── posts/zh/                  # 博客 zh (含 knowledge/maturity 三轴标注)
 │       ├── portfolio/                 # 2个作品
 │       └── about/                     # 关于我 (zh.md/en.md)
 │
 └── worker/                            # CMS 后端
     ├── wrangler.toml
     └── src/
-        ├── index.ts                   # 路由
+        ├── index.ts                   # 路由 (含 /api/feed-proxy 白名单反代, 绕过 CF 对 CI 的拦截)
         ├── auth.ts                    # OAuth
         ├── github-api.ts              # GitHub API
         ├── batch.ts                   # 批量操作
