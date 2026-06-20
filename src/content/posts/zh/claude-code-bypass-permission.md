@@ -5,6 +5,7 @@ tags:
   - Claude Code
 categories: ['practice']
 lang: zh
+draft: true
 ---
 
 
