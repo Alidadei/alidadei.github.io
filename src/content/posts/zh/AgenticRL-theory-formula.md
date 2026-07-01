@@ -1,5 +1,5 @@
 ---
-title: 'Agentic RL 基础理论&代码速递-基于TRL库源码解读'
+title: 'LLM 后训练 基础理论&代码-基于TRL库源码解读'
 date: 2026-06-17
 tags:
   - LLM
