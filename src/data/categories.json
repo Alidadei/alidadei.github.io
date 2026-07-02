@@ -24,14 +24,14 @@
         "aliases": [],
         "children": [
           {
-            "slug": "transformer",
+            "slug": "大模型",
             "label": {
-              "zh": "Transformer",
-              "en": "Transformer"
+              "zh": "大模型",
+              "en": "LLM"
             },
             "description": {
-              "zh": "Transformer 架构相关",
-              "en": "Transformer architecture"
+              "zh": "大模型（LLM）相关：架构、训练、推理、应用",
+              "en": "LLM architecture, training, inference & applications"
             },
             "aliases": [],
             "children": []

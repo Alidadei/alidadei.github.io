@@ -1,10 +1,10 @@
 ---
-title: 'GRPO 训练中的量词'
+title: 'GRPO 训练中的量词简介'
 date: 2026-06-17
 tags:
   - LLM
   - Agentic RL
-categories: ['note', 'ai', 'transformer']
+categories: ['note', 'ai', '大模型']
 knowledge: ['ai/llm/rl']
 maturity: 当下热点
 lang: zh
