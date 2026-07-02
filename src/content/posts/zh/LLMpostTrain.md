@@ -11,7 +11,15 @@ maturity: 当下热点
 lang: zh
 ---
 
-## Part 1: SFT
+## 引言
+
+LLM后训练指的是：补充
+
+本文简单介绍几个常见后训练方法，同时对照代码进行理解，方便随时复习。
+
+## Part 1: SFT “把这个PART几给全部删掉！”
+
+SFT是有监督微调的缩写，也就是需要给模型一个ground truth（GT）进行训练。对于LLM来说，GT一般是一段标准回复语（比如：客服针对某个问题的回答或者是某个工具调用的标准模板）。
 
 ### 核心代码
 
@@ -20,43 +28,20 @@ Label Masking: labels[:prompt_len] = -100
 CrossEntropyLoss(ignore_index=-100) → 只对 assistant 部分算 loss
 ```
 
-**pretraining 教模型通用知识和如何说话，SFT 主要教模型“听话”。** pretraining 阶段模型会对所有 token 逐个计算交叉熵损失（每个位置都学）；但到了 SFT 阶段，就**仅在 特定 回答语料部分**计算这个 loss（prompt 部分用 `labels[:prompt_len] = -100` 屏蔽，`ignore_index=-100` 跳过），为的就是让模型只学“怎么回答”，不去动它已有的通用知识——即在保留预训练能力的前提下，补充指令跟随的能力。
+**pretraining 教模型通用知识和如何说话，SFT 主要教模型“听话”。** pretraining 阶段模型会对所有 token 逐个计算交叉熵损失（每个位置都学）；“这里补充交叉熵损失的具体公式，算的是谁和谁的交叉熵？”
+
+但到了 SFT 阶段，就**仅在 特定 回答语料部分**计算这个 loss（prompt 部分用 `labels[:prompt_len] = -100` 屏蔽，`ignore_index=-100` 跳过），为的就是让模型只学“怎么回答”，不去动它已有的通用知识——即在保留预训练能力的前提下，补充指令跟随的能力。
 
 ### SFT 的局限
 
 - 只会模仿，不会判断：无法区分好回答和坏回答
-- 分布外崩溃：没见过的问题格式导致质量断崖
-
----
-
-## Part 2: RLHF 架构
-
-### 四种模型
-
-| 模型 | 作用 |
-|------|------|
-| Actor (Policy) | 被训练的模型 |
-| Reference | 冻结的 SFT 模型，通常利用 |
-| Critic (Value) | 估计状态价值，算 GAE advantage |
-| Reward Model | 打分（~300M，比 Actor 小） |
-
-### Reward Model Loss
-
-```
-loss_RM = -log σ(r_chosen - r_rejected)
-```
-
-RM 输出: (batch_size, 1)，一个 scalar 分数。TRL 实现: 一次 forward pass，chosen 和 rejected 拼成 batch，`torch.chunk` 拆分。
-
-### RLHF vs PPO vs DPO vs GRPO
-
-RLHF 是方法论，PPO/DPO/GRPO 是实现方式。RLHF 不绑定具体算法。
+- 分布外崩溃：没见过的问题格式会导致质量断崖
 
 ---
 
 ## Part 3: DPO
 
-**核心思想**：DPO 把 RLHF 的两步（先训 Reward Model，再用 RL 优化策略）压成一步——直接用偏好数据训练策略，不需要单独的 RM。理论依据是最优策略 π* 与参考策略 π_ref 之间存在闭式解，于是 reward 可写成 log 概率比 r(x,y) = β·log(π_θ(y)/π_ref(y))，代回偏好排序目标后整个优化退化成一个二分类损失。一句话：**用偏好数据直接对齐，跳过显式的 reward 建模**。
+**核心思想**：DPO 是  “补充”的简写，其 直接用偏好数据训练策略，不需要单独的 RM。理论依据是最优策略 π* 与参考策略 π_ref 之间存在闭式解，于是 reward 可写成 log 概率比 r(x,y) = β·log(π_θ(y)/π_ref(y))，代回偏好排序目标后整个优化退化成一个二分类损失。一句话：**用偏好数据直接对齐，跳过显式的 reward 建模**。
 
 ### 核心公式
 
@@ -101,6 +86,8 @@ loss           = -log σ(β × log_diff)
 ---
 
 ## Part 4: GRPO&PPO
+
+
 
 GRPO 和 PPO 共用同一个 **Clipped Surrogate Objective**（截断式代理损失）：
 
