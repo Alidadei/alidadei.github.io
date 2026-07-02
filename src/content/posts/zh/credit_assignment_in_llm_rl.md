@@ -5,7 +5,7 @@ tags:
   - LLM
   - RL
   - Credit Assignment
-categories: ['note', 'ai', '大模型']
+categories: ['note', 'ai', 'llm']
 knowledge: ['ai/llm/rl']
 maturity: 基础
 lang: zh

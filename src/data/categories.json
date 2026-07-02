@@ -24,7 +24,7 @@
         "aliases": [],
         "children": [
           {
-            "slug": "大模型",
+            "slug": "llm",
             "label": {
               "zh": "大模型",
               "en": "LLM"

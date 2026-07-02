@@ -4,7 +4,7 @@ date: 2026-04-23
 tags:
   - LLM
   - 深度学习
-categories: ['note', 'ai', '大模型']
+categories: ['note', 'ai', 'llm']
 knowledge: ['ai/nn-math']
 maturity: 基础
 lang: zh

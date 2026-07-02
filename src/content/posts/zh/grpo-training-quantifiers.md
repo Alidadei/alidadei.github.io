@@ -4,7 +4,7 @@ date: 2026-06-17
 tags:
   - LLM
   - Agentic RL
-categories: ['note', 'ai', '大模型']
+categories: ['note', 'ai', 'llm']
 knowledge: ['ai/llm/rl']
 maturity: 当下热点
 lang: zh
