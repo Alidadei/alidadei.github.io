@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-06-18 (最后更新: 新增友链页 + cms 友链管理;AgenticRL/GRPO 博客文章)
+> 生成时间：2026-07-02 (最后更新: 分类 slug transformer → 大模型; 新增 LLM RL Credit Assignment / Off-policy 文章)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -154,7 +154,7 @@ graph TB
 │  └── quotes.json      每日一句 (中英各10条)               │
 │                                                        │
 │  src/content/                                          │
-│  ├── posts/zh/        10篇博客文章 (Markdown)            │
+│  ├── posts/zh/        12篇博客文章 (Markdown)            │
 │  ├── portfolio/       2个作品集项目                      │
 │  └── about/           关于我 (zh.md/en.md, Markdown)                       │
 │                                                        │
@@ -241,7 +241,7 @@ categories?: string[]  分类标签 (前端自动聚合成 tabs)
 博客分类树 (slug 即 URL 段,/zh/blog/category/<slug>/)
 ├── note (学习笔记)
 │   ├── ai (AI)
-│   │   └── transformer (Transformer)
+│   │   └── 大模型 (LLM)
 │   ├── embedded (嵌入式开发)
 │   └── data-structure (数据结构与算法)
 ├── practice (个人调研&实践)
