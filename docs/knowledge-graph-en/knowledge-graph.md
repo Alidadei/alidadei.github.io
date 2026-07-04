@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-07-02 (最后更新: 分类 slug transformer → 大模型; 新增 LLM RL Credit Assignment / Off-policy 文章)
+> 生成时间：2026-07-02 (最后更新: 2026-07-04 — 新增《Claude Code Dynamic Workflows: 从对话式 Agent 到可观测复现的执行编排》, posts/zh 文章数同步 12→15)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -154,7 +154,7 @@ graph TB
 │  └── quotes.json      每日一句 (中英各10条)               │
 │                                                        │
 │  src/content/                                          │
-│  ├── posts/zh/        12篇博客文章 (Markdown)            │
+│  ├── posts/zh/        15篇博客文章 (14发布+1草稿)            │
 │  ├── portfolio/       2个作品集项目                      │
 │  └── about/           关于我 (zh.md/en.md, Markdown)                       │
 │                                                        │
