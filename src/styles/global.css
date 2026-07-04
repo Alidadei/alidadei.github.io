@@ -206,6 +206,20 @@ pre,
   position: relative;
 }
 
+/* 代码块在正文中的间距
+   Tailwind v4 preflight 把 pre 的 margin reset 成 0,
+   导致段落到代码块沿用 p 的 1.6em 下间距(偏大),
+   而代码块到下一段直接是 0(粘连)。
+   这里让代码块与上下文紧凑成组,区别于段落正常间距(1.6em)。 */
+.prose pre {
+  margin-top: 0.6em;
+  margin-bottom: 1em;
+}
+/* 段落直接引出代码块时,收窄段落下间距,让引出文字紧贴代码块 */
+.prose p:has(+ pre) {
+  margin-bottom: 0.6em;
+}
+
 /* 代码块一键复制按钮(纯图标小方块) */
 .copy-btn {
   position: absolute;
