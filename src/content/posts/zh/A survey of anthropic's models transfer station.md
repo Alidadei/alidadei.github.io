@@ -34,7 +34,7 @@ AIcoding了这么久，突然发现自己一直是用claude code cli接国产的
 
 ## 中转站机制速览(选型前必懂)
 
-> 来源:helpaio《Claude Code 中转站选购指北》。
+> 来源:helpaio《Claude Code 中转站选购指北》。[Claude Code 中转站选购指北：渠道对比、缓存避坑与高可用配置 | Help AIO](https://www.helpaio.com/guides/claude-code-relay)
 
 ### 工作原理
 
