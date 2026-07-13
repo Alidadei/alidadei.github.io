@@ -183,7 +183,15 @@ body {
 .prose th, .prose td {
   padding: 0.75em 1em;
   border: 1px solid var(--color-border);
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* 移动端表格：不折行，横向滑动看全列 */
+@media (max-width: 640px) {
+  .prose th, .prose td {
+    white-space: nowrap;
+  }
 }
 .prose th {
   background: var(--color-bg-secondary);
