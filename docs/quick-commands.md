@@ -119,14 +119,12 @@ cms 菜单结构:
 
 ---
 
-## 缩略图&icon
+## 头像&icon
 
 | 命令 | 作用 |
 |------|------|
-| npm run thumbs | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
-| npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
-| npm run favicon | 换网站 favicon。源图支持 PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO,生成 favicon.png 并自动递增 ?v 版本号 |
-| npm run avatar | 换关于页头像。自动判断源图透明度:透明→PNG 融入背景,不透明照片→jpg(体积小) |
+| npm run favicon | **换网站 favicon**。源图支持 PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO,生成 favicon.png 并自动递增 ?v 版本号 |
+| npm run avatar | **换关于页头像**。自动判断源图透明度:透明→PNG 融入背景,不透明照片→jpg(体积小) |
 
 favicon 用法:
 - 命令: `npm run favicon -- <源图> [尺寸]`,例 `npm run favicon -- public/images/my_profile.png`
@@ -140,6 +138,12 @@ avatar 用法:
 - 自动判断: 透明源图(PNG 图标)→输出透明 PNG(contain 保留完整图,融入背景);不透明照片→输出 jpg(cover 居中裁剪,体积小)。会清掉旧格式文件,避免两份并存。
 - 生成: `public\images\violin.*` + 更新 `src\pages\[lang]\about.astro` 两处(PC + 移动端)的 img src。
 - **注意:** 源图路径别用中文(同 favicon,Windows 命令行传 node 可能乱码)。
+
+## 缩略图&3D
+
+| npm run thumbs   | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
+| ---------------- | ------------------------------------------------------------ |
+| npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
 
 ---
 
