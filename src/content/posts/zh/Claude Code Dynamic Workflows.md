@@ -2,7 +2,7 @@
 title: 'Claude Code Dynamic Workflows：coding agent 用显式程序来动态编排workflow的范式'
 date: 2026-07-04
 tags:
-  - Claude Code
+  - Claude Code CLI
   - AI Agent
   - Agent 编排
   - Dynamic Workflows
@@ -27,11 +27,9 @@ lang: zh
   -> workflow 汇总结果并返回给主会话
 ```
 
-它针对的问题是：当任务变长变大以后，只靠一个主 agent 在对话里一轮一轮地决定“接下来派哪个 agent、读哪个文件、验证哪个结论”，会变得低效、难以复用，同时也容易污染主上下文。
+它针对的问题是：当任务变长变大以后通常需要派遣多个subagent来拆分完成，如果只靠一个主 agent 在对话里一轮一轮地决定“接下来派哪个 agent、读哪个文件、验证哪个结论”，会变得低效、难以复用，同时也容易污染主上下文。
 
-Dynamic workflows 的做法是：把这套编排逻辑写成一个可执行脚本，让脚本持有循环、分支、中间状态和 agent 调度逻辑。
-
-换句话说，它把“agentic workflow”从隐式对话过程，变成了一个显式的程序脚本。
+Dynamic workflows 的做法是：让主agent事先把这套编排逻辑写成一个可执行脚本，让这个脚本去维护整个workflow的循环、分支、中间状态和 agent 调度逻辑。
 
 ## 什么时候触发
 
