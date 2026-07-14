@@ -48,7 +48,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       )}
       <h1 class="text-3xl sm:text-4xl font-bold text-primary mb-4 leading-tight">{title}</h1>
       <div class="article-title-line"></div>
-      <div class="flex flex-wrap items-center gap-4 text-sm text-text-muted">
+      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 text-sm text-text-muted">
         {date && (
           <time datetime={date.toISOString()}>
             {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
