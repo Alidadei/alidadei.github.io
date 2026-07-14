@@ -1,43 +1,57 @@
 #!/usr/bin/env node
-// 压缩博客正文图(public/images/posts/)。
-//   默认:    原地压缩(resize max 1280 + jpg/png/webp 各自格式优化),不换格式。
-//   --webp:  把图转成 webp(删原图)+ 自动改 src/content/posts/**/*.md 里的引用(.png/.jpg → .webp)。
-// 用法:
-//   npm run compress-posts                  # 原地压缩 posts/ 下 >50KB 的图
-//   npm run compress-posts -- a.png b.jpg   # 原地压缩指定图
-//   npm run compress-posts -- --webp        # 转 webp(>30KB 的)+ 改引用
-//   npm run compress-posts -- --webp a.png  # 指定图转 webp
+// 批量压缩 public/images/ 下的图。
+//   默认:     只处理 public/images/posts/,原地压缩(不换格式,不动引用)。
+//   --all:    处理整个 public/images/(递归,跳过 thumbs/ 构建产物),原地压缩。
+//   --webp:   转 webp + 删原图 + 改 src/content/posts/**/*.md 引用(仅限 posts,因引用都在 md)。
+//   <文件名>: 只处理指定图(相对扫描根)。
+// 注意:--all 和 --webp 不可同时用(images 里非 posts 图引用散在 friends.json/site.ts/about 等,自动改不全)。
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 
-const DIR = 'public/images/posts';
-const POSTS_DIR = 'src/content/posts';
-const MAX_WIDTH = 1280;
-
 const argv = process.argv.slice(2);
+const ALL = argv.includes('--all');
 const WEBP = argv.includes('--webp');
 const files = argv.filter(a => !a.startsWith('--'));
+const ROOT = ALL ? 'public/images' : 'public/images/posts';
+const POSTS_DIR = 'src/content/posts';
+const MAX_WIDTH = 1280;
 const THRESHOLD = WEBP ? 30 * 1024 : 50 * 1024;
+
+if (ALL && WEBP) {
+  console.error('✗ --all 和 --webp 不能一起用:images 里非 posts 图引用散在 friends.json/site.ts/about 等,自动改不全。');
+  console.error('  posts 图用 --webp(引用都在 md);其余图用 --all 原地压缩(不改格式,引用不变)。');
+  process.exit(1);
+}
+
+// 递归找图,跳过 thumbs/(构建产物)
+function findImgs(dir) {
+  let out = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === 'thumbs') continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) out = out.concat(findImgs(p));
+    else if (/\.(png|jpe?g)$/i.test(e.name)) out.push(p);   // 只收 png/jpg;.webp 已是优化格式,跳过
+  }
+  return out;
+}
 
 let targets;
 if (files.length > 0) {
-  targets = files.map(f => path.join(DIR, f));
+  targets = files.map(f => path.join(ROOT, f));
 } else {
-  targets = fs.readdirSync(DIR)
-    .filter(f => /\.(png|jpe?g|webp)$/i.test(f))
-    .map(f => path.join(DIR, f))
-    .filter(f => fs.statSync(f).size > THRESHOLD);
+  targets = findImgs(ROOT).filter(f => fs.statSync(f).size > THRESHOLD);
 }
 
 if (targets.length === 0) {
-  console.log(`没有需要处理的图(posts/ 下没有 > ${THRESHOLD / 1024}KB 的图)。`);
+  console.log(`没有需要处理的图(${ROOT} 下没有 > ${THRESHOLD / 1024}KB 的图)。`);
   process.exit(0);
 }
 
-console.log(`${WEBP ? '转 webp' : '原地压缩'} ${targets.length} 张图(max width ${MAX_WIDTH}px):`);
+const scope = ALL ? '整个 public/images' : 'public/images/posts';
+console.log(`${WEBP ? '转 webp' : '原地压缩'} ${targets.length} 张图(${scope}, max width ${MAX_WIDTH}px):`);
 
-// 递归找所有博客 .md
+// 递归找博客 .md(--webp 改引用用)
 function findMd(dir) {
   let out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -47,15 +61,13 @@ function findMd(dir) {
   }
   return out;
 }
-
-// 把 .md 里 /images/posts/oldName → /images/posts/newName,返回改了几处
 function updateMdRefs(oldName, newName) {
-  const re = new RegExp('/images/posts/' + oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+  const re = new RegExp('/images/[^\\s)"\\]]*?' + oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
   let changed = 0;
   for (const md of findMd(POSTS_DIR)) {
     let c = fs.readFileSync(md, 'utf8');
     if (re.test(c)) {
-      c = c.replace(re, '/images/posts/' + newName);
+      c = c.replace(re, m => m.replace(oldName, newName));
       fs.writeFileSync(md, c);
       changed++;
     }
@@ -81,7 +93,7 @@ for (const f of targets) {
   }
 
   if (buf.length >= before) {
-    console.log(`  ${path.basename(f)}: ${(before / 1024).toFixed(0)}KB → 无收益,保留原图`);
+    console.log(`  ${f}: ${(before / 1024).toFixed(0)}KB → 无收益,保留原图`);
     continue;
   }
 
@@ -90,7 +102,7 @@ for (const f of targets) {
     const tmp = out + '.tmp';
     fs.writeFileSync(tmp, buf);
     fs.renameSync(tmp, out);
-    if (out !== f && fs.existsSync(f)) fs.unlinkSync(f);   // 删原图
+    if (out !== f && fs.existsSync(f)) fs.unlinkSync(f);
     const refs = updateMdRefs(path.basename(f), path.basename(out));
     console.log(`  ${path.basename(f)} (${(before / 1024).toFixed(0)}KB) → ${path.basename(out)} (${(buf.length / 1024).toFixed(0)}KB),改 ${refs} 处引用`);
     converted++;
@@ -98,7 +110,7 @@ for (const f of targets) {
     const tmp = f + '.tmp';
     fs.writeFileSync(tmp, buf);
     fs.renameSync(tmp, f);
-    console.log(`  ${path.basename(f)}: ${(before / 1024).toFixed(0)}KB → ${(buf.length / 1024).toFixed(0)}KB`);
+    console.log(`  ${f}: ${(before / 1024).toFixed(0)}KB → ${(buf.length / 1024).toFixed(0)}KB`);
   }
   saved += before - buf.length;
 }

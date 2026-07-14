@@ -144,6 +144,13 @@ avatar 用法:
 | npm run thumbs   | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
 | ---------------- | ------------------------------------------------------------ |
 | npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
+| npm run compress-posts | 批量压缩 public/images 图:原地压缩(默认)或转 webp(--webp) |
+
+compress-posts 用法:
+- `npm run compress-posts` 原地压缩 posts/ 下 >50KB 的图(不换格式,不动引用)。
+- `npm run compress-posts -- --all` 压缩整个 public/images/(跳过 thumbs/ 和已有 webp)。
+- `npm run compress-posts -- --webp` 把 posts 图转 webp(删原图 + 自动改 .md 引用,省 50%+)。**--webp 不要和 --all 同用**(非 posts 图引用散在 friends.json/site.ts/about,自动改不全)。
+- 都先写临时文件再 rename(避开 Windows 文件占用);压缩无收益(会变大)的自动保留原图。
 
 ---
 
