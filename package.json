@@ -14,6 +14,7 @@
     "new-post": "node scripts/new-post.mjs",
     "favicon": "node scripts/set-favicon.mjs",
     "avatar": "node scripts/set-avatar.mjs",
+    "compress-posts": "node scripts/compress-post-images.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
