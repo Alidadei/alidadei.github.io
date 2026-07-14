@@ -15,7 +15,7 @@ lang: zh
 
 ## 简介
 
-我们一般提起的‘workflow’，通常指的是静态workflow：即‘先A后B再C’这样的一段固定流程，主要是将一段机械执行流程进行自动化，没有太多灵活变通的地方。而Claude Code 提出的 Dynamic workflows，是让coding agent把一个任务编排逻辑进行程序化，但是具体每个节点的执行还是由每个subagent进行自主判断：
+我们一般提起‘workflow’通常指的是静态workflow：即‘先A后B再C’这样的一段固定流程，主要是将一段机械执行流程进行自动化，没有太多灵活变通的地方。而Claude Code 提出的 Dynamic workflows，是让coding agent把一个任务编排逻辑进行程序化，但是具体每个节点的执行还是由每个subagent进行自主判断：
 
 
 ```text
@@ -65,33 +65,31 @@ Claude Code Dynamic workflows 官方文档把 workflow 定义为： **Claude 为
 
 ## 为什么叫 dynamic
 
-dynamic并不是说在运行中能够随意修改整段编排脚本，而是说：**dynamic workflow 脚本在执行时会根据subagents的中间执行结果来决定后续的任务路径**。
+dynamic并不是说在运行中能够随意修改整段编排脚本，官方没有说明 runtime 会在执行中让 Claude 改写整段脚本并继续执行。
 
-所以，“dynamic”至少包含三层含义。
+“dynamic”主要指的是下面两种含义：
 
-**第一，生成时动态。**
+**第一，动态生成**
 
-workflow 脚本不是人预先写死的固定 DAG，而是 Claude 根据当前任务、代码库上下文和用户要求现场生成的。比如同样是“审计代码”，小项目可能生成一个简单的文件级扫描流程，大项目可能先按目录拆分，再派多个 subagents 并行审计。
+workflow 脚本不是人预先写死的固定 DAG，而是 Claude 根据即时任务、代码库上下文和用户要求现场生成的。比如：同样是“审计代码”，小项目的dynamic workflow可能生成一个简单的文件级扫描流程，大项目则会先按目录拆分，再派多个 subagents 并行审计。
 
-**第二，执行时动态。**
+**第二，动态执行**
 
-脚本可以写循环、条件分支、停止条件、重试和聚合逻辑。因此后续执行路径可以依赖前面 agent 的返回结果。
-
-例如：
+脚本中的条件判断和执行路径可以依赖 subagent 的执行或判断结果，而非单纯的规则条件，例如：
 
 ```js
-const result = await agent('Run typecheck and summarize errors')
+const result = await agent('Run typecheck and summarize errors') //让subagent判断是否有错误需要修复
 
-if (result.hasErrors) {
+if (result.hasErrors) { //假如subagent检测出了错误
   await pipeline(result.errorFiles, file =>
-    agent(`Fix type errors in ${file}`)
+    agent(`Fix type errors in ${file}`) //派遣agent去修复
   )
 } else {
   return 'typecheck already passed'
 }
 ```
 
-这里是否进入修复阶段，取决于前一个 agent 的结果。这就是执行时的动态性。
+在这里，是否进入修复阶段，取决于前一个 agent 的检查结果，这就是执行时的动态性。
 
 再比如：
 
@@ -100,11 +98,10 @@ let previousCount = 0
 
 for (let round = 0; round < 5; round++) {
   const findings = await pipeline(files, file =>
-    agent(`Find security issues in ${file}`)
+    agent(`Find security issues in ${file}`) //派遣subagent寻找安全issues，并通过findings传递信息
   )
-
+//如果连续一轮agent没有新发现，workflow 就提前停止；如果仍有新发现，就继续下一轮
   const unique = dedupe(findings)
-
   if (unique.length === previousCount) {
     break
   }
@@ -113,33 +110,21 @@ for (let round = 0; round < 5; round++) {
 }
 ```
 
-这里如果连续一轮没有新发现，workflow 就提前停止；如果仍有新发现，就继续下一轮。官方文档中的示例任务也包含类似表达，比如“持续修复直到 type check 通过”或者“连续两轮没有新发现就停止”。
-
-**第三，规模和拆分方式动态。**
-
-subagent 数量、任务拆分粒度和验证阶段可以跟随任务规模变化。小任务可能只启动少量 agents；大任务可以按文件、目录、模块、风险等级或错误类型批量派发。
-
-因此，更准确的说法是：
-
-> Dynamic workflow 的动态性来自“模型按任务生成编排脚本”以及“脚本根据中间结果控制后续执行路径”。官方没有说明 runtime 会在执行中自动让 Claude 改写整段脚本并继续执行。
-
-这也是它和普通 subagent 调度的区别：普通模式是主 Claude 在对话里边想边派工；dynamic workflow 是 Claude 先把派工逻辑写成程序，再由 runtime 按程序执行，程序里的循环和分支根据中间subagent的执行结果来改变后续工作路径。
+官方文档中的示例任务也包含许多类似的表达，比如：让subagent“持续修复直到 type check 通过”或者“连续两轮没有新发现就停止”。
 
 ## 为什么需要 Dynamic workflows
 
-Claude Code 官方文档把 agent loop 描述为一个循环：收集上下文、执行动作、验证结果，然后继续循环直到任务完成。
+Claude Code 官方文档把 agent loop 描述为一个循环——收集上下文、执行动作、验证结果，然后继续循环直到任务完成，这个 loop 对单一的小任务很好用，但遇到大任务会出现三个问题：
 
-这个 loop 对普通任务很好用，但大任务会遇到三个问题。
+**第一，主上下文污染。**
 
-**第一，主上下文容易被污染。**
-
-这个是老生常谈的问题了，大量工具调用结果、报错、日志和中间判断等内容会污染主 Claude agent 的上下文，当然这个问题直接用subagent就能解决，所以这并非Dynamic workflows的重点，Dynamic workflows的重点是如何编写一个脚本来编排这些subagents工作。
+这是个老生常谈的问题，大量工具调用结果、报错、日志等一次性内容会污染主agent 的上下文，这个问题用subagent可以很好地缓解，但是如何编排好多个subagents进行长任务呢？总不能一直让主agent按照一份plan文档在那里手动派遣吧？这便是dynamic workflow针对的问题。
 
 **第二，调度过程难复用。**
 
-如果一次审计需要“列出文件 -> 每个文件单独审计 -> 去重 -> 交叉验证 -> 修正”，这其实已经是一套流程。如果每次都靠自然语言重新走一遍，成本高，也不稳定（不可复现）。
+如果一次审计需要：“列出文件并分批 -> 每批次文件让一个subagent单独审计 -> 去重 -> subagent交叉验证 -> 修正”，这套流程如果每次都靠一个markdown文档中的自然语言约束agent重新走一遍，成本高，也很不稳定（不可复现）。
 
-**第三，长任务需要可观测和可恢复。**
+**第三，用户需要可观测性。**
 
 一个任务派出几十个 agents 后，用户需要知道当前在哪个阶段、跑了多少 worker、哪些失败了、token 用了多少、是否能暂停和恢复。普通对话式调度很难提供这些工程能力。
 
@@ -182,11 +167,12 @@ return audits.filter(Boolean)
 这里有几个设计点值得注意：
 
 - `agent()` 是核心原语，用来启动一个 subagent。
-- `pipeline()` 用来对列表做批处理，常见于“每个文件一个 worker”。
-- `schema` 用来约束 agent 的返回结构，减少后续解析的不确定性。
-- 脚本可以包含循环、条件分支、重试、聚合、过滤等普通程序逻辑。
 
-这就是它和“提示词工作流”的根本区别：prompt 只能描述流程，workflow 脚本可以执行流程。
+- `pipeline()` 用来对列表做批处理，常见于“每个文件一个 worker”。
+
+- `schema` 用来约束 agent 的返回结构，减少后续解析的不确定性。
+
+  这就是它和“提示词工作流”的根本区别：prompt 只能用自然语言描述流程，workflow 脚本可以直接执行流程。
 
 ## 运行时怎么设计
 
