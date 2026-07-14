@@ -13,6 +13,7 @@
     "cms": "node scripts/cms.mjs",
     "new-post": "node scripts/new-post.mjs",
     "favicon": "node scripts/set-favicon.mjs",
+    "avatar": "node scripts/set-avatar.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
