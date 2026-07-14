@@ -383,7 +383,7 @@ alidadei.github.io/
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
 │   ├── sw.js                          # Service Worker (强制缓存3D重资源)
-│   ├── favicon.ico / favicon.svg
+│   ├── favicon.png / favicon.svg
 │   ├── robots.txt
 │   ├── fonts/                         # 自托管 Inter 字体 (woff2)
 │   │   ├── inter-400.woff2
