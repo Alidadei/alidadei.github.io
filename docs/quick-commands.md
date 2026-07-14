@@ -6,7 +6,87 @@
 
 ---
 
-## 日常开发
+## 博客地址
+
+```
+src\content\posts\zh
+```
+
+```
+public\images\posts
+```
+
+## 图片地址
+
+```
+public\images
+```
+
+## 其他内容地址
+
+维护网站正文与配置时改这些源文件(都是源,不是构建产物):
+
+### 每日一句
+
+(改这里;build 会复制到 public\quotes.json) 
+
+```
+src\data\quotes.json
+```
+
+### 作品集 / 项目页
+
+```
+src\content\portfolio
+```
+
+### 关于页
+
+(中/英,含新闻、教育、实习、研究、获奖、技能)
+
+```
+src\content\about
+```
+
+### 站点配置
+
+(站名、导航菜单、作者信息、邮箱、GitHub)
+
+```
+src\data\site.ts
+```
+
+### 博客分类树
+
+(平时用 npm run cms 改,也可直接编辑)
+
+```
+src\data\categories.json
+```
+
+### 知识主题树
+
+(文章 knowledge 字段引用,构建时校验路径)
+
+```
+src\data\knowledge.json
+```
+
+### 友链
+
+```
+src\data\friends.json
+```
+
+### 旧链接重定向
+
+(cms 改分类 slug 时自动追加)
+
+```
+src\data\redirects.json
+```
+
+## 本地调试
 
 | 命令 | 作用 | 说明 |
 |------|------|------|
@@ -20,7 +100,7 @@ dev 和 preview 的区别:
 
 ---
 
-## 内容维护
+## cms标签维护工具
 
 | 命令 | 作用 |
 |------|------|
@@ -118,3 +198,62 @@ cms 菜单结构:
 | 命令 | 作用 |
 |------|------|
 | npx kill-port 端口号 | 结束占用指定端口的进程(如 npx kill-port 4321 4322) |
+
+---
+
+## 项目数据说明
+
+### 构建时的两条数据通道
+
+```
+【通道1】src 被消化进页面
+  src/ (代码·数据) --import/收集--> astro 处理 --> dist/ (HTML/JS/CSS)
+
+【例外】源在 src,先变产物放进 public
+  src\3d\background.ts --esbuild--> public\three-bg.js
+  src\data\quotes.json -----cp----> public\quotes.json
+  portfolio 源图 -------sharp-----> public\images\thumbs
+
+【通道2】public 原样复制到 dist
+  public/ (图片·字体·PDF + 上面3个产物) --> dist/ (原文件,URL=路径)
+```
+
+说明:通道1的原始 .md/.json 不以原文件出现在 dist(被消化成 HTML/JS/CSS);例外那 3 个产物先进 public,再随通道2进 dist。
+
+### 每样东西从哪来、走哪条
+
+| 内容 | 源在哪 | 走哪条 | 说明 |
+|------|--------|--------|------|
+| 博客文章 / 作品集 / 关于页 | src\content\ 下 .md | 通道1 | content collection 收集,渲染成页面 |
+| 站点配置、导航、作者信息 | src\data\site.ts | 通道1 | 被 layout/header 等 import |
+| 分类树 | src\data\categories.ts | 通道1 | 被博客页 import(.json 是 cms 后端运行时读) |
+| 友链 | src\data\friends.json | 通道1 | 被 links.astro import |
+| 知识树 | src\data\knowledge.json | 通道1 | 被 content.config + 博客页 import |
+| 重定向 | src\data\redirects.json | 通道1 | 被 astro.config.mjs import |
+| 每日一句 | src\data\quotes.json | 例外 | 不被 import,cp 到 public,前端运行时 fetch |
+| 3D 背景脚本 | src\3d\background.ts | 例外 | esbuild 编译成 three-bg.js 放 public |
+| 图片 / 字体 / PDF / favicon | public\ | 通道2 | 原样投放,源就在 public |
+| 缩略图 | portfolio 源图 | 例外 | sharp 生成到 public\images\thumbs |
+
+### 作品集(portfolio)的特殊构建
+
+作品集是双层拼装 —— 列表卡片走通道1,详情页走通道2(独立 HTML):
+
+```
+src/content/portfolio/*.md
+  frontmatter: 标题·摘要·缩略图·分类·link
+        │ getCollection(通道1)
+        ↓
+projects.astro ──→ /zh/projects/ 列表卡片
+        │
+        │ 卡片 link 字段指向(点击新标签打开)
+        ↓
+public/portfolio/music-signal-analysis.html (通道2 原样投放)
+  = 详情页,独立 HTML,不是 astro 生成的
+```
+
+要点:
+- 列表卡片(src):projects.astro 只读 frontmatter(标题/摘要/图/分类/link),渲染成 /zh/projects/ 的卡片网格(分类 tab + 无限滚动)。
+- 详情页(public/portfolio/*.html):独立静态 HTML,不是 astro 生成的(src/pages 无 portfolio 路由)。卡片 link 指向它,点击新标签打开。改详情直接改这个 html。
+- md 正文(body)目前没被任何页面渲染 —— 只有 frontmatter 进了列表,详情内容来自 public html(另一套)。写 body 不会显示。
+

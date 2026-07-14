@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && astro dev",
+    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && cp src/data/quotes.json public/quotes.json && astro dev",
     "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && cp src/data/quotes.json public/quotes.json && npm run thumbs && astro build",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",

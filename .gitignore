@@ -1,6 +1,7 @@
 # build output
 dist/
 public/three-bg.js
+public/quotes.json
 public/images/thumbs/
 # generated types
 .astro/
