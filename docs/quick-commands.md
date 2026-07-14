@@ -132,7 +132,7 @@ favicon 用法:
 - 源图: PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO。非正方形会**居中裁剪**成方形;ICO 在内存提取内嵌最大的 PNG(不落地临时文件,无需清理中间产物)。
 - 尺寸: 输出 favicon.png 边长,默认 180(兼顾标签页和高 DPI),一般不用传。
 - 生成: `public\favicon.png` + 把 `src\layouts\BaseLayout.astro` 的 `favicon.png?v=N` 递增 +1(破缓存),再打印 git 命令。
-- **注意:** 源图路径别用中文(Windows 命令行传给 node.exe 会乱码,导致找不到文件),用英文名。
+- **注意:** 源图路径尽量别用中文，若有报错可以改成英文名(Windows 命令行传给 node.exe 可能会导致乱码从而无法找到文件)。
 
 ---
 
