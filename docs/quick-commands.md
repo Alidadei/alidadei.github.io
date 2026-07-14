@@ -134,6 +134,15 @@ cms 菜单结构:
 |------|------|
 | npm run thumbs | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
 | npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
+| npm run favicon | 换网站 favicon。源图支持 PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO,生成 favicon.png 并自动递增 ?v 版本号 |
+
+favicon 用法:
+- 命令: `npm run favicon -- <源图> [尺寸]`,例 `npm run favicon -- public/images/my_profile.png`
+- 源图: PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO。非正方形会居中裁剪成方形;ICO 在内存提取内嵌最大的 PNG(不落地临时文件,无需清理中间产物)。
+- 尺寸: 输出 favicon.png 边长,默认 180(兼顾标签页和高 DPI),一般不用传。
+- 脚本自动: 生成 `public\favicon.png` + 把 `src\layouts\BaseLayout.astro` 的 `favicon.png?v=N` 递增 +1(破缓存),再打印 git 命令。
+- 完整流程: 跑脚本 → 照打印的 `git add / commit / push` → 等 CI 部署 → 无痕窗口看标签页。
+- 注意: 源图路径别用中文(Windows 命令行传给 node.exe 会乱码,导致找不到文件),用英文名。
 
 ---
 
@@ -155,6 +164,7 @@ cms 菜单结构:
 | 改分类的网址(slug) | npm run cms,选「重命名 slug」 |
 | 新增或删除分类/标签 | npm run cms |
 | 改了作品集图,刷新缩略图 | npm run thumbs |
+| 换网站 favicon | npm run favicon -- <源图> |
 | 改了 3D 背景代码 | npm run build:3d(或直接 npm run build) |
 | 提交推送前最终验证 | npm run build(必须全绿才能部署) |
 
