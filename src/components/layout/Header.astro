@@ -66,7 +66,7 @@ const switchLabel = getUI(lang, 'lang.switch');
           <a
             href={item.href}
             class:list={[
-              'block px-3 py-3 text-sm font-semibold rounded-md transition-colors',
+              'block px-3 py-3 text-base font-bold rounded-md transition-colors',
               isActive
                 ? 'text-accent font-bold'
                 : 'text-text-muted hover:text-text-secondary',
@@ -78,7 +78,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       })}
       <a
         href={altUrl}
-        class="block px-3 py-3 text-sm text-text-muted hover:text-accent transition-colors"
+        class="block px-3 py-3 text-base font-semibold text-text-muted hover:text-accent transition-colors"
       >
         {switchLabel}
       </a>
