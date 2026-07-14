@@ -86,27 +86,18 @@ src\data\friends.json
 src\data\redirects.json
 ```
 
-## 本地调试
-
-| 命令 | 作用 | 说明 |
-|------|------|------|
-| npm run dev | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景 |
-| npm run build | 完整构建 | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
-| npm run preview | 预览构建产物 | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。端口被占会自动换(如 4322) |
-
-dev 和 preview 的区别:
-- dev 是开发模式,改文件实时刷新,但缓存/压缩等行为和线上不同。
-- preview 跑的是 build 产物,和 GitHub Pages 线上完全一致。想确认线上效果用 preview。
-
----
-
-## cms标签维护工具
+## cms标签维护工具 
 
 | 命令 | 作用 |
 |------|------|
 | npm run cms | 分类/标签 CLI 维护工具(交互式菜单)。增删改分类和标签、批量删除、重命名 slug(自动同步文章并生成旧链接重定向) |
 
+| 命令                              | 作用                                                         |
+| --------------------------------- | ------------------------------------------------------------ |
+| node tests/cms-functions.test.mjs | 跑 cms 工具的纯函数测试(61 项,验证分类/标签的解析、改写、匹配逻辑)。改过 scripts/cms.mjs 后建议跑一遍 |
+
 cms 菜单结构:
+
 - 分类管理
   - 列出分类
   - 新增分类
@@ -128,7 +119,7 @@ cms 菜单结构:
 
 ---
 
-## 资源处理
+## 缩略图&icon
 
 | 命令 | 作用 |
 |------|------|
@@ -138,19 +129,25 @@ cms 菜单结构:
 
 favicon 用法:
 - 命令: `npm run favicon -- <源图> [尺寸]`,例 `npm run favicon -- public/images/my_profile.png`
-- 源图: PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO。非正方形会居中裁剪成方形;ICO 在内存提取内嵌最大的 PNG(不落地临时文件,无需清理中间产物)。
+- 源图: PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO。非正方形会**居中裁剪**成方形;ICO 在内存提取内嵌最大的 PNG(不落地临时文件,无需清理中间产物)。
 - 尺寸: 输出 favicon.png 边长,默认 180(兼顾标签页和高 DPI),一般不用传。
-- 脚本自动: 生成 `public\favicon.png` + 把 `src\layouts\BaseLayout.astro` 的 `favicon.png?v=N` 递增 +1(破缓存),再打印 git 命令。
-- 完整流程: 跑脚本 → 照打印的 `git add / commit / push` → 等 CI 部署 → 无痕窗口看标签页。
-- 注意: 源图路径别用中文(Windows 命令行传给 node.exe 会乱码,导致找不到文件),用英文名。
+- 生成: `public\favicon.png` + 把 `src\layouts\BaseLayout.astro` 的 `favicon.png?v=N` 递增 +1(破缓存),再打印 git 命令。
+- **注意:** 源图路径别用中文(Windows 命令行传给 node.exe 会乱码,导致找不到文件),用英文名。
 
 ---
 
-## 测试
+## 本地调试
 
-| 命令 | 作用 |
-|------|------|
-| node tests/cms-functions.test.mjs | 跑 cms 工具的纯函数测试(61 项,验证分类/标签的解析、改写、匹配逻辑)。改过 scripts/cms.mjs 后建议跑一遍 |
+| 命令            | 作用           | 说明                                                         |
+| --------------- | -------------- | ------------------------------------------------------------ |
+| npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景 |
+| npm run build   | 完整构建       | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
+| npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。端口被占会自动换(如 4322) |
+
+dev 和 preview 的区别:
+
+- dev 是开发模式,改文件实时刷新,但缓存/压缩等行为和线上不同。
+- preview 跑的是 build 产物,和 GitHub Pages 线上完全一致。想确认线上效果用 preview。
 
 ---
 
