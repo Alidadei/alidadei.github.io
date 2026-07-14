@@ -12,6 +12,7 @@
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",
     "new-post": "node scripts/new-post.mjs",
+    "favicon": "node scripts/set-favicon.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
