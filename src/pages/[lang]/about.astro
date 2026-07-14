@@ -22,7 +22,7 @@ const d = entry.data;
 
     <!-- 📱 手机端:小提琴 + 联系方式 小卡片(桌面隐藏) -->
     <div class="lg:hidden flex items-center gap-4 p-4 rounded-xl bg-bg-secondary border border-border">
-      <div class="w-14 h-14 rounded-full bg-bg-tertiary flex items-center justify-center text-3xl shrink-0">🎻</div>
+      <img src="/images/violin.jpg" alt="avatar" class="w-14 h-14 rounded-full shrink-0 object-cover" />
       <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-text-secondary min-w-0">
         <a href={`mailto:${siteConfig.author.email}`} class="flex items-center gap-1.5 hover:text-accent min-w-0">
           <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@ const d = entry.data;
     <!-- ═══ 左栏:头像 + 联系方式(桌面端 sticky,手机隐藏) ═══ -->
     <aside class="hidden lg:block w-60 lg:shrink-0">
       <div class="lg:sticky lg:top-24 space-y-5">
-        <div class="w-28 h-28 lg:w-32 lg:h-32 rounded-full mx-auto lg:mx-0 ring-4 ring-bg-secondary shadow-sm flex items-center justify-center bg-bg-tertiary text-6xl">🎻</div>
+        <img src="/images/violin.jpg" alt="avatar" class="w-28 h-28 lg:w-32 lg:h-32 rounded-full mx-auto lg:mx-0 ring-4 ring-bg-secondary shadow-sm object-cover" />
         <div class="text-center lg:text-left">
           <p class="font-bold text-lg text-primary">{siteConfig.author.name}</p>
           <p class="text-sm text-text-muted leading-snug mt-0.5">{siteConfig.author.bio[lang]}</p>
