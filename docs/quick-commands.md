@@ -126,6 +126,7 @@ cms 菜单结构:
 | npm run thumbs | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
 | npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
 | npm run favicon | 换网站 favicon。源图支持 PNG/JPG/WebP/SVG/GIF/TIFF/AVIF/ICO,生成 favicon.png 并自动递增 ?v 版本号 |
+| npm run avatar | 换关于页头像。自动判断源图透明度:透明→PNG 融入背景,不透明照片→jpg(体积小) |
 
 favicon 用法:
 - 命令: `npm run favicon -- <源图> [尺寸]`,例 `npm run favicon -- public/images/my_profile.png`
@@ -133,6 +134,12 @@ favicon 用法:
 - 尺寸: 输出 favicon.png 边长,默认 180(兼顾标签页和高 DPI),一般不用传。
 - 生成: `public\favicon.png` + 把 `src\layouts\BaseLayout.astro` 的 `favicon.png?v=N` 递增 +1(破缓存),再打印 git 命令。
 - **注意:** 源图路径尽量别用中文，若有报错可以改成英文名(Windows 命令行传给 node.exe 可能会导致乱码从而无法找到文件)。
+
+avatar 用法:
+- 命令: `npm run avatar -- <源图>`,例 `npm run avatar -- ~/Downloads/photo.jpg`
+- 自动判断: 透明源图(PNG 图标)→输出透明 PNG(contain 保留完整图,融入背景);不透明照片→输出 jpg(cover 居中裁剪,体积小)。会清掉旧格式文件,避免两份并存。
+- 生成: `public\images\violin.*` + 更新 `src\pages\[lang]\about.astro` 两处(PC + 移动端)的 img src。
+- **注意:** 源图路径别用中文(同 favicon,Windows 命令行传 node 可能乱码)。
 
 ---
 
@@ -162,6 +169,7 @@ dev 和 preview 的区别:
 | 新增或删除分类/标签 | npm run cms |
 | 改了作品集图,刷新缩略图 | npm run thumbs |
 | 换网站 favicon | npm run favicon -- <源图> |
+| 换关于页头像 | npm run avatar -- <源图> |
 | 改了 3D 背景代码 | npm run build:3d(或直接 npm run build) |
 | 提交推送前最终验证 | npm run build(必须全绿才能部署) |
 
