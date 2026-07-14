@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && astro dev",
-    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build",
+    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build && node scripts/bump-sw-version.mjs",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",

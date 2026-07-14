@@ -4,7 +4,7 @@
 //   - HTML 导航: Network First(内容最新,离线回退)
 //   - 其他静态 (JS/CSS/图片/字体): Stale While Revalidate
 //
-// 升级 vendor 资源(如换 Three.js 版本)后:把下面 VERSION 改 v1→v2,旧缓存自动清理重下。
+// VERSION 是占位:npm run build 末尾由 scripts/bump-sw-version.mjs 自动替换成本次构建时间戳,每次部署自动清 SW 缓存。
 const VERSION = 'v20260714220000';
 const HEAVY = `heavy-${VERSION}`;    // 重资源缓存
 const RUNTIME = `runtime-${VERSION}`; // 其他静态运行时缓存
