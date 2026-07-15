@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+/* Tailwind 只扫描源码，避免 docs/answers 中的普通文本被误判成类名或 CSS 变量。 */
+@source "../";
 
 /* 温暖米色配色方案 */
 @theme {

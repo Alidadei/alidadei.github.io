@@ -158,9 +158,10 @@ compress-posts 用法:
 
 | 命令            | 作用           | 说明                                                         |
 | --------------- | -------------- | ------------------------------------------------------------ |
-| npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景 |
+| npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景并自动选择可用端口 |
 | npm run build   | 完整构建       | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
-| npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。端口被占会自动换(如 4322) |
+| npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。会自动选择可用端口 |
+| npx kill-port   | 释放端口       | 应明确指定端口，如：  npx kill-port 4321                     |
 
 dev 和 preview 的区别:
 
@@ -188,10 +189,11 @@ dev 和 preview 的区别:
 
 ## 注意事项
 
-- 端口被占:dev 和 preview 默认 4321,被占会自动换端口(如 4322),看终端输出的实际地址。
+- 端口被占:dev 和 preview 从 4321 开始探测可用端口并自动换端口,看终端输出的实际地址；也可用 `npm run dev -- --port 4330` 指定端口。
+- `localhost` 与 `127.0.0.1` 都表示本机: `127.0.0.1` 强制使用 IPv4 回环地址; `localhost` 是主机名,Windows 可能优先解析到 IPv6 回环地址 `::1`。如果 `localhost` 打不开但 `127.0.0.1` 能打开,通常是 IPv6 监听异常,可改用 `http://127.0.0.1:实际端口/`。
 - preview 前要先 build:preview 只服务 dist/,没构建过会看不到新改动。
 - build 会改 public/:three-bg.js、quotes.json、images/thumbs/ 是构建产物(images/thumbs 已 gitignore),不用手动管。
-- 停止后台服务器:在终端按 Ctrl+C。
+- 每一次调试完后释放端口:在终端按 Ctrl+C。
 
 ---
 
@@ -216,8 +218,8 @@ dev 和 preview 的区别:
 
 | 命令 | 作用 |
 |------|------|
-| npx astro dev --host | dev 模式暴露到局域网,终端会打印一个可被手机访问的 IP 地址(手机和电脑连同一 WiFi) |
-| npx astro preview --host | preview 模式暴露到局域网,用于查看 build 产物的真机效果 |
+| npm run dev -- --host | dev 模式暴露到局域网,终端会打印一个可被手机访问的 IP 地址(手机和电脑连同一 WiFi) |
+| npm run preview -- --host | preview 模式暴露到局域网,用于查看 build 产物的真机效果 |
 
 提示:平时端口被占,astro 会自动换端口(如 4322、4323),看终端输出的实际地址。清理被占端口可用:
 

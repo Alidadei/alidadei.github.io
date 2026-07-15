@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && astro dev",
+    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && node scripts/run-astro.mjs dev",
     "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build && node scripts/bump-sw-version.mjs",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
@@ -15,7 +15,7 @@
     "favicon": "node scripts/set-favicon.mjs",
     "avatar": "node scripts/set-avatar.mjs",
     "compress-posts": "node scripts/compress-post-images.mjs",
-    "preview": "astro preview",
+    "preview": "node scripts/run-astro.mjs preview",
     "astro": "astro"
   },
   "dependencies": {
