@@ -10,8 +10,8 @@ export const siteConfig = {
     name: 'Harry Yu',
     avatar: '/images/my_profile.png',
     bio: {
-      zh: 'FDU PHD',
-      en: 'Ph.D. @ FDU',
+      zh: 'FDU Ph.D.student',
+      en: 'Ph.D.student @ FDU',
     },
     location: 'Shanghai, China',
     email: '13427917163@163.com',
