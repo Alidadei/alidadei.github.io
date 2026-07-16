@@ -151,7 +151,7 @@ graph TB
 │  ├── categories.json  分类树 (3顶级 + 子分类)            │
 │  ├── categories.ts    分类工具函数
 │  ├── redirects.json   分类旧URL→新URL重定向 (cms改名时自动生成)                       │
-│  └── quotes.json      每日一句 (中英各10条)               │
+│  └── quotes.json      每日一句 (中文18条, 英文暂无)          │
 │                                                        │
 │  src/content/                                          │
 │  ├── posts/zh/        16篇博客文章 (15发布+1草稿)            │
@@ -536,7 +536,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 ```
 
 **关键数据文件：**
-- `src/data/quotes.json` — 每日一句句子库 (中文11条, 构建时自动同步到 `public/quotes.json`)
+- `src/data/quotes.json` — 每日一句句子库 (中文18条, 英文暂无, 构建时自动同步到 `public/quotes.json`)
 - `public/3d-background.html` — 3D场景 (独立HTML, 自托管Three.js, 移动端跳过Bloom, 每日一句从 quotes.json 动态加载)
 - `public/vendor/three/` — Three.js + 后处理着色器 (UnrealBloom等)
 
