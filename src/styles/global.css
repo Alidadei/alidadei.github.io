@@ -78,6 +78,15 @@ body {
 /* 文章正文排版增强 */
 .prose {
   line-height: 1.9;
+  min-width: 0;
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .prose h1 {
   font-size: 2rem;
@@ -86,36 +95,57 @@ body {
   margin-bottom: 1em;
 }
 .prose h2 {
-  font-size: 1.5rem;
+  font-size: 1.625rem;
   font-weight: 700;
   line-height: 1.3 !important;
   letter-spacing: -0.01em;
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid var(--color-border);
-  margin-top: 1.25em !important;
-  margin-bottom: 0.6em !important;
+  margin-top: 0.9em !important;
+  margin-bottom: 0.5em !important;
+}
+.prose h2:first-of-type {
+  margin-top: 0.5em !important;
+}
+.prose h2:not(:first-of-type) {
+  position: relative;
+  padding-top: 1.75rem;
+}
+.prose h2:not(:first-of-type)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed rgba(176, 125, 79, 0.55);
+}
+/* An explicit Markdown --- already supplies the divider. */
+.prose hr + h2 {
+  padding-top: 0;
+  margin-top: 0.35em !important;
+}
+.prose hr + h2::before {
+  display: none;
 }
 .prose h3 {
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.3 !important;
-  margin-top: 1em !important;
-  margin-bottom: 0.4em !important;
+  margin-top: 0.7em !important;
+  margin-bottom: 0.35em !important;
 }
 .prose h4 {
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.3 !important;
-  margin-top: 0.8em !important;
-  margin-bottom: 0.4em !important;
+  margin-top: 0.6em !important;
+  margin-bottom: 0.3em !important;
 }
 @media (min-width: 640px) {
   .prose h1 { font-size: 2.25rem; }
-  .prose h2 { font-size: 1.75rem; }
+  .prose h2 { font-size: 1.875rem; }
   .prose h3 { font-size: 1.375rem; }
 }
 .prose p {
-  margin-bottom: 1.6em;
+  margin-bottom: 1.1em;
 }
 .prose a {
   text-decoration: underline;
@@ -144,9 +174,10 @@ body {
 }
 .prose hr {
   border: none;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
-  margin: 3em 0;
+  height: 0;
+  border-top: 2px dashed rgba(176, 125, 79, 0.55);
+  background: none;
+  margin: 1.25em 0;
 }
 .prose ul, .prose ol {
   margin: 1.5em 0;
@@ -222,7 +253,7 @@ pre,
    Tailwind v4 preflight 把 pre 的 margin reset 成 0,
    导致段落到代码块沿用 p 的 1.6em 下间距(偏大),
    而代码块到下一段直接是 0(粘连)。
-   这里让代码块与上下文紧凑成组,区别于段落正常间距(1.6em)。 */
+   这里让代码块与上下文紧凑成组,区别于段落正常间距(1.1em)。 */
 .prose pre {
   margin-top: 0.6em;
   margin-bottom: 1em;
@@ -284,10 +315,11 @@ code {
   font-size: 0.875em;
 }
 :not(pre) > code {
-  background: var(--color-bg-tertiary);
+  background: #fff8e7;
   padding: 2px 6px;
   border-radius: 4px;
   color: var(--color-accent);
+  border: 1px solid rgba(176, 125, 79, 0.42);
 }
 
 /* 滚动条美化 */
@@ -325,11 +357,52 @@ code {
 
 /* TOC sidebar styles */
 .toc-link {
-  border-left: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 .toc-link:hover {
-  border-left-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.toc-link.is-active {
+  color: var(--color-accent);
+  font-weight: 600;
+  opacity: 1;
+}
+#toc-active-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 0;
+  background: var(--color-accent);
+  pointer-events: none;
+  transition: height 0.3s ease;
+  z-index: 1;
+}
+#toc-active-head {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 9px;
+  height: 13px;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+  background: linear-gradient(160deg, var(--color-accent-light) 0%, var(--color-accent) 72%, #8d5b36 100%);
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 100%, 50% 78%, 0% 100%
+  );
+  filter: drop-shadow(0 2px 4px rgba(176, 125, 79, 0.28));
+  z-index: 2;
+}
+#toc-active-head::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1px;
+  height: 8px;
+  transform: none;
+  border-radius: 9999px;
+  background: rgba(255, 236, 194, 0.68);
 }
 #toc-nav::-webkit-scrollbar {
   width: 3px;

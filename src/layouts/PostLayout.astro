@@ -22,7 +22,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
   <Header />
   <!-- KaTeX CSS only loaded on blog post pages -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
-  <article class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
+  <article class="max-w-6xl mx-auto xl:translate-x-12 px-4 sm:px-6 lg:px-8 py-8 fade-in">
     <header class="mb-4">
       <!-- Category breadcrumb -->
       {categories.length > 0 && (
@@ -110,9 +110,14 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           <h3 class="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
             {lang === 'zh' ? '目录' : 'Table of Contents'}
           </h3>
-          <nav id="toc-nav" class="space-y-1 text-sm border-l-2 border-border pl-3 max-h-[70vh] overflow-y-auto">
-            <!-- TOC items injected by JS -->
-          </nav>
+          <div id="toc-track" class="relative">
+            <span id="toc-active-indicator" aria-hidden="true">
+              <span id="toc-active-head"></span>
+            </span>
+            <nav id="toc-nav" class="space-y-1 text-sm border-l-2 border-border pl-3 max-h-[70vh] overflow-y-auto">
+              <!-- TOC items injected by JS -->
+            </nav>
+          </div>
         </div>
       </aside>
     </div>
@@ -125,7 +130,8 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       const prose = document.querySelector('.prose');
       const tocNav = document.getElementById('toc-nav');
       const tocSidebar = document.getElementById('toc-sidebar');
-      if (!prose || !tocNav || !tocSidebar) return;
+      const tocTrack = document.getElementById('toc-track');
+      if (!prose || !tocNav || !tocSidebar || !tocTrack) return;
 
       // Find all headings h2-h4 in prose
       const headings = prose.querySelectorAll('h2, h3, h4');
@@ -134,8 +140,22 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         return;
       }
 
-      // Clear any previous TOC items (for Astro page transitions)
-      tocNav.innerHTML = '';
+      // Clear only generated links (for Astro page transitions). Keep the
+      // continuous active-line indicator mounted in the track wrapper.
+      tocNav.querySelectorAll('.toc-link').forEach((link) => link.remove());
+      let tocIndicator = document.getElementById('toc-active-indicator');
+      if (!tocIndicator) {
+        tocIndicator = document.createElement('span');
+        tocIndicator.id = 'toc-active-indicator';
+        tocIndicator.setAttribute('aria-hidden', 'true');
+        tocTrack.prepend(tocIndicator);
+      }
+      let tocActiveHead = document.getElementById('toc-active-head');
+      if (!tocActiveHead) {
+        tocActiveHead = document.createElement('span');
+        tocActiveHead.id = 'toc-active-head';
+        tocIndicator.appendChild(tocActiveHead);
+      }
 
       // Also prepare mobile TOC
       const tocNavMobile = document.getElementById('toc-nav-mobile');
@@ -158,10 +178,11 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         link.href = '#' + heading.id;
         link.textContent = heading.textContent?.trim() || '';
 
-        // Hierarchy: all bold, with indent & size by level
-        let cls = 'toc-link block py-1 font-bold text-text-muted hover:text-accent transition-colors truncate';
+        // Hierarchy: section headings are stronger; subheadings are indented and lighter.
+        let cls = 'toc-link block py-1 text-text-muted hover:text-accent transition-colors truncate';
+        link.dataset.level = String(level);
         if (level === 2) {
-          cls += ' text-[0.85rem]';
+          cls += ' font-semibold text-[0.85rem]';
         } else if (level === 3) {
           cls += ' pl-3 text-[0.8rem]';
         } else if (level === 4) {
@@ -220,11 +241,23 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       }
 
       // Scroll spy: highlight current heading
-      const tocLinks = tocNav.querySelectorAll('.toc-link');
-      const mobileLinks = tocNavMobile ? tocNavMobile.querySelectorAll('.toc-link') : [];
+      const tocLinks = Array.from(tocNav.querySelectorAll('.toc-link'));
+      const mobileLinks = tocNavMobile ? Array.from(tocNavMobile.querySelectorAll('.toc-link')) : [];
       const headingElements = Array.from(headings);
+      const observedHeadingIndices = new Set<number>();
+      const hasIntersectionObserver = 'IntersectionObserver' in window;
+      let tocObserver: IntersectionObserver | null = null;
+      let activeIndex = -1;
 
-      function updateActiveHeading() {
+      function isAtArticleEnd() {
+        const articleBottom = prose.getBoundingClientRect().bottom;
+        return articleBottom <= window.innerHeight + scrollOffset;
+      }
+
+      // Fallback for browsers without IntersectionObserver and for the small
+      // gaps between two headings where neither heading intersects the band.
+      function getPositionFallback() {
+        if (isAtArticleEnd()) return headingElements.length - 1;
         let currentIndex = 0;
         for (let i = headingElements.length - 1; i >= 0; i--) {
           const rect = headingElements[i].getBoundingClientRect();
@@ -233,20 +266,101 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
             break;
           }
         }
+        return currentIndex;
+      }
 
-        const allLinks = [...tocLinks, ...mobileLinks];
-        allLinks.forEach((link, i) => {
-          const realIndex = i % headingElements.length;
-          if (realIndex === currentIndex) {
-            link.classList.remove('text-text-muted');
-            link.classList.add('text-accent');
-            (link as HTMLElement).style.borderLeftColor = 'var(--color-accent)';
-          } else {
-            link.classList.remove('text-accent');
-            link.classList.add('text-text-muted');
-            (link as HTMLElement).style.borderLeftColor = 'transparent';
-          }
+      function getObserverIndex() {
+        if (observedHeadingIndices.size === 0) return getPositionFallback();
+        const activationLine = scrollOffset + 10;
+        const candidates = Array.from(observedHeadingIndices);
+        // Use the heading closest to the activation line rather than the
+        // callback order. This keeps upward and downward scrolling symmetrical
+        // when two headings overlap the observer band.
+        return candidates.reduce((closest, index) => {
+          const currentDistance = Math.abs(headingElements[index].getBoundingClientRect().top - activationLine);
+          const closestDistance = Math.abs(headingElements[closest].getBoundingClientRect().top - activationLine);
+          return currentDistance < closestDistance ? index : closest;
+        }, candidates[0]);
+      }
+
+      function updateIndicatorPosition(activeLink = tocLinks[activeIndex] as HTMLElement | undefined) {
+        if (!tocIndicator || !activeLink) return;
+        const trackRect = tocTrack.getBoundingClientRect();
+        const linkRect = activeLink.getBoundingClientRect();
+        const end = Math.min(
+          Math.max(linkRect.bottom - trackRect.top, 0),
+          tocTrack.clientHeight
+        );
+        // The line grows from the top of the track to the active item instead
+        // of replacing the track with a short active border.
+        tocIndicator.style.height = `${end}px`;
+      }
+
+      function setActiveHeading(currentIndex: number, force = false) {
+        // Only update the DOM when the active heading changes. This keeps the
+        // scroll spy responsive while allowing the active item to follow the
+        // reader inside a long, scrollable TOC.
+        if (currentIndex === activeIndex && !force) return;
+        activeIndex = currentIndex;
+
+        const setActiveState = (links: Element[]) => {
+          links.forEach((link, index) => {
+            const isActive = index === currentIndex;
+            link.classList.toggle('is-active', isActive);
+            if (isActive) {
+              link.setAttribute('aria-current', 'location');
+            } else {
+              link.removeAttribute('aria-current');
+            }
+          });
+        };
+
+        setActiveState(tocLinks);
+        setActiveState(mobileLinks);
+
+        // Grow one continuous indicator along the existing straight track.
+        // The track remains the original border color; the accent line covers
+        // the chapters already passed and ends at the current item.
+        const activeLink = tocLinks[currentIndex] as HTMLElement | undefined;
+        updateIndicatorPosition(activeLink);
+
+        // Keep the active desktop item visible without changing the existing
+        // straight border shape or page scroll position.
+        activeLink?.scrollIntoView({
+          block: 'nearest',
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
         });
+      }
+
+      function updateActiveHeading(force = false) {
+        const currentIndex = isAtArticleEnd()
+          ? headingElements.length - 1
+          : (hasIntersectionObserver && observedHeadingIndices.size > 0
+            ? getObserverIndex()
+            : getPositionFallback());
+        setActiveHeading(currentIndex, force);
+      }
+
+      // Fumadocs-style anchor tracking: headings become active while they
+      // intersect a narrow band below the fixed header. The scroll listener
+      // below remains as a fallback for the gaps and the article end.
+      if (hasIntersectionObserver) {
+        tocObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            const index = headingElements.indexOf(entry.target);
+            if (index < 0) return;
+            if (entry.isIntersecting) {
+              observedHeadingIndices.add(index);
+            } else {
+              observedHeadingIndices.delete(index);
+            }
+          });
+          updateActiveHeading();
+        }, {
+          rootMargin: `-${scrollOffset}px 0px -70% 0px`,
+          threshold: 0
+        });
+        headingElements.forEach((heading) => tocObserver?.observe(heading));
       }
 
       // Smooth scroll on click — use getBoundingClientRect for accurate position
@@ -275,6 +389,11 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           });
           ticking = true;
         }
+      });
+      window.addEventListener('resize', () => updateActiveHeading(true));
+      tocNav.addEventListener('scroll', () => {
+        if (activeIndex < 0) return;
+        updateIndicatorPosition();
       });
 
       // Initial state
