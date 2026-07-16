@@ -102,7 +102,7 @@ const d = entry.data;
       <!-- News -->
       {d.news.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '近期动态' : 'News'}
           </h2>
           <div class="space-y-3">
@@ -119,12 +119,12 @@ const d = entry.data;
       <!-- Education -->
       {d.education.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '教育经历' : 'Education'}
           </h2>
           <div class="space-y-6">
             {d.education.map((e) => (
-              <div class="border-l-4 border-accent pl-5">
+              <div>
                 <div class="flex items-baseline justify-between flex-wrap gap-2">
                   <h3 class="font-bold text-lg text-primary">{e.school}</h3>
                   <span class="text-sm text-text-muted whitespace-nowrap">{e.period}</span>
@@ -139,12 +139,12 @@ const d = entry.data;
       <!-- Internship -->
       {d.internship.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '实习经历' : 'Internship'}
           </h2>
           <div class="space-y-6">
             {d.internship.map((i) => (
-              <div class="border-l-4 border-accent pl-5">
+              <div>
                 <div class="flex items-baseline justify-between flex-wrap gap-2">
                   <h3 class="font-bold text-lg text-primary">{i.company}</h3>
                   <span class="text-sm text-text-muted whitespace-nowrap">{i.period}</span>
@@ -159,12 +159,12 @@ const d = entry.data;
       <!-- Research / Projects -->
       {d.research.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '研究 & 项目' : 'Research & Projects'}
           </h2>
           <div class="space-y-8">
             {d.research.map((r) => (
-              <div class="border-l-4 border-accent pl-5">
+              <div>
                 <div class="flex items-baseline justify-between flex-wrap gap-2">
                   <h3 class="font-bold text-lg text-primary">{r.title}</h3>
                   {r.role && <span class="text-sm text-text-muted whitespace-nowrap">{r.role}</span>}
@@ -180,7 +180,7 @@ const d = entry.data;
       <!-- Awards -->
       {d.awards.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '获奖荣誉' : 'Awards & Honors'}
           </h2>
           <div class="space-y-3">
@@ -200,7 +200,7 @@ const d = entry.data;
       <!-- Skills -->
       {d.skills.length > 0 && (
         <section class="mb-12">
-          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 border-b border-border">
+          <h2 class="text-xl md:text-2xl font-bold text-primary mb-6 pb-2 about-section-heading">
             {lang === 'zh' ? '专业技能' : 'Skills'}
           </h2>
           <div class="grid sm:grid-cols-2 gap-4">

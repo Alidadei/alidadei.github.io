@@ -179,6 +179,12 @@ body {
   background: none;
   margin: 1.25em 0;
 }
+
+/* Keep About page section dividers consistent with article separators. */
+.about-section-heading {
+  border-bottom: 2px dashed rgba(176, 125, 79, 0.55);
+}
+
 .prose ul, .prose ol {
   margin: 1.5em 0;
   padding-left: 1.5em;
