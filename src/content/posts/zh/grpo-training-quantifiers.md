@@ -29,7 +29,7 @@ r &= \pi_{new} / \pi_{old}
 $$
 其中 R_i 是第 i 条轨迹的 reward，μ_group 和 σ_group 是同一题所有 G 条轨迹的均值和标准差，r 是新旧策略概率比，ε 防止更新幅度过大（通常 0.2）
 
-![看完能和外婆解释的PPO, DPO, GRPO强化学习](/images/posts/grpo-ppo-dpo-explained.webp)
+![看完能和外婆解释的PPO, DPO, GRPO强化学习](../../../../public/images/posts/grpo-ppo-dpo-explained.webp)
 
 **GRPO 的逻辑：** 大家（Group）一起上——同一个问题独立回答多次，根据每份回答的表现为它打一个分数（reward），然后在组内算出互相的相对排名（Advantage）。比自己组平均水平好的就拿正分（被强化），差的就拿负分（被抑制）。但有三条规矩：一是奖励/惩罚别太激动（PPO clipped，防止一次更新步子太大），二是别丢了自己原来的语言底子（KL 约束不要偏离初始模型太远），三是同一个问题必须生成多个回答才能比较。
 

@@ -77,7 +77,7 @@ alidadei.github.io/
 
 ## 内容维护
 
-- **写博客**:在 src/content/posts/zh/ 新建 .md,frontmatter 按 docs/技术博客排版规范.md(单行 categories、tags 多行、正文从 ## 起)。
+- **写博客**:在 src/content/posts/zh/ 新建 .md,frontmatter 按 docs/技术博客排版规范.md(单行 categories、tags 多行、正文从 ## 起);正文图片使用相对 `../../../../public/images/posts/` 的路径,Typora 与线上均可查看。
 - **分类/标签/友链**:npm run cms 交互式管理(增删改 + 批量)。
 - **每日一句**:改 src/data/quotes.json(按日期自动轮换)。
 - **关于我**:改 src/content/about/zh.md / en.md(含教育/实习/研究/奖项等结构化字段)。

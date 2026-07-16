@@ -245,7 +245,9 @@ export async function handleImageUpload(request: Request, env: Env): Promise<Res
   return jsonResponse({
     path: filePath,
     url: `/images/posts/${timestamp}-${safeName}`,
-    markdown: `![${safeName}](/images/posts/${timestamp}-${safeName})`,
+    // Posts live in src/content/posts/{lang}/, so this is readable by both
+    // Typora (local file) and Astro (rewritten at build time).
+    markdown: `![${safeName}](../../../../public/images/posts/${timestamp}-${safeName})`,
   });
 }
 
@@ -272,7 +274,7 @@ export async function handleListImages(request: Request, env: Env): Promise<Resp
       url: `/images/posts/${f.name}`,
       sha: f.sha,
       size: f.size,
-      markdown: `![${f.name}](/images/posts/${f.name})`,
+      markdown: `![${f.name}](../../../../public/images/posts/${f.name})`,
     }));
 
   return jsonResponse(images);

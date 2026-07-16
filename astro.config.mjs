@@ -5,13 +5,14 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkPublicImagePaths from './src/plugins/remark-public-image-paths.mjs';
 import redirects from './src/data/redirects.json' with { type: 'json' };
 
 export default defineConfig({
   site: 'https://alidadei.github.io',
   redirects,
   markdown: {
-    remarkPlugins: [remarkMath],
+    remarkPlugins: [remarkPublicImagePaths, remarkMath],
     rehypePlugins: [rehypeKatex],
     shikiConfig: {
       theme: 'github-light',

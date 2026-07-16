@@ -62,12 +62,15 @@ function findMd(dir) {
   return out;
 }
 function updateMdRefs(oldName, newName) {
+  const relativeOld = '../../../../public/images/posts/' + oldName;
+  const relativeNew = '../../../../public/images/posts/' + newName;
   const re = new RegExp('/images/[^\\s)"\\]]*?' + oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
   let changed = 0;
   for (const md of findMd(POSTS_DIR)) {
     let c = fs.readFileSync(md, 'utf8');
-    if (re.test(c)) {
-      c = c.replace(re, m => m.replace(oldName, newName));
+    const next = c.replace(relativeOld, relativeNew).replace(re, m => m.replace(oldName, newName));
+    if (next !== c) {
+      c = next;
       fs.writeFileSync(md, c);
       changed++;
     }
