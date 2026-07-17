@@ -1,12 +1,16 @@
 # LLM 后训练基础概念阐述
 
-大语言模型先在海量文本上做预训练，学会“接下来最可能出现什么 token”；之后，人们还要继续教它听指令、遵守输出格式、贴近人的偏好，或者在可验证任务上提高正确率。这一大段工作通常统称为 **后训练（post-training）**。
+## 写作动机
 
-“后训练”不是某一种固定算法，也没有全行业唯一的流水线。SFT、奖励模型、DPO、PPO、GRPO 都可能出现在后训练里，但一个项目不必把它们全部用一遍。本文按论文和主流框架里相对稳定的共识解释这些概念；凡是不同论文、不同框架口径不统一的地方，会明确写出来。
+我在学习和实践LLM后训练的过程中，发现其中存在许多“黑话”，它们其实是诸多LLM相关的基础概念，但是很容易遇到各种各样不同的说法和口径，有时候不同叫法指的是同一个东西有时候指的却是不同的东西，一开始入门的时候很容易让人觉得晕头转向，因而我便产生了将它们全部梳理一遍的冲动。本文将根据论文和主流框架里相对稳定的共识来解释这些概念，想快速了解的读者可以不必深究公式，只需理解每个公式究竟在“比较谁/优化谁/约束谁”。
 
-第一次阅读时可以跳过公式。每个公式后面的白话解释已经覆盖它想表达的核心；公式的作用只是把“究竟在比较谁、平均谁、约束谁”写得没有歧义。
+## 什么是LLM后训练
 
-## 先看全局：一条常见但并非唯一的路线
+大语言模型首先会在海量文本上做**预训练**来吸收必要的知识，其本质是让模型在**自监督**地预测下一个 token 的过程中学会文本中的各种规律并将其压缩进模型参数里——所谓“自监督”，就是正确答案直接来自原文本的下一个 token，不需要人工逐条标注；之后，模型还需要学会贴近人的偏好、遵守某些特定的输出格式或者在特定任务上提高正确率，针对这些能力的训练统称为 **后训练（post-training）**。
+
+“后训练”不是某一种固定算法，也没有全行业唯一的流水线：SFT、DPO、PPO、GRPO 等方法都可能出现在后训练里，一个项目通常会根据场景来选择合适的算法组合。
+
+## 先看全局：一条经典的路线
 
 ```text
 原始语料
@@ -14,25 +18,13 @@
 基础模型
   ↓ 可选：继续预训练，用领域或目标语言语料继续学习
 领域基础模型
-  ↓ SFT：用“问题—理想回答”示范教模型听指令
-指令模型
+  ↓ SFT：用“问题—理想回答”示范教模型如何听从指令进行规范回答
+指令模型（Instruct 系列）
   ├─ 固定偏好对（chosen / rejected）────────→ DPO 等离线偏好优化
-  ├─ 奖励模型或规则 / 验证器 + 新生成的回答 ─→ PPO、GRPO 等在线强化学习
-  └─ 一次生成多个候选，筛出较好的回答 ─────→ Best-of-N、拒绝采样，再用于训练或直接返回
+  └─ 奖励模型或规则 / 验证器 + 新生成的回答 ─→ PPO、GRPO 等在线强化学习
 ```
 
-这张图里最重要的关系是：
-
-- **SFT 数据告诉模型“照着什么样子回答”**；
-- **偏好数据告诉模型“两个回答里更喜欢哪一个”**；
-- **奖励把回答压成一个或一串分数**；
-- **优势（advantage）把分数变成“这个回答比基线好多少”**；
-- **策略梯度再根据优势调整模型生成这些 token 的概率**；
-- **KL、熵和裁剪等机制负责限制更新幅度或维持探索**。
-
-OpenAI 的 [InstructGPT 论文](https://arxiv.org/abs/2203.02155) 展示了“SFT—偏好排序—奖励模型—强化学习”这条经典路线；[DPO](https://arxiv.org/abs/2305.18290) 则表明，固定偏好数据也可以不显式训练奖励模型、不在优化时在线 rollout，直接优化策略。
-
-“继续预训练算不算后训练”也没有统一口径：有人按时间顺序把基础预训练后的所有训练都算进去，有人把 continued pretraining 单独列为语料适配。本文把它放在总流程里，但与教模型遵循偏好的 alignment 训练分开解释。
+OpenAI 的 [InstructGPT 论文](https://arxiv.org/abs/2203.02155) 采用的便是“SFT—偏好排序—奖励模型—强化学习”这条经典路线，不过“继续预训练算不算后训练”目前没有统一的口径：有人按时间顺序把基础预训练后的所有训练都算进去，有人把 continued pretraining 单独列为语料适配。个人更倾向于后一种口径，因为“继续预训练”和 SFT、DPO 这类训练在数据形式和优化目的上都有明显区别，因而本文也把它单独看待。
 
 ## LLM 的输入处理
 
@@ -40,66 +32,19 @@ OpenAI 的 [InstructGPT 论文](https://arxiv.org/abs/2203.02155) 展示了“SF
 
 #### 模型读到的不是“字”和“词”，而是 token ID
 
-人输入的是字符串，模型实际接收的是一串整数。中间负责转换的工具叫 **tokenizer（分词器）**：
+人输入的是字符串，模型实际接收的却是一串整数，也就是 token ID，中间负责转换的工具叫 **tokenizer（分词器）**：
 
 ```text
 字符串 → token 序列 → token ID 序列 → 向量序列 → Transformer
 ```
 
-一个 token 可能是一个汉字、一个词、半个英文单词、标点、空格的一部分，也可能是专门表示“用户消息开始”的控制符。具体切法完全取决于 tokenizer，不能拿“一个 token 等于一个字”当通用换算规则。
+一个 token 可能是一个汉字、一个词或标点，也可能是专门表示“用户消息开始”的控制符，其具体切法完全取决于 tokenizer，不能机械地认为“一个 token 等于一个字”。
 
-**词表（vocabulary）** 就是 token 与整数 ID 的对照表。模型还有一张 embedding 矩阵，把每个 ID 变成向量。模型输出时，最后一层通常也要给词表中的每个 token 打分。因此 tokenizer、词表、输入 embedding 和输出头必须彼此对得上。
-
-#### Tokenizer 是怎样训练出来的
-
-常见流程可以粗略理解为四步：
-
-1. 收集有代表性的语料。语料中有哪些语言、代码和领域文本，会直接影响切词效果。
-2. 做有限的规范化和预切分，例如处理空格、Unicode 形式或标点。不同 tokenizer 的选择不同，并非都必须做同样的规范化。
-3. 学习子词单元。常见方法包括 BPE 和 Unigram。
-4. 按模型需要加入 BOS、EOS、PAD、UNK，以及聊天角色、工具调用等特殊 token；不是每个 tokenizer 都必须具备其中全部类型。
-
-**BPE** 可以大白话理解为：先从较小单元出发，反复把语料中常一起出现的相邻片段合并，直到达到目标词表大小。它让罕见词也能拆成已知子词，最早广泛用于神经机器翻译的工作见 [Sennrich 等人的论文](https://aclanthology.org/P16-1162/)。
-
-**Unigram** 的思路不同：先准备一个较大的候选子词集合，再逐步删去对整体概率贡献较小的候选，留下设定数量的 token。[SentencePiece](https://aclanthology.org/D18-2012/) 同时支持 BPE 和 Unigram，并能直接从原始句子训练，不要求所有语言都先按空格分词。
-
-这里不存在“BPE 永远优于 Unigram”之类的共识。真正要看的是目标语料上的序列长度、语言覆盖、可逆性、训练成本和下游效果。
-
-#### 词表大小怎样确定
-
-没有一个放之四海而皆准的数字。它是几种成本的折中：
-
-- **词表较小**：一段话往往会被切成更多 token，序列变长。对标准稠密注意力来说，长序列的计算和显存成本增长很快；可用上下文里也更容易塞不下内容。
-- **词表较大**：序列可能变短，但 embedding、输出头和每一步 softmax 都更大；低频 token 也可能因为训练次数太少而学不好。
-- **语言分布不均**：如果训练语料偏向某些语言，其他语言可能被切得很碎。同样一句话，所需 token 数可能明显不同。
-- **领域差异**：代码、化学式、医学名词和普通聊天的合理切分并不一样。
-
-假设 token embedding 和输出头使用的向量宽度为 $d$，给词表新增 $K$ 个 token：若输入 embedding 和输出权重共享，新增参数约为 $Kd$；若两者不共享，约为 $2Kd$，这里忽略偏置项。这个公式只说明参数成本，不代表词表越小越好，因为序列长度也会反过来影响训练与推理成本。
-
-合理做法是：先用有代表性的候选语料训练几种词表大小，再在留出数据上比较平均 token 数、长尾语言和领域文本的切分、训练吞吐、模型效果与显存成本。[一项覆盖多种语言和任务的实证研究](https://aclanthology.org/2024.findings-naacl.247/) 也提醒：fertility（一个词平均被切成多少 token）等指标有参考价值，但不能单独替代下游实验。
-
-#### 什么时候需要扩充词表
-
-扩词表不是普通 SFT 的必做步骤。原 tokenizer 已经能表示任何输入时，仅仅因为某个专业词被拆成多个 token，并不自动说明值得扩词。扩词表更常见于以下情况：
-
-- 新增语言被切得极碎，序列成本明显过高；
-- 领域中有大量稳定、反复出现的特殊字符串；
-- 要加入新的聊天控制符、工具调用标记或模态占位符；
-- 有足够继续预训练数据，让新 token 真正学到含义。
-
-一个稳妥的扩词流程是：
-
-1. 保留旧 token 与旧 ID 的对应关系，只把新 token 追加到词表末尾；
-2. 同步扩展输入 embedding 和输出头；
-3. 初始化新行，可以使用已有子词向量的组合或其他经过验证的初始化方法；
-4. 用覆盖新 token 的数据继续预训练或微调；
-5. 检查旧能力、目标语言效果、序列长度和部署端 tokenizer 是否一致。
-
-只在 tokenizer 里添加字符串，却不扩展并训练模型权重，新 token 不会凭空获得语义。主流 Transformers 接口的 [`resize_token_embeddings`](https://huggingface.co/docs/transformers/main_classes/model#transformers.PreTrainedModel.resize_token_embeddings) 负责调整 embedding 大小，但“能调整尺寸”不等于“已经学会新 token”。词表扩展的初始化和继续训练也会影响效果，相关对比可见 [Mundra 等人的研究](https://aclanthology.org/2024.conll-1.8/)。
+**词表（vocabulary）** 就是 token 与 token ID 的对照表，此外，LLM 还有一张 embedding 矩阵，把每个 ID 变成向量。模型输出时，最后一层通常也要给词表中的每个 token 打分，因此 tokenizer、词表、输入 embedding 和输出头必须彼此对得上号。
 
 ### Chat template 与特殊 token
 
-聊天模型最终仍然只接收一串 token。所谓 `system`、`user`、`assistant` 角色，必须先被模板序列化，例如：
+不同 LLM 通常都会有自己的输入模板，例如下面这个仅用于解释结构的示意模板：
 
 ```text
 <角色开始>system
@@ -109,58 +54,183 @@ OpenAI 的 [InstructGPT 论文](https://arxiv.org/abs/2203.02155) 展示了“SF
 <角色开始>assistant
 ```
 
-上面只是示意，不是某个模型的真实模板。不同模型使用的控制 token 和换行方式可能完全不同。
+不同模型使用的控制 token 和换行方式可能完全不同。如果训练时使用一种模板，推理时换成另一种，模型看到的输入分布就变了，效果可能明显下降。这里的特殊 token 并不是可有可无的“装饰”：模型在训练中已经学会用它们判断一段消息由谁发出、在哪里结束、接下来该轮到谁说话。
 
-如果训练时使用一种模板，推理时换成另一种，模型看到的输入分布就变了，效果可能明显下降。还要避免 tokenizer 自动加入一次 BOS/EOS，模板又手动加入一次，造成特殊 token 重复。Hugging Face 的 [聊天模板文档](https://huggingface.co/docs/transformers/main/en/chat_templating) 对这一点有直接说明。
+## LLM 的输出解码（重要）
 
-### 上下文、注意力掩码与位置
+这一部分模型在吐出下一个 token 的时候存在一个转换过程：首先，为词表中每个 token 给出一个原始打分，叫做 **logit**；然后把这个分数转换成概率，最终再根据概率进行解码（选择 token）输出。
 
-“LLM 会对全部输入做全局注意力”并不是所有模型都成立。原始 Transformer 使用全注意力；但实际模型也可能采用滑动窗口、分块注意力或其他稀疏结构。例如 [Mistral 7B](https://arxiv.org/abs/2310.06825) 使用了滑动窗口注意力。
+### Logits 与概率
 
-对典型 decoder-only LLM 来说，关键是 **因果掩码（causal mask）**：第 $t$ 个位置只能看当前位置及其之前的 token，不能偷看后面的答案。
+**logit** 反映的是当前预测位置与词表中每个候选 token 的**匹配程度**。典型语言模型会用当前位置的隐藏向量 $h_t$ 与每个 token 对应的输出权重 $w_i$ 做线性计算得：
+$$
+z_i=h_t^\top w_i+b_i
+$$
 
-- **训练时**：已知整段正确文本，可以在一次前向计算中并行得到各位置的预测，但每个位置仍受因果掩码约束。
-- **推理时**：后一个 token 依赖前一个刚生成的 token，所以必须按顺序生成。KV cache 会保存先前位置的 key/value，避免每一步把旧内容全部重算；它节省重复计算，但不会消除逐 token 的依赖。可参考 [Transformers 的 KV cache 文档](https://huggingface.co/docs/transformers/kv_cache)。
-
-`padding mask` 用来告诉模型哪些位置只是补齐长度的 PAD；`truncation` 决定输入太长时从哪里截断。它们配置错误时，模型可能关注到填充内容，或者把真正需要的提示截掉。
-
-## LLM 的输出与解码
-
-### 从 logits 到下一个 token
-
-模型最后不会直接吐出一句话，而是先为词表中每个 token 给出一个未归一化分数，叫 **logit**。用 softmax 把 logits 变成概率：
+其中有些模型不使用输出偏置，此时可以把 $b_i$ 看成 0。所以可以把 logit 粗略理解为“候选 token 打分”，但它并不一定是余弦相似度。打分越高，只能说明模型在当前上下文中越偏向这个 token。接着，softmax 把 logits 变成概率：
 
 $$
 p_i = \frac{\exp(z_i)}{\sum_j \exp(z_j)}
 $$
 
-$z_i$ 是第 $i$ 个 token 的 logit，$p_i$ 是它作为下一个 token 的概率。所有 $p_i$ 相加等于 1。
+其中 $z_i$ 是第 $i$ 个 token 的 logit，$p_i$ 是当前这一步该 token 被输出的概率，所有 $p_i$ 相加等于 1。
 
-如果已经有输入 $x$，模型生成回答 $y=(y_1,\ldots,y_T)$，整段回答的概率可以写成：
+如果已经有输入 $x$，模型生成回答 $y=(y_1,\ldots,y_T)$，其中每个 $y_i$ 都是一个 token，那么整段回答的概率可以写成（注意这是天然的条件概率）：
 
 $$
 p_\theta(y\mid x)
 =\prod_{t=1}^{T}p_\theta(y_t\mid x,y_{<t})
 $$
 
-意思很简单：第一个 token 的概率，乘上“已有第一个 token 时第二个 token 的概率”，再一直乘下去。
+意思很简单：模型生成整段回答的概率 = 第一个 token 的概率，乘上“已有第一个 token 时第二个 token 的概率”……一直乘到最后一个 token 的条件概率。
 
 ### Logprob：概率的对数
 
-`logprob` 就是 $\log p$。因为概率 $p$ 在 0 到 1 之间，所以 logprob 通常不大于 0：$-0.1$ 比 $-5$ 代表更高的概率。整段回答的 logprob 是各 token logprob 之和：
+`logprob` 就是 $\log p$。因为概率 $p$ 在 0 到 1 之间，所以 logprob 不大于 0，因此 `logp = -0.1` 比 `logp = -5` 代表更高的概率；同时，整段回答的 logprob 是各 token logprob 之和：
 
 $$
 \log p_\theta(y\mid x)
 =\sum_{t=1}^{T}\log p_\theta(y_t\mid x,y_{<t})
 $$
 
-这样既把乘法变成了加法，也避免很多极小概率相乘造成数值下溢。PPO 的新旧策略概率比、DPO 的 chosen/rejected 比较、KL 的采样估计都会用到 logprob。
+这样既把乘法变成了加法，也避免很多极小概率相乘造成的数值下溢。PPO 的新旧策略概率比、DPO 的 chosen/rejected 比较、KL 的采样估计都会用到 logprob。
 
-还要注意：token 越多，logprob 相加的项就越多，整段总 logprob 往往也越负。因此比较不同长度的回答时，是否做长度归一化会改变指标含义；不能把未经说明的“sequence score”直接当作公平质量分。
+还要注意：token 越多，logprob 相加的项就越多，整段总 logprob 往往也越负。不同长度的回答进行比较时，是否做长度归一化会改变指标含义，不能把未经说明的“sequence score”直接当作公平质量分。
 
-### 自回归不等于“每次选概率最大的词”
+### Entropy
 
-**自回归**只说明：每次根据已有上下文预测下一个 token，再把新 token 放回上下文继续预测。到底怎样从概率分布中选 token，是另一个问题，叫 **解码（decoding）**。
+即大模型输出的信息熵/分布熵，完全符合信息论的定义。
+
+对于已经生成到第 $t$ 个位置的前缀 $s_t=(x,y_{<t})$，模型下一个 token 的分布熵为：
+
+$$
+H_t
+=H\bigl(\pi_\theta(\cdot\mid s_t)\bigr)
+=-\sum_{v\in\mathcal V}
+\pi_\theta(v\mid s_t)\log\pi_\theta(v\mid s_t)
+$$
+
+其中 $\mathcal V$ 是整个词表，$\pi_\theta(v\mid s_t)$ 是词表中 token $v$ 在当前位置的概率。大白话来说，这个公式就是把“每个 token 的概率 × 它携带的不确定性”加起来：概率越平均，模型越拿不准，entropy 越高；概率越集中，模型越确定，entropy 越低。
+
+这里有个很容易混淆的点：**一条已经采样出来的回答本身只有一个 logprob，它对应的 $-\log p_\theta(y\mid x)$ 叫 surprisal（自信息，也常译为惊奇度），严格来说不是 entropy**。因为 entropy 描述的是“还没抽之前，整个概率分布有多不确定”，而 surprisal 描述的是“已经抽到这个结果后，它有多出乎意料”。
+
+工程日志里常说的“一条回答的 entropy”，一般是沿着这条回答，在每个生成位置都计算一次上面的分布熵，然后取平均：
+
+$$
+\bar H(y\mid x)
+=\frac{1}{T}\sum_{t=1}^{T}
+H\bigl(\pi_\theta(\cdot\mid x,y_{<t})\bigr)
+$$
+
+这也是当前 [TRL GRPOTrainer](https://huggingface.co/docs/trl/grpo_trainer) 记录 `entropy` 时采用的口径：对生成回答中的 token prediction entropy 求平均。若要写“所有可能回答构成的完整分布熵”，则还要对所有可能的回答取期望：
+
+$$
+H(Y\mid x)
+=\mathbb E_{Y\sim p_\theta(\cdot\mid x)}
+\left[-\log p_\theta(Y\mid x)\right]
+$$
+
+根据信息熵的定义，对于离散概率分布，熵在均匀分布时最大。因此，当词表中所有 token 的概率完全相同时，单个位置的理论最大熵为 $\log N$，其中 $N=|\mathcal V|$ 是词表大小；当某个 token 的概率为 1 时，理论最小熵为 0。机器学习公式通常使用自然对数，此时单位是 nat。
+
+- 熵高：概率分散，模型在多个 token 之间犹豫；
+- 熵低：概率集中，少数 token 占据大部分概率。
+
+熵不是“答案质量”，也不是可以直接当作事实置信度的万能指标：一个模型可以非常确定地答错，也可以在多个都合理的措辞之间保持高熵。为了在训练中鼓励探索，有些方法会在需要最小化的 policy loss 里减去 entropy bonus：
+
+$$
+\mathcal L_{\mathrm{total}}
+=\mathcal L_{\mathrm{policy}}-\alpha\bar H,
+\qquad \alpha>0
+$$
+
+因为优化器要把 loss 降低，所以这个负号会鼓励模型维持更高的熵，避免策略过早塌缩成近乎固定的回答；反过来，$\alpha$ 太大也会让输出过于随机。熵正则的作用可参考 [Ahmed 等人的研究](https://proceedings.mlr.press/v97/ahmed19a.html)。
+
+### KL divergence
+
+KL 散度衡量两个概率分布有多不一样，其定义为：
+
+$$
+D_{\mathrm{KL}}(P\|Q)
+=\sum_x P(x)\log\frac{P(x)}{Q(x)}
+$$
+
+其中 $P(x)$ 和 $Q(x)$ 表示两个分布对同一个结果 $x$ 分配的概率；$x$ 可以是一枚 token，也可以是一整条回答。公式前面的 $P(x)$ 还意味着：KL 是按照 $P$ 来加权平均的，所以参数顺序一换，关注的区域也会跟着变化。
+
+它有三个重要性质：
+
+1.  $D_{\mathrm{KL}}(P\|Q)\ge 0$；
+2. 两个分布相同时为 0；
+3. 它不对称，通常 $D_{\mathrm{KL}}(P\|Q)\ne D_{\mathrm{KL}}(Q\|P)$。
+
+#### Forward KL 与 reverse KL
+
+“正向”和“反向”的叫法依赖谁被当成目标分布，脱离参数顺序就容易争错。
+
+如果约定 $P$ 是目标或 reference、$Q$ 是待学习策略，那么常见称呼是：
+
+- forward KL：$D_{\mathrm{KL}}(P\|Q)$；
+- reverse KL：$D_{\mathrm{KL}}(Q\|P)$。
+
+可以把目标分布 $P$ 想象成地图上的两座“概率山峰”：一座山代表简洁直接的回答，另一座山代表详细严谨的回答，两类回答都合理；我们现在让模型分布 $Q$ 去拟合这张地图。
+
+```text
+目标分布 P：       /\                 /\
+                 模式 A              模式 B
+```
+
+- **Mode-covering（覆盖模式）**：forward KL 按 $P$ 加权。如果模式 B 明明在 $P$ 中有不少概率，但 $Q$ 在那里几乎为 0，$\log(P/Q)$ 就会变得很大，因此 $Q$ 宁可把分布铺宽一点，也不愿漏掉其中一座山。形象地说，它追求的是“两个答案流派我都得照顾到”。
+- **Mode-seeking（寻找模式）**：reverse KL 按 $Q$ 加权。如果 $Q$ 已经集中在模式 A 附近，它几乎不会采到模式 B，自然也很少为“漏掉 B”付出代价；与此同时，两座山之间又是 $P$ 的低概率山谷，把概率铺过去反而会受罚。因此 $Q$ 更容易只守住其中一座高峰。形象地说，它追求的是“先选一个最像样的流派站稳”。
+
+相关方向差异可见 [Ghasemipour 等人的分析](https://proceedings.mlr.press/v100/ghasemipour20a.html)。不过，mode-covering / mode-seeking 只是帮助理解的典型直觉，具体行为还受模型能力、支持集、优化方式和有限样本影响，不能当成必然结论。
+
+#### 后训练里常见的是哪一个 KL
+
+经典 KL 约束强化学习目标常写成：
+
+$$
+\max_\pi\quad
+\mathbb E_{y\sim\pi(\cdot\mid x)}[r(x,y)]
+-\beta D_{\mathrm{KL}}
+\bigl(\pi(\cdot\mid x)\|\pi_{\mathrm{ref}}(\cdot\mid x)\bigr)
+$$
+
+按上面的约定，它相对 reference 属于 reverse KL。$\beta$ 越大，理论目标越不愿意远离 reference；$\beta$ 越小，奖励越可能主导更新。
+
+自回归模型中，序列级对数概率比可以拆成 token 级之和：
+
+$$
+\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}
+=\sum_t
+\left[
+\log\pi_\theta(y_t\mid x,y_{<t})
+-\log\pi_{\mathrm{ref}}(y_t\mid x,y_{<t})
+\right]
+$$
+
+单个采样 token 的 `logp_current - logp_ref` 可以是负数；这不违反“KL 非负”，因为 KL 的非负性说的是按第一个分布取期望后的整体量。
+
+#### Reference KL 与 old-policy ratio 不同
+
+- $\pi_\theta$ 对 $\pi_{\mathrm{ref}}$ 的 KL：限制模型长期偏离训练起点；
+- $\pi_\theta/\pi_{\mathrm{old}}$ 的概率比：限制这一次优化相对采样策略变化太大。
+
+reference 和 old policy 可能初始时参数相同，但职责不同。
+
+### 解码输出——“如何按概率选词”
+
+解码（decoding）是总称，决定模型最终怎样从词表中选出下一个 token；**采样（sampling）则专指其中带随机抽取的分支**，贪婪解码虽然也在选 token，但通常不叫 sampling。它们的关系可以画成：
+
+```text
+模型输出 logits
+  ├─ 直接取最大值 ─────────────────────────→ greedy decoding
+  └─ temperature 调整（可选）
+       ↓ softmax 得到概率
+     top-k / top-p 截断候选（可选，可组合）
+       ↓ 重新归一化
+     按剩余概率随机抽取 ───────────────────→ multinomial sampling
+```
+
+所以，**多项式采样是最后“按概率抽一次”的动作；temperature、top-k 和 top-p 是抽之前对概率分布做的加工**。可以把它想成抽奖：multinomial sampling 负责真正伸手抽票，temperature 改变每类票的数量差距，top-k/top-p 则先把一部分小概率票拿出箱子。Hugging Face 的 [Generation 文档](https://huggingface.co/docs/transformers/main_classes/text_generation) 也是用 `do_sample` 决定是否随机采样，再用 temperature、top-k、top-p 操作 logits 或候选分布。
 
 #### 贪婪解码（greedy decoding）
 
@@ -176,11 +246,11 @@ $$
 
 也叫 categorical sampling 或 ancestral sampling：按照模型给出的概率随机抽一个 token，而不是永远选第一名。例如在同一个上下文中，某三个 token 的概率为 0.6、0.3、0.1；若重复独立抽样很多次，频率会大致接近这个比例。
 
-温度、top-k 和 top-p 通常不是三套互斥算法，而是先修改或裁剪概率分布，再从剩余分布做这种随机采样。
+如果不使用 top-k/top-p，那么整个词表中每个非零概率 token 理论上都有机会被抽中，包括概率极低的长尾 token；temperature、top-k 和 top-p 的主要作用，正是控制这种随机性最终能“放开到什么程度”。
 
 #### Temperature
 
-温度 $T$ 作用在 logits 上：
+温度 $T$ 本质是作用在 logits 上的一个参数：
 
 $$
 p_i(T)=\frac{\exp(z_i/T)}{\sum_j\exp(z_j/T)},\qquad T>0
@@ -190,93 +260,138 @@ $$
 - $0<T<1$：分布更尖，头部 token 更容易被选中；
 - $T>1$：分布更平，低概率 token 更有机会被选中。
 
-数学上不能直接把 $T=0$ 代进公式。很多推理接口把 `temperature=0` 特殊解释为“不采样，走贪婪解码”，这是软件约定，不是 softmax 在零温度下的普通计算。
+数学上不能直接把 $T=0$ 代进公式。很多推理接口把 `temperature=0` 特殊解释为“不采样，走贪婪解码”，这是一种软件约定。
 
-温度也不是“事实准确度旋钮”。降低温度通常减少随机性，但如果最高概率答案本来就错，贪婪地重复它不会把错误变正确。
+关于温度的更多详细解读可以参考之前的一篇博客：[Temperature 的数学本质 | Harry Yu](https://alidadei.github.io/zh/blog/temperature-math/)
 
-#### Top-k
+最后再区分一下 **entropy bonus 和 temperature**：entropy 是对当前既定概率分布“不确定程度”的度量，；temperature 是推理时主动改变这个分布形状的参数。
 
-只保留概率最高的 $k$ 个 token，把其他 token 的概率设为 0，再重新归一化并采样。候选数量固定，但不同上下文中第 $k$ 名的概率可能差很多。
+Top-k
+
+只保留概率最高的 $k$ 个 token，把其他 token 的概率设为 0，再重新归一化并做多项式采样。它的目的很直接：**砍掉低概率长尾，避免一次随机抽样把模型带到非常离谱的 token 上**。
+
+- $k$ 越小，候选越少，输出通常越集中、稳定，但也更容易模板化或重复；
+- $k$ 越大，越接近在完整词表上直接采样，输出更多样，但抽到不合适 token 的机会也会增加；
+- 当 $k=1$ 时只剩概率最大的 token，结果就退化成贪婪解码。
+
+它的局限也很明显：候选数量永远固定。模型很确定时，第 1 名可能已经占 95%，保留 50 个候选显得过多；模型很不确定时，前 50 个 token 又可能只覆盖很少的总概率。因此，top-k 能控制随机范围，但不能保证事实正确。
 
 #### Top-p / nucleus sampling
 
-从高到低累加概率，保留累计概率首次达到阈值 $p$ 所需的最小候选集合，再重新归一化并采样。候选数量会随上下文变化：模型很确定时集合较小，不确定时集合较大。[Nucleus Sampling 论文](https://openreview.net/forum?id=rygGQyrFvH) 指出，开放式文本中一味最大化概率容易产生乏味或重复文本，并提出用动态概率核采样。
+从高到低累加概率，保留累计概率首次达到阈值 $p$ 所需的最小候选集合，再重新归一化并做多项式采样。它的目的也是砍掉长尾，但与 top-k 最大的区别在于：**top-p 固定的是要覆盖的概率质量，而不是候选数量**。
 
-#### Beam search
+- $p$ 较小，候选集合更窄，输出通常更保守、更稳定；
+- $p$ 越接近 1，保留的长尾越多，输出通常更多样、也更不可预测；
+- $p=1$ 时不做 top-p 截断。
 
-Beam search 同时保留若干条当前得分较高的部分序列，再逐步扩展，近似寻找整段得分更高的答案。它在机器翻译、受约束生成等任务里很常见；在开放式聊天中却未必更自然，通常还需要长度惩罚、重复控制等额外设计。它也只是有限宽度的搜索，不保证找到全局最优，更不保证“概率最高”就等于“最符合用户需要”。
+例如某一步的概率从高到低为 `[0.55, 0.25, 0.10, 0.06, 0.04]`：
 
-#### 停止条件
+```text
+top-k = 3   → 固定保留前三个：[0.55, 0.25, 0.10]
+top-p = 0.8 → 前两个累计刚好达到 0.80，只保留：[0.55, 0.25]
+```
 
-生成通常在以下任一条件满足时结束：
+换一个上下文后，top-k 仍然保留 3 个，top-p 保留的数量却可能变成 1 个、5 个甚至更多。因此，top-p 会随着模型当前有多确定而自动收缩或放宽候选集合。[Nucleus Sampling 论文](https://arxiv.org/abs/1904.09751) 正是针对开放式文本中低概率长尾与最大概率解码退化的问题提出这种动态概率核；[Nadeem 等人的系统研究](https://aclanthology.org/2020.aacl-main.36/) 则把 top-k、top-p 和 temperature 都视为在开放式生成中调节质量—多样性权衡的采样方法。
+
+temperature、top-k 和 top-p 可以一起使用：在常见的采样管线中，temperature 会先改变概率差距，进而影响哪些 token 能进入 top-p 集合；top-k 和 top-p 同时开启时，最终候选通常是经过两道筛选后剩下的部分。具体处理顺序由推理框架实现决定，因此复现实验时不能只记录一个参数。
+
+#### 输出停止条件
+
+LLM 的输出通常在以下任一条件满足时结束：
 
 - 生成 EOS；
 - 命中指定 stop sequence；
 - 达到 `max_new_tokens`；
 - 外部控制器决定停止，例如工具调用协议完成。
 
-解码参数改变的是“怎样从当前模型取样”，不会修改模型权重。训练中的熵正则则会改变权重，两者不要混为一谈。主流生成参数的准确定义可查阅 [Transformers 文本生成文档](https://huggingface.co/docs/transformers/main_classes/text_generation)。
+解码参数改变的是“怎样从当前模型给出的打分概率中选择或采样 token”。
 
 ## 常见概念
 
-### Sample、prompt、completion 与 response
+下面开始辨析诸多容易让人混淆的各种概念和说法。
+
+### prompt、completion 与 response
 
 这些词看起来简单，却最容易在 batch 统计里产生误会：
 
-- **prompt**：交给模型的条件，可以是问题，也可以包含 system 指令、历史对话、工具结果等。
-- **completion**：模型接在 prompt 后面生成的 token 序列。
+- **prompt**：交给模型的输入，可以是问题，也可以包含 system 指令、历史对话、工具结果等。
+- **completion**：模型接在 prompt 后面生成的 token 序列，也有可能叫**generation**。
 - **response**：在聊天任务里通常指助手回答，常与 completion 混用；但有的系统会从 completion 中去掉控制 token 后才叫 response。
 - **sample / example**：一个训练样本。它究竟指“一条 prompt”“一条 prompt-completion”还是“一个 token”，必须看代码或文档，不能只凭变量名猜。
 
-在 GRPO 中，一条 prompt 往往会生成 $G$ 条 completion。因此“8 条 prompt”和“64 条 completion”完全可能是同一个 rollout batch 的两种统计口径。
+在 GRPO 中，模型面对一条 prompt （问题）往往会生成 $G$ 条 completions（回答），因此“8 条 prompt”和“64 条 completion”完全可能是同一个 rollout batch 的两种统计口径。
 
-### Alignment：目标，不是某一种算法
+### Rollout 与 trajectory
 
-**Alignment（对齐）**通常指让模型行为更符合指定的人类意图、规则或偏好。SFT、RLHF、RLAIF、DPO 都可以成为实现手段，但没有一个算法与 alignment 画等号。
+在标准强化学习资料里，**trajectory、episode 和 rollout 经常被当作近义词**，都可指一串状态、动作和奖励。[Spinning Up 的基本概念](https://spinningup.openai.com/en/latest/spinningup/rl_intro.html) 就明确把这些词放在一起解释。
 
-“对齐”也不是“从此永远正确、安全、公平”的认证。模型究竟对齐到什么，取决于示范数据、偏好标注、宪法或评分规则；不同群体之间还可能存在真实的价值冲突。因此技术报告最好明确写“对齐到哪套目标、由谁提供反馈、怎样评估”，而不是只写“模型已经对齐”。
+为了在 LLM 工程中说得更清楚，可以采用下面这套实用约定：
 
-### 继续预训练、SFT 与偏好学习
+- **rollout** 更强调“让某个策略实际跑一次并采样”的过程，也常指这次生成本身；
+- **trajectory** 更强调记录下来的完整轨迹，例如状态、token、logprob、奖励、工具调用和环境返回值。
 
-#### 继续预训练（continued pretraining）
-
-继续使用“预测下一个 token”的目标，让基础模型阅读更多目标语言、代码或专业领域文本。它主要是在补充语料分布和知识，不等同于教模型遵循问答指令。
-
-#### SFT（监督微调）
-
-SFT 给模型看理想回答，并用交叉熵让模型提高这些目标 token 的概率：
+一条普通问答的轨迹可以写成：
 
 $$
-\mathcal L_{\mathrm{SFT}}
-=-\sum_t m_t\log p_\theta(y_t\mid x,y_{<t})
+\tau=(s_0,a_0,s_1,a_1,\ldots,s_T)
 $$
 
-$m_t$ 是损失掩码。很多聊天 SFT 只让 assistant 回答位置的 $m_t=1$，不对 system 和 user 的 token 计算损失；但这是一种常见配方，不是“SFT”这个词自带的硬性规定。有些训练会对整段序列计算损失。
+如果只在最终答案处打一个分，轨迹中间可能没有显式奖励。Agent 任务的轨迹还可能包含“调用搜索工具—收到结果—继续思考—提交答案”等多轮动作。
 
-训练时把正确前缀直接喂给模型，常叫 **teacher forcing**。推理时模型只能看到自己先前生成的内容，两者有天然差别。
+### Batch、minibatch、microbatch 与 train_batch
 
-只对回答位置算损失，也不意味着基础知识一定不会遗忘。学习率、训练步数、数据分布和是否混入通用数据仍会影响旧能力。
+`train_batch` 不是一个跨框架统一的标准术语。看到它时，至少要追问两个问题：
 
-#### 偏好学习
+1. 单位是 prompt、completion、trajectory，还是 token？
+2. 它指一次前向计算、一次反向累计、一次 optimizer step，还是一整批 rollout？
 
-偏好数据通常长这样：同一个 prompt 下有一个较好的回答 $y_w$（winner/chosen）和一个较差的回答 $y_l$（loser/rejected）。它只告诉模型相对顺序，不必给出绝对分数。
+常见概念如下：
 
-偏好标签可以来自人类、另一个模型，或可验证规则：
+- **microbatch**：单张设备一次前向/反向真正装下的那小批数据；
+- **per-device batch**：每张数据并行设备一次训练迭代处理的样本数；
+- **gradient accumulation steps**：累积多少个 micro step 后才更新一次参数；
+- **global / effective batch**：一次 optimizer update 汇总的全部数据；
+- **minibatch**：从较大的 rollout batch 中切出用于若干次优化的小批数据；
+- **rollout / generation batch**：一次集中生成并打分的数据；
+- **epoch**：把指定数据完整重复训练一遍。PPO 中也常指同一 rollout batch 被切成 minibatch 重用若干轮。
 
-- **RLHF**：核心反馈来自人类；
-- **RLAIF**：核心反馈来自 AI，例如 [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) 中由模型依据原则提供反馈；
-- **RLVR**：奖励来自可验证结果，例如答案匹配、代码测试或格式约束。[Tülu 3 的技术说明](https://allenai.org/blog/tulu-3-technical) 给出了规则验证奖励的实际例子。
+在纯数据并行、没有额外样本复制的简单设置下，若 $B_{\mathrm{device}}$ 明确指“每张设备每个 micro step 的样本数”，那么：
 
-这些名字描述的是反馈来源或训练设置，不是互相排斥的单一算法。一个系统可以同时混用人类偏好、AI 反馈和规则验证。
+$$
+B_{\mathrm{update}}
+=B_{\mathrm{device}}
+\times N_{\mathrm{data\ parallel}}
+\times N_{\mathrm{grad\ accumulation}}
+$$
 
-### Policy：LLM 强化学习里的“策略”
+例如每张卡每次处理 4 条 completion，2 个数据并行副本，累积 8 次梯度，那么一次 optimizer update 汇总 $4\times2\times8=64$ 条 completion。
 
-策略写作 $\pi_\theta$，表示“在当前状态下，对下一步动作给出概率分布”。在 decoder-only LLM 里，可以这样对应：
+如果 GRPO 每个 prompt 生成 $G=8$ 条 completion，且这 64 条 completion 正好按完整组组织，那么它们只对应 8 条 prompt：
 
-- **状态 $s_t$**：prompt 加上已经生成的前缀；
-- **动作 $a_t$**：下一个 token；
-- **策略 $\pi_\theta(a_t\mid s_t)$**：模型给下一个 token 的概率；
-- **一轮交互**：一直生成到 EOS、长度上限或任务结束。
+$$
+B_{\mathrm{prompt}}=\frac{B_{\mathrm{completion}}}{G}=8
+$$
+
+但不同框架可能在 sampler 中先把 prompt 按 $G$ 重复，也可能先取一批互不相同的 prompt，再在生成阶段各扩成 $G$ 条 completion。因此，只看到 `per_device_train_batch_size`，不能断定它代表多少条独立 prompt。TRL 的 [GRPO 配置说明](https://huggingface.co/docs/trl/grpo_trainer) 会额外规定 effective batch 与 `num_generations` 的整除关系，并单独定义 generation batch；NVIDIA Megatron 的 [并行与 global batch 说明](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html) 又采用通用分布式训练口径。公式里的单位必须写出来。
+
+#### Step 也有多种含义
+
+- **generation step**：自回归生成一个 token；
+- **micro step**：处理一个 microbatch 并累计一次梯度；
+- **optimizer step / update step**：真正调用优化器更新一次参数；
+- **environment step**：智能体在环境里执行一次动作。
+
+报告实验时只写“训练了 1000 steps”信息不够。至少还应说明是哪一种 step、有效 batch 的单位、序列长度、生成条数和数据是否复用。
+
+### Policy
+
+写作 $\pi_\theta$，在传统强化学习中指的是 **策略**，表示“在当前状态下，给出的下一步动作的概率分布”。
+
+在 decoder-only LLM 里，可以这样去对应：
+
+- **状态 $s_t$**：prompt 加上已经生成的内容；
+- **动作 $a_t$**：生成下一个 token；
+- **策略 $\pi_\theta(\cdot\mid s_t)$**：模型在整个词表上的下一 token 概率分布；写成 $\pi_\theta(a_t\mid s_t)$ 时，指的是其中某个具体 token $a_t$ 的概率；
 
 因此，policy 通常就是正在训练的语言模型本身，而不是模型外面另有一个神秘模块。
 
@@ -284,12 +399,12 @@ $m_t$ 是损失掩码。很多聊天 SFT 只让 assistant 回答位置的 $m_t=1
 
 这三个词不能混用：
 
-- **当前策略（current policy）**：此刻正在更新的 $\pi_\theta$。
-- **行为策略（behavior policy）**：真正采集这批数据时使用的策略。
-- **旧策略（old policy）**：PPO/GRPO 中常把采样时的策略冻结成一个快照，用来计算新旧概率比。它通常就是该批数据的行为策略。
+- **当前策略（current policy）**：此刻正在更新的 $\pi_\theta$，更新当前模型也就等于更新它在各种上下文中的下一 token 概率分布。
+- **行为策略（behavior policy）**：指真正采集这批数据时的策略，论文里常记作 $\mu$ 或 $\pi_b$，但符号并不统一，必须以当前论文的定义为准。
+- **旧策略（old policy）**：PPO/GRPO 中通常会保存 rollout 时策略的快照或当时的 logprob，并记作 $\pi_{\mathrm{old}}$，用来计算新旧概率比；对这一批 rollout 来说，它通常就是行为策略。数据复用与概率比的详细关系见之前的博客：[LLM RL 中数据复用引发的 off-policy 问题与解决方法 | Harry Yu](https://alidadei.github.io/zh/blog/off_policy_and_importance_ratio/)。
 - **参考策略（reference policy）**：通常是冻结的 SFT 模型或训练起点，用来约束当前模型不要偏离太远。
 
-旧策略会随着 rollout 批次更新；参考策略往往长期不变。一个负责回答“这批数据从哪来”，另一个负责回答“模型不要离初始行为多远”。
+旧策略会随着 rollout 批次更新；参考策略往往长期不变，这俩一个负责回答“这批数据是谁生成的”，另一个负责约束“模型不要离初始行为多远”。
 
 ### On-policy、off-policy、online 与 offline
 
@@ -306,28 +421,11 @@ $m_t$ 是损失掩码。很多聊天 SFT 只让 assistant 回答位置的 $m_t=1
 - **online** 强调训练期间还在不断与环境交互、生成新数据；
 - **offline** 强调训练只使用事先固定的数据集，不再向环境采新样本。
 
-它们与 on/off-policy 有关系，但不是严格同义词。`online` 说的是“数据是否边练边采”，`on-policy` 说的是“数据分布是否来自当前策略”。例如 PPO 常先用旧策略快照生成一批新回答，再把这批回答切成 minibatch 训练几个 epoch；在这几个 epoch 中，当前策略已经发生变化，所以工程上常说它是近似 on-policy、但允许有限的数据陈旧度。
+它们与 on/off-policy 有关系，但不是严格同义词。`online` 说的是“数据是否边练边采”，`on-policy` 说的是“数据分布是否来自当前策略”。例如 PPO 常先用旧策略快照生成一批新回答，再把这批回答切成 minibatch 训练几个 epoch（更新模型）；在这几个 epoch 中，当前策略已经发生变化（模型被更新了），所以工程上常说它是近似 on-policy、但允许有限的数据陈旧度。
 
-[OpenAI Spinning Up 的算法分类](https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html) 将 PPO 列为 on-policy 方法，并强调这类方法不能随意使用旧策略数据。DPO 通常使用固定偏好数据集，属于 offline 偏好优化；它也不是传统意义上依赖 rollout 的 policy-gradient 强化学习。
+[OpenAI Spinning Up 的算法分类](https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html) 将 PPO 列为 on-policy 方法，并强调这类方法不能随意使用旧策略数据。
 
-### Rollout 与 trajectory
 
-在标准强化学习资料里，**trajectory、episode 和 rollout 经常被当作近义词**，都可指一串状态、动作和奖励。不要假装它们存在全行业统一、严格的边界。[Spinning Up 的基本概念](https://spinningup.openai.com/en/latest/spinningup/rl_intro.html) 就明确把这些词放在一起解释。
-
-为了在 LLM 工程中说得更清楚，可以采用下面这套实用约定：
-
-- **rollout** 更强调“让某个策略实际跑一次并采样”的过程，也常指这次生成本身；
-- **trajectory** 更强调记录下来的完整轨迹，例如状态、token、logprob、奖励、工具调用和环境返回值。
-
-一条普通问答的轨迹可以写成：
-
-$$
-\tau=(s_0,a_0,s_1,a_1,\ldots,s_T)
-$$
-
-如果只在最终答案处打一个分，轨迹中间可能没有显式奖励。Agent 任务的轨迹还可能包含“调用搜索工具—收到结果—继续思考—提交答案”等多轮动作。
-
-**一次 rollout 不一定等于一条 prompt。** GRPO 常对同一 prompt rollout 多次，以便在同组回答之间比较；一个 rollout batch 也可能包含许多 prompt。
 
 ### Reward、return、value 与 advantage
 
@@ -343,7 +441,7 @@ $$
 - 另一个模型充当 judge；
 - 多个信号的加权组合。
 
-奖励是优化目标的代理，不自动等于“真实质量”。奖励函数漏掉的条件，模型就可能钻空子。DeepMind 将这类现象总结为 [specification gaming](https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/)；在 LLM 语境中也常叫 **reward hacking**。
+奖励是优化目标的代理，不等于“真实质量”。奖励函数漏掉的条件，模型就可能钻空子。DeepMind 将这类现象总结为 [specification gaming](https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/)；在 LLM 语境中也常叫 **reward hacking**。
 
 #### Return：从现在到结束一共拿到多少奖励
 
@@ -479,7 +577,7 @@ LLM 版 PPO 通常包含：
 
 #### GRPO
 
-[DeepSeekMath](https://arxiv.org/html/2402.03300) 提出的 Group Relative Policy Optimization（GRPO）保留了 PPO 式的策略更新思路，但省去独立 critic。对同一个 prompt 采样 $G$ 个回答，得到奖励 $R_1,\ldots,R_G$，原始论文中的组内标准化优势可简化写成：
+[DeepSeekMath](https://arxiv.org/abs/2402.03300) 提出的 Group Relative Policy Optimization（GRPO）保留了 PPO 式的策略更新思路，但省去独立 critic。对同一个 prompt 采样 $G$ 个回答，得到奖励 $R_1,\ldots,R_G$，原始论文中的组内标准化优势可简化写成：
 
 $$
 \hat A_i
@@ -533,134 +631,7 @@ DPO 的主要关系可以概括为：
 
 所以“生成多个答案再选最好”本身不是 policy gradient。它是否属于训练、怎样训练，要看选完以后做了什么。[Llama 2 技术报告](https://arxiv.org/abs/2307.09288) 展示了拒绝采样与 RLHF 迭代结合的实际流程。
 
-### Entropy
 
-给定状态 $s$，策略的 token 分布熵为：
-
-$$
-H\bigl(\pi(\cdot\mid s)\bigr)
-=-\sum_a \pi(a\mid s)\log\pi(a\mid s)
-$$
-
-- 熵高：概率分散，模型在多个 token 之间犹豫；
-- 熵低：概率集中，少数 token 占据大部分概率。
-
-熵不是“答案质量”，也不是可以直接当作事实置信度的万能指标。一个模型可以非常确定地答错，也可以在多个都合理的措辞之间保持高熵。
-
-训练目标中加入熵奖励，通常是为了鼓励随机性和探索，防止策略过早变得过于确定。熵正则对策略优化的作用可参考 [Ahmed 等人的研究](https://proceedings.mlr.press/v97/ahmed19a.html)。但熵系数过大也会让输出过于随机；合理值依任务、奖励尺度和训练阶段而定。
-
-#### Entropy 与 temperature 的区别
-
-- **temperature**：推理时临时改变采样分布，不修改模型参数；
-- **entropy bonus**：训练时进入目标函数，通过梯度修改模型参数。
-
-二者都可能让输出分布变平，但发生的阶段和长期效果完全不同。
-
-### KL divergence
-
-KL 散度衡量两个概率分布有多不一样：
-
-$$
-D_{\mathrm{KL}}(P\|Q)
-=\sum_x P(x)\log\frac{P(x)}{Q(x)}
-$$
-
-它有三个重要性质：
-
-1. 期望意义下 $D_{\mathrm{KL}}(P\|Q)\ge 0$；
-2. 两个分布相同时为 0；
-3. 它不对称，通常 $D_{\mathrm{KL}}(P\|Q)\ne D_{\mathrm{KL}}(Q\|P)$。
-
-#### Forward KL 与 reverse KL
-
-“正向”和“反向”的叫法依赖谁被当成目标分布，脱离参数顺序就容易争错。最稳妥的表达永远是直接写 $D_{\mathrm{KL}}(P\|Q)$。
-
-如果约定 $P$ 是目标或 reference、$Q$ 是待学习策略，那么常见称呼是：
-
-- forward KL：$D_{\mathrm{KL}}(P\|Q)$；
-- reverse KL：$D_{\mathrm{KL}}(Q\|P)$。
-
-常见直觉是：forward KL 会重罚 $P$ 有概率而 $Q$ 几乎不给概率的区域，因此更倾向覆盖目标的多种模式；reverse KL 会重罚 $Q$ 把概率放到 $P$ 很低的区域，因此更容易集中到少数模式。相关方向差异可见 [Ghasemipour 等人的分析](https://proceedings.mlr.press/v100/ghasemipour20a.html)。但“mode-covering / mode-seeking”只是帮助理解的典型直觉，具体行为还受模型能力、支持集、优化方式和有限样本影响，不能当成必然结论。
-
-#### 后训练里常见的是哪一个 KL
-
-经典 KL 约束强化学习目标常写成：
-
-$$
-\max_\pi\quad
-\mathbb E_{y\sim\pi(\cdot\mid x)}[r(x,y)]
--\beta D_{\mathrm{KL}}
-\bigl(\pi(\cdot\mid x)\|\pi_{\mathrm{ref}}(\cdot\mid x)\bigr)
-$$
-
-这里的顺序是“当前 policy 在前，reference 在后”。按上面的约定，它相对 reference 属于 reverse KL。$\beta$ 越大，理论目标越不愿意远离 reference；$\beta$ 越小，奖励越可能主导更新。
-
-自回归模型中，序列级对数概率比可以拆成 token 级之和：
-
-$$
-\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}
-=\sum_t
-\left[
-\log\pi_\theta(y_t\mid x,y_{<t})
--\log\pi_{\mathrm{ref}}(y_t\mid x,y_{<t})
-\right]
-$$
-
-单个采样 token 的 `logp_current - logp_ref` 可以是负数；这不违反“KL 非负”，因为 KL 的非负性说的是按第一个分布取期望后的整体量。
-
-#### Reference KL 与 old-policy ratio 不同
-
-后训练代码里经常同时出现两种“距离”：
-
-- $\pi_\theta$ 对 $\pi_{\mathrm{ref}}$ 的 KL：限制模型长期偏离训练起点；
-- $\pi_\theta/\pi_{\mathrm{old}}$ 的概率比：限制这一次优化相对采样策略变化太大。
-
-reference 和 old policy 可能初始时参数相同，但职责不同，之后通常也不再相同。
-
-### Batch、minibatch、microbatch 与 train_batch
-
-`train_batch` 不是一个跨框架统一的标准术语。看到它时，至少要追问两个问题：
-
-1. 单位是 prompt、completion、trajectory，还是 token？
-2. 它指一次前向计算、一次反向累计、一次 optimizer step，还是一整批 rollout？
-
-常见概念如下：
-
-- **microbatch**：单张设备一次前向/反向真正装下的那小批数据；
-- **per-device batch**：每张数据并行设备一次训练迭代处理的样本数；
-- **gradient accumulation steps**：累积多少个 micro step 后才更新一次参数；
-- **global / effective batch**：一次 optimizer update 汇总的全部数据；
-- **minibatch**：从较大的 rollout batch 中切出用于若干次优化的小批数据；
-- **rollout / generation batch**：一次集中生成并打分的数据；
-- **epoch**：把指定数据完整重复训练一遍。PPO 中也常指同一 rollout batch 被切成 minibatch 重用若干轮。
-
-在纯数据并行、没有额外样本复制的简单设置下，若 $B_{\mathrm{device}}$ 明确指“每张设备每个 micro step 的样本数”，那么：
-
-$$
-B_{\mathrm{update}}
-=B_{\mathrm{device}}
-\times N_{\mathrm{data\ parallel}}
-\times N_{\mathrm{grad\ accumulation}}
-$$
-
-例如每张卡每次处理 4 条 completion，2 个数据并行副本，累积 8 次梯度，那么一次 optimizer update 汇总 $4\times2\times8=64$ 条 completion。
-
-如果 GRPO 每个 prompt 生成 $G=8$ 条 completion，且这 64 条 completion 正好按完整组组织，那么它们只对应 8 条 prompt：
-
-$$
-B_{\mathrm{prompt}}=\frac{B_{\mathrm{completion}}}{G}=8
-$$
-
-但不同框架可能在 sampler 中先把 prompt 按 $G$ 重复，也可能先取一批互不相同的 prompt，再在生成阶段各扩成 $G$ 条 completion。因此，只看到 `per_device_train_batch_size`，不能断定它代表多少条独立 prompt。TRL 的 [GRPO 配置说明](https://huggingface.co/docs/trl/grpo_trainer) 会额外规定 effective batch 与 `num_generations` 的整除关系，并单独定义 generation batch；NVIDIA Megatron 的 [并行与 global batch 说明](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html) 又采用通用分布式训练口径。公式里的单位必须写出来。
-
-#### Step 也有多种含义
-
-- **generation step**：自回归生成一个 token；
-- **micro step**：处理一个 microbatch 并累计一次梯度；
-- **optimizer step / update step**：真正调用优化器更新一次参数；
-- **environment step**：智能体在环境里执行一次动作。
-
-报告实验时只写“训练了 1000 steps”信息不够。至少还应说明是哪一种 step、有效 batch 的单位、序列长度、生成条数和数据是否复用。
 
 ### 一张易混概念对照表
 
@@ -701,14 +672,9 @@ $$
 
 ### Tokenizer、输入与生成
 
-- Sennrich, Haddow, Birch, 2016：[Neural Machine Translation of Rare Words with Subword Units](https://aclanthology.org/P16-1162/)
-- Kudo, Richardson, 2018：[SentencePiece: A simple and language independent subword tokenizer and detokenizer for Neural Text Processing](https://aclanthology.org/D18-2012/)
-- Ali et al., 2024：[How Good is Your Tokenizer? On the Monolingual Performance of Multilingual Language Models](https://aclanthology.org/2024.findings-naacl.247/)
-- Mundra et al., 2024：[An Empirical Study of Vocabulary Expansion Methods for Language Models](https://aclanthology.org/2024.conll-1.8/)
-- Vaswani et al., 2017：[Attention Is All You Need](https://arxiv.org/abs/1706.03762)
-- Jiang et al., 2023：[Mistral 7B](https://arxiv.org/abs/2310.06825)
-- Holtzman et al., 2020：[The Curious Case of Neural Text Degeneration](https://openreview.net/forum?id=rygGQyrFvH)
-- Hugging Face Transformers：[Chat templates](https://huggingface.co/docs/transformers/main/en/chat_templating)、[Generation](https://huggingface.co/docs/transformers/main_classes/text_generation)、[KV cache](https://huggingface.co/docs/transformers/kv_cache)、[Resize token embeddings](https://huggingface.co/docs/transformers/main_classes/model#transformers.PreTrainedModel.resize_token_embeddings)
+- Holtzman et al., 2020：[The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
+- Nadeem et al., 2020：[A Systematic Characterization of Sampling Algorithms for Open-ended Language Generation](https://aclanthology.org/2020.aacl-main.36/)
+- Hugging Face Transformers：[Chat templates](https://huggingface.co/docs/transformers/main/en/chat_templating)、[Generation](https://huggingface.co/docs/transformers/main_classes/text_generation)
 
 ### 偏好、强化学习与奖励
 
@@ -719,13 +685,19 @@ $$
 - Rafailov et al., 2023：[Direct Preference Optimization](https://arxiv.org/abs/2305.18290)
 - Shao et al., 2024：[DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300)
 - Lightman et al., 2023：[Let's Verify Step by Step](https://arxiv.org/abs/2305.20050)
-- Bai et al., 2022：[Constitutional AI: Harmlessness from AI Feedback](https://arxiv.org/abs/2212.08073)
+- OpenAI, 2023：[Improving mathematical reasoning with process supervision](https://openai.com/index/improving-mathematical-reasoning-with-process-supervision/)
 - Touvron et al., 2023：[Llama 2: Open Foundation and Fine-Tuned Chat Models](https://arxiv.org/abs/2307.09288)
 - Ahmed et al., 2019：[Understanding the impact of entropy on policy optimization](https://proceedings.mlr.press/v97/ahmed19a.html)
 - Ghasemipour et al., 2020：[A Divergence Minimization Perspective on Imitation Learning Methods](https://proceedings.mlr.press/v100/ghasemipour20a.html)
+- DeepMind, 2020：[Specification gaming: the flip side of AI ingenuity](https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/)
 - OpenAI Spinning Up：[Key Concepts in RL](https://spinningup.openai.com/en/latest/spinningup/rl_intro.html)、[Kinds of RL Algorithms](https://spinningup.openai.com/en/latest/spinningup/rl_intro2.html)、[Policy Optimization](https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html)
 
 ### 工程口径
 
-- Hugging Face TRL：[GRPO Trainer](https://huggingface.co/docs/trl/grpo_trainer)、[PPO Trainer](https://huggingface.co/docs/trl/ppo_trainer)
+- Hugging Face TRL：[GRPO Trainer](https://huggingface.co/docs/trl/grpo_trainer)
 - NVIDIA Megatron Core：[Parallelism Strategies Guide](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html)
+
+### 站内延伸阅读
+
+- [Temperature 的数学本质 | Harry Yu](https://alidadei.github.io/zh/blog/temperature-math/)
+- [LLM RL 中数据复用引发的 off-policy 问题与解决方法 | Harry Yu](https://alidadei.github.io/zh/blog/off_policy_and_importance_ratio/)
