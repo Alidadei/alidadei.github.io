@@ -1,0 +1,7 @@
+interface:
+  display_name: "反思修改并提交"
+  short_description: "基于 Git diff 反思人工修改并建立下一轮提交基线"
+  default_prompt: "使用 $reflect 分析当前人工修改、沉淀写作偏好并创建基线提交。"
+
+policy:
+  allow_implicit_invocation: false
