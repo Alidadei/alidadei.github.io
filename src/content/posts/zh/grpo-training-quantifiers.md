@@ -6,7 +6,7 @@ tags:
   - Agentic RL
 categories: ['note', 'ai', 'llm']
 knowledge: ['ai/llm/rl']
-maturity: 当下热点
+maturity: 基础
 lang: zh
 ---
 

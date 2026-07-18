@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 860" role="img" aria-labelledby="title desc">
+  <title id="title">目标分布 P 与两个候选 Q 的概率分布示意图</title>
+  <desc id="desc">
+    横轴将回答粗略分为简洁正确、别扭混合和详细正确三类，纵轴表示概率。图中标出三个分布的数值，并在下方直接比较 forward KL 与 reverse KL 对两个候选 Q 的计算结果。
+  </desc>
+  <rect width="1100" height="860" fill="#fff" rx="20"/>
+  <g fill="#172033" font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif">
+    <text x="550" y="46" font-size="27" font-weight="700" text-anchor="middle">Forward KL 与 reverse KL 会选择哪个 Q？（教学示意）</text>
+    <g font-size="16">
+      <path stroke="#2563eb" stroke-linecap="round" stroke-width="5" d="M282 76h52"/>
+      <circle cx="308" cy="76" r="6" fill="#2563eb"/>
+      <text x="344" y="82">目标分布 P</text>
+      <path stroke="#ea580c" stroke-dasharray="12 9" stroke-linecap="round" stroke-width="5" d="M472 76h52"/>
+      <circle cx="498" cy="76" r="6" fill="#ea580c"/>
+      <text x="534" y="82">候选 Q（铺开）</text>
+      <path stroke="#16a34a" stroke-dasharray="3 9" stroke-linecap="round" stroke-width="5" d="M684 76h52"/>
+      <circle cx="710" cy="76" r="6" fill="#16a34a"/>
+      <text x="746" y="82">候选 Q（只押 A）</text>
+    </g>
+    <g stroke="#d8dfeb">
+      <path d="M110 540h910"/>
+      <path stroke-dasharray="5 7" d="M110 432.5h910M110 325h910M110 217.5h910M110 110h910"/>
+    </g>
+    <g fill="none" stroke="#334155" stroke-width="2.5">
+      <path d="M110 540h925"/>
+      <path fill="#334155" stroke="none" d="m1035 540-13-7v14z"/>
+      <path d="M110 540V96"/>
+      <path fill="#334155" stroke="none" d="m110 96-7 13h14z"/>
+    </g>
+    <g fill="#536176" font-size="15" text-anchor="end">
+      <text x="91" y="546">0</text>
+      <text x="91" y="438">0.25</text>
+      <text x="91" y="331">0.50</text>
+      <text x="91" y="223">0.75</text>
+      <text x="91" y="116">1.00</text>
+    </g>
+    <path stroke="#b8c3d3" stroke-width="1.5" d="M220 540v8m340-8v8m340-8v8"/>
+    <path fill="none" stroke="#2563eb" stroke-linecap="round" stroke-width="6" d="M220 327c125 0 205 209 340 209s215-209 340-209"/>
+    <path fill="none" stroke="#ea580c" stroke-dasharray="12 9" stroke-linecap="round" stroke-width="6" d="M220 432.5C350 410 430 325 560 325s210 85 340 107.5"/>
+    <path fill="none" stroke="#16a34a" stroke-dasharray="3 9" stroke-linecap="round" stroke-width="6" d="M220 119c125 0 210 417 340 417h340"/>
+    <g fill="#2563eb">
+      <circle cx="220" cy="327" r="7"/>
+      <circle cx="560" cy="536" r="7"/>
+      <circle cx="900" cy="327" r="7"/>
+    </g>
+    <g fill="#ea580c">
+      <circle cx="220" cy="432.5" r="7"/>
+      <circle cx="560" cy="325" r="7"/>
+      <circle cx="900" cy="432.5" r="7"/>
+    </g>
+    <g fill="#16a34a">
+      <circle cx="220" cy="119" r="7"/>
+      <circle cx="560" cy="536" r="7"/>
+      <circle cx="900" cy="536" r="7"/>
+    </g>
+    <g font-size="15" font-weight="700">
+      <text x="244" y="131" fill="#16a34a">Q只押 A = 0.98</text>
+      <text x="244" y="300" fill="#2563eb">P 的峰 A = 0.495</text>
+      <text x="244" y="457" fill="#ea580c">Q铺开 = 0.25</text>
+      <text x="584" y="311" fill="#ea580c">Q铺开 = 0.50</text>
+      <text x="584" y="520" fill="#2563eb">P = Q只押 A = 0.01</text>
+      <text x="876" y="300" fill="#2563eb" text-anchor="end">P 的峰 B = 0.495</text>
+      <text x="876" y="457" fill="#ea580c" text-anchor="end">Q铺开 = 0.25</text>
+      <text x="876" y="520" fill="#16a34a" text-anchor="end">Q只押 A = 0.01</text>
+    </g>
+    <g font-size="17" text-anchor="middle">
+      <text x="220" y="575">简洁正确 A</text>
+      <text x="560" y="575">别扭混合</text>
+      <text x="900" y="575">详细正确 B</text>
+    </g>
+    <text x="565" y="612" font-size="18" font-weight="600" text-anchor="middle">回答风格：从简洁到详细</text>
+    <text x="31" y="324" font-size="18" font-weight="600" text-anchor="middle" transform="rotate(-90 31 324)">这类回答的概率</text>
+    <text x="1018" y="642" fill="#6b778c" font-size="14" text-anchor="end">只把回答粗略分成三类，不代表回答空间真的只有一条轴</text>
+    <rect width="480" height="155" x="55" y="670" fill="#eff6ff" stroke="#93c5fd" stroke-width="2" rx="18"/>
+    <text x="82" y="704" fill="#1d4ed8" font-size="21" font-weight="700">Forward KL：D(P‖Q)</text>
+    <text x="82" y="735" font-size="16">由 P 加权：重点照顾 A、B 两座峰</text>
+    <text x="82" y="769" font-size="18">Q铺开 = <tspan fill="#16a34a" font-weight="700">0.64 ✓</tspan></text>
+    <text x="290" y="769" font-size="18">Q只押 A = <tspan font-weight="700">1.59</tspan></text>
+    <text x="82" y="802" fill="#1d4ed8" font-size="17" font-weight="700">数值更小 → 选择铺开，不愿漏掉峰 B</text>
+    <rect width="480" height="155" x="565" y="670" fill="#faf5ff" stroke="#d8b4fe" stroke-width="2" rx="18"/>
+    <text x="592" y="704" fill="#7e22ce" font-size="21" font-weight="700">Reverse KL：D(Q‖P)</text>
+    <text x="592" y="735" font-size="16">由正在检查的 Q 加权：重点检查 Q 常去哪里</text>
+    <text x="592" y="769" font-size="18">Q铺开 = <tspan font-weight="700">1.61</tspan></text>
+    <text x="800" y="769" font-size="18">Q只押 A = <tspan fill="#16a34a" font-weight="700">0.63 ✓</tspan></text>
+    <text x="592" y="802" fill="#7e22ce" font-size="17" font-weight="700">数值更小 → 选择只押 A，不愿落进 P 的低谷</text>
+  </g>
+</svg>

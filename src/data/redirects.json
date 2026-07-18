@@ -16,5 +16,6 @@
   "/zh/blog/category/personal-practice/": "/zh/blog/category/practice/",
   "/en/blog/category/personal-practice/": "/en/blog/category/practice/",
   "/zh/blog/category/personal-views/": "/zh/blog/category/insights/",
-  "/en/blog/category/personal-views/": "/en/blog/category/insights/"
+  "/en/blog/category/personal-views/": "/en/blog/category/insights/",
+  "/zh/blog/llmposttrain/": "/zh/blog/llm-post-training-methods-and-trl-source-code/"
 }
