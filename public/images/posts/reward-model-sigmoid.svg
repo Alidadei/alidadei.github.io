@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" role="img" aria-labelledby="title desc">
+  <title id="title">Sigmoid 将奖励分数差映射成偏好概率</title>
+  <desc id="desc">横轴是 chosen 回答分数减 rejected 回答分数，纵轴是 chosen 被偏好的概率。分数差为负二、零和正二时，概率分别约为零点一二、零点五和零点八八。</desc>
+
+  <rect width="1000" height="650" rx="20" fill="#ffffff" />
+
+  <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" fill="#172033">
+    <text x="500" y="48" text-anchor="middle" font-size="27" font-weight="700">Sigmoid：把奖励分数差变成偏好概率</text>
+
+    <g stroke="#d8dfeb" stroke-width="1">
+      <line x1="100" y1="500" x2="920" y2="500" />
+      <line x1="100" y1="397.5" x2="920" y2="397.5" stroke-dasharray="5 7" />
+      <line x1="100" y1="295" x2="920" y2="295" stroke-dasharray="5 7" />
+      <line x1="100" y1="192.5" x2="920" y2="192.5" stroke-dasharray="5 7" />
+      <line x1="100" y1="90" x2="920" y2="90" stroke-dasharray="5 7" />
+    </g>
+
+    <g stroke="#334155" stroke-width="2.5" fill="none">
+      <line x1="100" y1="500" x2="938" y2="500" />
+      <path d="M938 500 l-13 -7 v14 z" fill="#334155" stroke="none" />
+      <line x1="100" y1="500" x2="100" y2="76" />
+      <path d="M100 76 l-7 13 h14 z" fill="#334155" stroke="none" />
+    </g>
+
+    <g font-size="15" fill="#536176">
+      <text x="82" y="506" text-anchor="end">0</text>
+      <text x="82" y="403" text-anchor="end">0.25</text>
+      <text x="82" y="301" text-anchor="end">0.50</text>
+      <text x="82" y="198" text-anchor="end">0.75</text>
+      <text x="82" y="96" text-anchor="end">1.00</text>
+
+      <text x="100" y="526" text-anchor="middle">−6</text>
+      <text x="237" y="526" text-anchor="middle">−4</text>
+      <text x="373" y="526" text-anchor="middle">−2</text>
+      <text x="510" y="526" text-anchor="middle">0</text>
+      <text x="647" y="526" text-anchor="middle">2</text>
+      <text x="783" y="526" text-anchor="middle">4</text>
+      <text x="920" y="526" text-anchor="middle">6</text>
+    </g>
+
+    <polyline
+      points="100,499 134,498 168,497 203,496 237,493 271,488 305,481 339,469 373,451 408,425 442,390 476,345 510,295 544,245 578,200 613,165 647,139 681,121 715,109 749,102 783,97 818,95 852,93 886,92 920,91"
+      fill="none" stroke="#7c3aed" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+
+    <g stroke="#a78bfa" stroke-width="2" stroke-dasharray="6 6">
+      <line x1="373" y1="451" x2="373" y2="500" />
+      <line x1="100" y1="451" x2="373" y2="451" />
+      <line x1="510" y1="295" x2="510" y2="500" />
+      <line x1="100" y1="295" x2="510" y2="295" />
+      <line x1="647" y1="139" x2="647" y2="500" />
+      <line x1="100" y1="139" x2="647" y2="139" />
+    </g>
+
+    <g fill="#7c3aed" stroke="#ffffff" stroke-width="3">
+      <circle cx="373" cy="451" r="9" />
+      <circle cx="510" cy="295" r="9" />
+      <circle cx="647" cy="139" r="9" />
+    </g>
+
+    <g font-size="16" font-weight="700" fill="#6d28d9">
+      <text x="286" y="438">Δr = −2 → 0.12</text>
+      <text x="526" y="286">Δr = 0 → 0.50</text>
+      <text x="663" y="130">Δr = 2 → 0.88</text>
+    </g>
+
+    <text x="510" y="560" text-anchor="middle" font-size="18" font-weight="600">奖励分数差 Δr = chosen 分数 − rejected 分数</text>
+    <text x="31" y="295" transform="rotate(-90 31 295)" text-anchor="middle" font-size="18" font-weight="600">chosen 被偏好的概率 σ(Δr)</text>
+
+    <g font-size="15">
+      <rect x="90" y="585" width="250" height="42" rx="12" fill="#fff1f2" />
+      <text x="215" y="611" text-anchor="middle" fill="#be123c">分差 &lt; 0：chosen 更可能输</text>
+      <rect x="375" y="585" width="250" height="42" rx="12" fill="#f5f3ff" />
+      <text x="500" y="611" text-anchor="middle" fill="#6d28d9">分差 = 0：双方各 50%</text>
+      <rect x="660" y="585" width="250" height="42" rx="12" fill="#f0fdf4" />
+      <text x="785" y="611" text-anchor="middle" fill="#15803d">分差 &gt; 0：chosen 更可能赢</text>
+    </g>
+  </g>
+</svg>

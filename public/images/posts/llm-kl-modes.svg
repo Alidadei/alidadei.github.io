@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 650" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 860" role="img" aria-labelledby="title desc">
   <title id="title">目标分布 P 与两个候选 Q 的概率分布示意图</title>
-  <desc id="desc">横轴将回答粗略分为简洁正确、别扭混合和详细正确三类，纵轴表示概率。目标分布 P 在简洁正确和详细正确处各有一座峰；候选 Q 铺开覆盖三类回答；候选 Q 只押 A 主要集中在简洁正确回答。</desc>
+  <desc id="desc">横轴将回答粗略分为简洁正确、别扭混合和详细正确三类，纵轴表示概率。图中标出三个分布的数值，并在下方直接比较 forward KL 与 reverse KL 对两个候选 Q 的计算结果。</desc>
 
-  <rect width="1100" height="650" fill="#ffffff" rx="20" />
+  <rect width="1100" height="860" fill="#ffffff" rx="20" />
 
   <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" fill="#172033">
-    <text x="550" y="46" text-anchor="middle" font-size="27" font-weight="700">同一个 Prompt 下的三种概率分布（教学示意）</text>
+    <text x="550" y="46" text-anchor="middle" font-size="27" font-weight="700">Forward KL 与 reverse KL 会选择哪个 Q？（教学示意）</text>
 
     <g font-size="16">
       <line x1="282" y1="76" x2="334" y2="76" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
@@ -14,11 +14,11 @@
 
       <line x1="472" y1="76" x2="524" y2="76" stroke="#ea580c" stroke-width="5" stroke-linecap="round" stroke-dasharray="12 9" />
       <circle cx="498" cy="76" r="6" fill="#ea580c" />
-      <text x="534" y="82">候选 Q铺开</text>
+      <text x="534" y="82">候选 Q（铺开）</text>
 
       <line x1="684" y1="76" x2="736" y2="76" stroke="#16a34a" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 9" />
       <circle cx="710" cy="76" r="6" fill="#16a34a" />
-      <text x="746" y="82">候选 Q只押 A</text>
+      <text x="746" y="82">候选 Q（只押 A）</text>
     </g>
 
     <g stroke="#d8dfeb" stroke-width="1">
@@ -75,9 +75,17 @@
       </g>
     </g>
 
-    <g font-size="16" font-weight="700" fill="#2563eb">
-      <text x="244" y="300">P 的峰 A</text>
-      <text x="876" y="300" text-anchor="end">P 的峰 B</text>
+    <g font-size="15" font-weight="700">
+      <text x="244" y="131" fill="#16a34a">Q只押 A = 0.98</text>
+      <text x="244" y="300" fill="#2563eb">P 的峰 A = 0.495</text>
+      <text x="244" y="457" fill="#ea580c">Q铺开 = 0.25</text>
+
+      <text x="584" y="311" fill="#ea580c">Q铺开 = 0.50</text>
+      <text x="584" y="520" fill="#2563eb">P = Q只押 A = 0.01</text>
+
+      <text x="876" y="300" text-anchor="end" fill="#2563eb">P 的峰 B = 0.495</text>
+      <text x="876" y="457" text-anchor="end" fill="#ea580c">Q铺开 = 0.25</text>
+      <text x="876" y="520" text-anchor="end" fill="#16a34a">Q只押 A = 0.01</text>
     </g>
 
     <g font-size="17" fill="#172033">
@@ -88,6 +96,22 @@
 
     <text x="565" y="612" text-anchor="middle" font-size="18" font-weight="600">回答风格：从简洁到详细</text>
     <text x="31" y="324" transform="rotate(-90 31 324)" text-anchor="middle" font-size="18" font-weight="600">这类回答的概率</text>
-    <text x="1018" y="632" text-anchor="end" font-size="14" fill="#6b778c">只把回答粗略分成三类，不代表回答空间真的只有一条轴</text>
+    <text x="1018" y="642" text-anchor="end" font-size="14" fill="#6b778c">只把回答粗略分成三类，不代表回答空间真的只有一条轴</text>
+
+    <g>
+      <rect x="55" y="670" width="480" height="155" rx="18" fill="#eff6ff" stroke="#93c5fd" stroke-width="2" />
+      <text x="82" y="704" font-size="21" font-weight="700" fill="#1d4ed8">Forward KL：D(P‖Q)</text>
+      <text x="82" y="735" font-size="16">由 P 加权：重点照顾 A、B 两座峰</text>
+      <text x="82" y="769" font-size="18" fill="#172033">Q铺开 = <tspan font-weight="700" fill="#16a34a">0.64 ✓</tspan></text>
+      <text x="290" y="769" font-size="18" fill="#172033">Q只押 A = <tspan font-weight="700">1.59</tspan></text>
+      <text x="82" y="802" font-size="17" font-weight="700" fill="#1d4ed8">数值更小 → 选择铺开，不愿漏掉峰 B</text>
+
+      <rect x="565" y="670" width="480" height="155" rx="18" fill="#faf5ff" stroke="#d8b4fe" stroke-width="2" />
+      <text x="592" y="704" font-size="21" font-weight="700" fill="#7e22ce">Reverse KL：D(Q‖P)</text>
+      <text x="592" y="735" font-size="16">由正在检查的 Q 加权：重点检查 Q 常去哪里</text>
+      <text x="592" y="769" font-size="18" fill="#172033">Q铺开 = <tspan font-weight="700">1.61</tspan></text>
+      <text x="800" y="769" font-size="18" fill="#172033">Q只押 A = <tspan font-weight="700" fill="#16a34a">0.63 ✓</tspan></text>
+      <text x="592" y="802" font-size="17" font-weight="700" fill="#7e22ce">数值更小 → 选择只押 A，不愿落进 P 的低谷</text>
+    </g>
   </g>
 </svg>
