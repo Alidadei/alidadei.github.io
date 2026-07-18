@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 650" role="img" aria-labelledby="title desc">
+  <title id="title">目标分布 P 与两个候选 Q 的概率分布示意图</title>
+  <desc id="desc">横轴将回答粗略分为简洁正确、别扭混合和详细正确三类，纵轴表示概率。目标分布 P 在简洁正确和详细正确处各有一座峰；候选 Q 铺开覆盖三类回答；候选 Q 只押 A 主要集中在简洁正确回答。</desc>
+
+  <rect width="1100" height="650" fill="#ffffff" rx="20" />
+
+  <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif" fill="#172033">
+    <text x="550" y="46" text-anchor="middle" font-size="27" font-weight="700">同一个 Prompt 下的三种概率分布（教学示意）</text>
+
+    <g font-size="16">
+      <line x1="282" y1="76" x2="334" y2="76" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
+      <circle cx="308" cy="76" r="6" fill="#2563eb" />
+      <text x="344" y="82">目标分布 P</text>
+
+      <line x1="472" y1="76" x2="524" y2="76" stroke="#ea580c" stroke-width="5" stroke-linecap="round" stroke-dasharray="12 9" />
+      <circle cx="498" cy="76" r="6" fill="#ea580c" />
+      <text x="534" y="82">候选 Q铺开</text>
+
+      <line x1="684" y1="76" x2="736" y2="76" stroke="#16a34a" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 9" />
+      <circle cx="710" cy="76" r="6" fill="#16a34a" />
+      <text x="746" y="82">候选 Q只押 A</text>
+    </g>
+
+    <g stroke="#d8dfeb" stroke-width="1">
+      <line x1="110" y1="540" x2="1020" y2="540" />
+      <line x1="110" y1="432.5" x2="1020" y2="432.5" stroke-dasharray="5 7" />
+      <line x1="110" y1="325" x2="1020" y2="325" stroke-dasharray="5 7" />
+      <line x1="110" y1="217.5" x2="1020" y2="217.5" stroke-dasharray="5 7" />
+      <line x1="110" y1="110" x2="1020" y2="110" stroke-dasharray="5 7" />
+    </g>
+
+    <g stroke="#334155" stroke-width="2.5" fill="none">
+      <line x1="110" y1="540" x2="1035" y2="540" />
+      <path d="M1035 540 l-13 -7 v14 z" fill="#334155" stroke="none" />
+      <line x1="110" y1="540" x2="110" y2="96" />
+      <path d="M110 96 l-7 13 h14 z" fill="#334155" stroke="none" />
+    </g>
+
+    <g font-size="15" fill="#536176">
+      <text x="91" y="546" text-anchor="end">0</text>
+      <text x="91" y="438" text-anchor="end">0.25</text>
+      <text x="91" y="331" text-anchor="end">0.50</text>
+      <text x="91" y="223" text-anchor="end">0.75</text>
+      <text x="91" y="116" text-anchor="end">1.00</text>
+    </g>
+
+    <g stroke="#b8c3d3" stroke-width="1.5">
+      <line x1="220" y1="540" x2="220" y2="548" />
+      <line x1="560" y1="540" x2="560" y2="548" />
+      <line x1="900" y1="540" x2="900" y2="548" />
+    </g>
+
+    <path d="M220 327 C345 327 425 536 560 536 C695 536 775 327 900 327"
+          fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round" />
+    <path d="M220 432.5 C350 410 430 325 560 325 C690 325 770 410 900 432.5"
+          fill="none" stroke="#ea580c" stroke-width="6" stroke-linecap="round" stroke-dasharray="12 9" />
+    <path d="M220 119 C345 119 430 536 560 536 C680 536 780 536 900 536"
+          fill="none" stroke="#16a34a" stroke-width="6" stroke-linecap="round" stroke-dasharray="3 9" />
+
+    <g>
+      <g fill="#2563eb">
+        <circle cx="220" cy="327" r="7" />
+        <circle cx="560" cy="536" r="7" />
+        <circle cx="900" cy="327" r="7" />
+      </g>
+      <g fill="#ea580c">
+        <circle cx="220" cy="432.5" r="7" />
+        <circle cx="560" cy="325" r="7" />
+        <circle cx="900" cy="432.5" r="7" />
+      </g>
+      <g fill="#16a34a">
+        <circle cx="220" cy="119" r="7" />
+        <circle cx="560" cy="536" r="7" />
+        <circle cx="900" cy="536" r="7" />
+      </g>
+    </g>
+
+    <g font-size="16" font-weight="700" fill="#2563eb">
+      <text x="244" y="300">P 的峰 A</text>
+      <text x="876" y="300" text-anchor="end">P 的峰 B</text>
+    </g>
+
+    <g font-size="17" fill="#172033">
+      <text x="220" y="575" text-anchor="middle">简洁正确 A</text>
+      <text x="560" y="575" text-anchor="middle">别扭混合</text>
+      <text x="900" y="575" text-anchor="middle">详细正确 B</text>
+    </g>
+
+    <text x="565" y="612" text-anchor="middle" font-size="18" font-weight="600">回答风格：从简洁到详细</text>
+    <text x="31" y="324" transform="rotate(-90 31 324)" text-anchor="middle" font-size="18" font-weight="600">这类回答的概率</text>
+    <text x="1018" y="632" text-anchor="end" font-size="14" fill="#6b778c">只把回答粗略分成三类，不代表回答空间真的只有一条轴</text>
+  </g>
+</svg>

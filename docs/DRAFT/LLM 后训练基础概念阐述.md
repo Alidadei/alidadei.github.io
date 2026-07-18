@@ -199,7 +199,9 @@ KLdivergence有三个重要性质：
 
 - reverse KL：$D_{\mathrm{KL}}(Q\|P)$。
 
-先说清楚这里的“峰”是什么。我们把同一个 prompt 的可能回答按某种特征排在横轴上，例如从“简洁”排到“详细”；纵轴是这类回答出现的概率。哪一小片区域的概率明显更高，哪一片就像一座山峰，也叫一个 **mode（模式）**。所以这里的一座峰不是指“一条回答里有个峰”，而是指“一群相似回答形成了一块高概率区域”。
+我们把同一个 prompt 的可能回答按某种特征排在横轴上，例如从“简洁”排到“详细”；纵轴是这类回答出现的概率。哪一小片区域的概率明显更高，哪一片就像一座山峰，也叫一个 **mode（模式）**。
+
+![目标分布 P 与两个候选 Q 的概率分布示意图](../../public/images/posts/llm-kl-modes.svg)
 
 下面直接用数字看差别。假设目标分布 $P$ 认为“简洁正确”和“详细正确”都很好，却很少接受夹在中间、写得别扭的回答：
 
@@ -209,17 +211,24 @@ KLdivergence有三个重要性质：
 | 候选 $Q_{\text{铺开}}$ | 0.25 | 0.50 | 0.25 |
 | 候选 $Q_{\text{只押 A}}$ | 0.98 | 0.01 | 0.01 |
 
-这里故意把待学习分布 $Q$ 限制为只能从这两个候选中选一个。这个限制才是之前那句“表达能力有限”真正想说的事：**不是 $Q$ 想长什么样就能长什么样，而是模型结构、参数或优化结果只允许它在几个不完美的近似里选。** 如果允许 $Q$ 直接等于 $P$，那么两个方向的 KL 都会选 $Q=P$，此时 KL 都是 0，根本不会出现下面的区别。
+图和表里的 $Q_{\text{铺开}}$ 与 $Q_{\text{只押 A}}$ 都不是什么特定算法或真实模型，只是我为了对比两个 KL 方向而手工设定的候选分布：
 
-把表中的数字代入公式，使用自然对数，可以得到：
+- $Q_{\text{铺开}}$ 没有只守着 A 或 B，而是三类回答都分到了一些概率。这里的“铺开”只是说它覆盖了从 A 到 B 的整段范围，并不是说三个概率必须完全相等；
+- $Q_{\text{只押 A}}$ 把 0.98 的概率都放在简洁正确 A 上，几乎放弃了另外两类回答。
+
+现在固定目标分布 $P$，分别问 forward KL 和 reverse KL：“你觉得哪个候选 $Q$ 离 $P$ 更近？”把表中的数字代入公式并使用自然对数，可以得到：
 
 | 衡量方式 | $Q_{\text{铺开}}$ | $Q_{\text{只押 A}}$ | 更偏向哪个候选 |
 | --- | ---: | ---: | --- |
 | forward KL：$D_{\mathrm{KL}}(P\|Q)$ | 0.64 | 1.59 | 铺开 |
 | reverse KL：$D_{\mathrm{KL}}(Q\|P)$ | 1.61 | 0.63 | 只押 A |
 
-- **Mode-covering（覆盖模式）**：forward KL 按 $P$ 加权。目标分布明明给 B 近一半概率，$Q_{\text{只押 A}}$ 却只给 B 0.01，漏掉 B 的代价很大，所以它宁可选择把概率铺开的候选。
-- **Mode-seeking（寻找模式）**：reverse KL 按 $Q$ 加权。$Q_{\text{铺开}}$ 把一半概率压在“别扭混合”上，但目标分布只给这里 0.01，代价很大；只押 A 反而更便宜。只押 B 也可能得到类似结果，并不是 reverse KL 天生偏爱 A。
+所谓“按照某个分布加权”，可以简单理解为：**由这个分布决定每一项说话的音量。概率越大，对最终 KL 的影响通常就越大。**
+
+- **Mode-covering（覆盖模式）**：forward KL 按 $P$ 加权。在 $P$ 看来，A、中间、B 三项的音量分别是 0.495、0.01、0.495。B 的音量很大，而 $Q_{\text{只押 A}}$ 只给 B 0.01，因此光是 B 这一项就有 $0.495\log(0.495/0.01)\approx1.93$，漏掉 B 会被重罚；$Q_{\text{铺开}}$ 虽然错给了中间区域很多概率，但 $P$ 只给这一项 0.01 的音量，所以影响较小。最终 forward KL 认为“铺开”更接近 $P$。
+- **Mode-seeking（寻找模式）**：reverse KL 改由正在接受检查的那个 $Q$ 加权。检查 $Q_{\text{铺开}}$ 时，中间项的音量是 0.50，而 $P$ 在这里仅有 0.01，因此光是这一项就有 $0.50\log(0.50/0.01)\approx1.96$，把大量概率放进 $P$ 的低谷会被重罚；检查 $Q_{\text{只押 A}}$ 时，B 的音量只有 0.01，所以漏掉 B 对总结果影响很小。最终 reverse KL 认为“只押 A”更接近 $P$。只押 B 也可能得到类似结果，并不是 reverse KL 天生偏爱 A。
+
+上面算的是每一项对总和的贡献，单独一项可以为负；只有全部项加起来的 KL 才一定大于等于 0。
 
 所以，“forward KL 覆盖多个模式、reverse KL 寻找一个模式”说的是**受到限制、只能近似目标分布时的常见倾向**，不是任何情况下都必然发生的定律。相关分析可见 [Ghasemipour 等人的论文](https://proceedings.mlr.press/v100/ghasemipour20a.html)。
 
@@ -401,7 +410,7 @@ $$
 B_{\mathrm{prompt}}=\frac{B_{\mathrm{completion}}}{G}=8
 $$
 
-但不同框架可能在 sampler 中先把 prompt 按 $G$ 重复，也可能先取一批互不相同的 prompt，再在生成阶段各扩成 $G$ 条 completion。因此，只看到 `per_device_train_batch_size`，不能断定它代表多少条独立 prompt。TRL 的 [GRPO 配置说明](https://huggingface.co/docs/trl/grpo_trainer) 会额外规定 effective batch 与 `num_generations` 的整除关系，并单独定义 generation batch；NVIDIA Megatron 的 [并行与 global batch 说明](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html) 又采用通用分布式训练口径。公式里的单位必须写出来。
+但不同框架可能在 sampler 中先把 prompt 按 $G$ 重复，也可能先取一批互不相同的 prompt，再在生成阶段各扩成 $G$ 条 completion。因此，只看到 `per_device_train_batch_size`，不能断定它代表多少条独立 prompt。TRL 的 [GRPO 配置说明](https://huggingface.co/docs/trl/grpo_trainer) 会额外规定 effective batch 与 `num_generations` 的整除关系，并单独定义 generation batch；NVIDIA Megatron 的 [并行与 global batch 说明](https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html) 又采用通用分布式训练口径。
 
 #### Step 也有多种含义
 
@@ -450,7 +459,7 @@ Qwen2.5-7B-Instruct（SFT 起点）
 
 旧策略会随着 rollout 批次更新；参考策略往往长期不变，这俩一个负责回答“这批数据是谁生成的”，另一个负责约束“模型不要离初始行为多远”。
 
-#### old-policy ratio、importance ratio 与 KL divergence
+#### old-policy ratio VS importance ratio 
 
 **old-policy ratio 不是 importance ratio 之外的另一个东西，它就是 importance ratio 的一种具体情况。**
 
@@ -460,7 +469,7 @@ $$
 w_t=\frac{\pi_{\mathrm{target}}(a_t\mid s_t)}{\mu(a_t\mid s_t)}
 $$
 
-$\mu$ 是真正生成这份数据的 behavior policy，$\pi_{\mathrm{target}}$ 是我们想估计或训练的目标策略。数据明明由 $\mu$ 采出来，却想知道换成目标策略后会怎样，就用这个概率比重新加权。
+$\mu$ 是真正生成这份数据的 behavior policy（LLM），$\pi_{\mathrm{target}}$ 是我们想估计或训练的目标策略（LLM）。数据明明由 $\mu$ 采出来，却想知道换成目标策略后会怎样，就用这个概率比重新加权。
 
 PPO 的数据通常由 old policy 生成，因此此时 $\mu=\pi_{\mathrm{old}}$，公式就变成了：
 
@@ -476,7 +485,7 @@ $$
 - 如果数据其实由另一个 behavior policy 生成，分母就应该是那个真正采样的策略 $\mu$，再写 $\pi_{\mathrm{old}}$ 就不一定是正确的校正；
 - 单个 token 的 ratio 是两个 token 概率相除；整条回答的 ratio 则是所有 token ratio 的连乘，等价于先把 log-ratio 相加再取指数。
 
-它和 KL divergence 也不是一回事：importance ratio 针对**这一个实际采到的 action**做概率校正，而 KL 是对一整个概率分布的平均偏离程度做衡量。PPO 会裁剪 $\pi_\theta/\pi_{\mathrm{old}}$，让过大的 ratio 不再继续放大这一项训练目标，从而抑制单次更新过猛；这是一种软约束，不保证更新后的 KL 一定小于某个数。LLM 后训练还常计算 $\pi_\theta$ 对 $\pi_{\mathrm{ref}}$ 的 KL，限制模型长期偏离训练起点。相关定义可对照 [PPO 原论文](https://arxiv.org/abs/1707.06347) 与 [OpenAI Spinning Up 的 PPO 说明](https://spinningup.openai.com/en/latest/algorithms/ppo.html)。
+它和 KL divergence 也不是一回事：importance ratio 针对**这一个实际采到的 action**做概率校正，而 KL 是对一整个概率分布偏离训练起点程度的衡量。PPO 会裁剪 $\pi_\theta/\pi_{\mathrm{old}}$，让过大的 ratio 不再继续放大这一项训练目标，从而抑制单次更新过猛；这是一种软约束，不保证更新后的 KL 一定小于某个数。LLM 后训练还常计算 $\pi_\theta$ 对 $\pi_{\mathrm{ref}}$ 的 KL，限制模型长期偏离训练起点。相关定义可对照 [PPO 原论文](https://arxiv.org/abs/1707.06347) 与 [OpenAI Spinning Up 的 PPO 说明](https://spinningup.openai.com/en/latest/algorithms/ppo.html)。
 
 ### On-policy、off-policy、online 与 offline
 
