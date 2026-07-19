@@ -68,6 +68,24 @@ const readStateExpression = `(() => {
   const bodyStyle = getComputedStyle(body);
   const scrollingElement = document.scrollingElement;
   const pointed = document.elementFromPoint(${Math.round(width * 0.4)}, ${Math.round(height * 0.7)});
+  const row = document.querySelector('.post-content-row');
+  const articleHeader = document.querySelector('.post-article-header');
+  const prose = document.querySelector('.post-article-body');
+  const sidebar = document.getElementById('toc-sidebar');
+  const latestPost = document.querySelector('#stage-3d > section');
+  const recentSpacer = latestPost?.previousElementSibling;
+  const toRect = element => {
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    };
+  };
   return {
     scrollY: window.scrollY,
     scrollingElement: scrollingElement?.tagName || null,
@@ -82,6 +100,14 @@ const readStateExpression = `(() => {
     bodyScrollHeight: body.scrollHeight,
     pointedElement: pointed?.tagName || null,
     pointedClass: typeof pointed?.className === 'string' ? pointed.className : '',
+    layout: {
+      row: toRect(row),
+      articleHeader: toRect(articleHeader),
+      prose: toRect(prose),
+      sidebar: toRect(sidebar),
+      latestPost: toRect(latestPost),
+      recentSpacer: toRect(recentSpacer),
+    },
   };
 })()`;
 

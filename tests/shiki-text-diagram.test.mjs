@@ -4,7 +4,7 @@ import shikiTextDiagram, { isTextDiagram } from '../src/plugins/shiki-text-diagr
 
 test('detects multiline branch diagrams used by the post', () => {
   assert.equal(isTextDiagram(`模型输出 logits
-  ├─ 直接取最大值 ─────────→ greedy decoding
+  ├─ 直接取最大值 ────→ greedy decoding
   └─ temperature 调整（可选）
        ↓ softmax 得到概率`, 'text'), true);
 });

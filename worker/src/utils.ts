@@ -3,6 +3,7 @@ export interface Env {
   GITHUB_APP_CLIENT_SECRET: string;
   GITHUB_APP_ID: string;
   ALLOWED_USER_IDS: string;
+  ALLOWED_ORIGINS: string;
   REPO_OWNER: string;
   REPO_NAME: string;
   BRANCH: string;
@@ -11,14 +12,46 @@ export interface Env {
 
 const SESSION_TTL = 8 * 60 * 60; // 8 hours
 
-export function corsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('Origin') || '*';
-  return {
-    'Access-Control-Allow-Origin': origin,
+export function isAllowedCorsOrigin(origin: string | null, allowedOrigins: string | undefined): boolean {
+  // Requests made by Worker/CI do not carry a browser Origin header. CORS is a
+  // browser boundary, so authentication remains responsible for API access.
+  if (!origin) return true;
+  if (!allowedOrigins) return false;
+
+  return allowedOrigins
+    .split(',')
+    .map(value => value.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+    .some((allowedOrigin) => {
+      if (allowedOrigin.endsWith(':*')) {
+        try {
+          const actual = new URL(origin);
+          const allowed = new URL(allowedOrigin.slice(0, -2));
+          return actual.protocol === allowed.protocol
+            && actual.hostname === allowed.hostname
+            && actual.port !== '';
+        } catch {
+          return false;
+        }
+      }
+      return origin === allowedOrigin;
+    });
+}
+
+export function corsHeaders(request: Request, env: Env): Record<string, string> {
+  const origin = request.headers.get('Origin');
+  const headers: Record<string, string> = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token',
-    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
   };
+
+  if (origin && isAllowedCorsOrigin(origin, env.ALLOWED_ORIGINS)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
+  return headers;
 }
 
 export function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -31,12 +64,12 @@ export function jsonResponse(data: unknown, status = 200, headers: Record<string
   });
 }
 
-export function corsResponse(data: unknown, request: Request, status = 200): Response {
+export function corsResponse(data: unknown, request: Request, env: Env, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...corsHeaders(request),
+      ...corsHeaders(request, env),
     },
   });
 }

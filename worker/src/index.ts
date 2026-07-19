@@ -1,4 +1,4 @@
-import { Env, corsHeaders, corsResponse } from './utils';
+import { Env, corsHeaders, isAllowedCorsOrigin, jsonResponse } from './utils';
 import { handleLogin, handleCallback, handleLogout, handleGetUser } from './auth';
 import {
   handleListPosts,
@@ -14,10 +14,10 @@ import {
 } from './github-api';
 import { handleBatchOperation } from './batch';
 
-function wrapCors(handler: () => Promise<Response>, request: Request): Promise<Response> {
+function wrapCors(handler: () => Promise<Response>, request: Request, env: Env): Promise<Response> {
   return handler().then(res => {
     const headers = new Headers(res.headers);
-    const cors = corsHeaders(request);
+    const cors = corsHeaders(request, env);
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     return new Response(res.body, { status: res.status, headers });
   });
@@ -27,10 +27,15 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
+    const requestOrigin = request.headers.get('Origin');
+
+    if (!isAllowedCorsOrigin(requestOrigin, env.ALLOWED_ORIGINS)) {
+      return jsonResponse({ error: 'Origin not allowed' }, 403, { Vary: 'Origin' });
+    }
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders(request) });
+      return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
 
     try {
@@ -47,45 +52,45 @@ export default {
 
       // API routes (CORS-wrapped)
       if (path === '/api/user' && request.method === 'GET') {
-        return wrapCors(() => handleGetUser(request, env), request);
+        return wrapCors(() => handleGetUser(request, env), request, env);
       }
       if (path === '/api/posts' && request.method === 'GET') {
-        return wrapCors(() => handleListPosts(request, env), request);
+        return wrapCors(() => handleListPosts(request, env), request, env);
       }
       if (path === '/api/posts/upload' && request.method === 'POST') {
-        return wrapCors(() => handleImageUpload(request, env), request);
+        return wrapCors(() => handleImageUpload(request, env), request, env);
       }
       if (path === '/api/images' && request.method === 'GET') {
-        return wrapCors(() => handleListImages(request, env), request);
+        return wrapCors(() => handleListImages(request, env), request, env);
       }
       if (path === '/api/images/upload' && request.method === 'POST') {
-        return wrapCors(() => handleImageUpload(request, env), request);
+        return wrapCors(() => handleImageUpload(request, env), request, env);
       }
 
       if (path.startsWith('/api/posts/')) {
         const filePath = decodeURIComponent(path.slice('/api/posts/'.length));
-        if (request.method === 'GET') return wrapCors(() => handleGetPost(request, env, filePath), request);
-        if (request.method === 'PUT') return wrapCors(() => handleSavePost(request, env, filePath), request);
-        if (request.method === 'DELETE') return wrapCors(() => handleDeletePost(request, env, filePath), request);
+        if (request.method === 'GET') return wrapCors(() => handleGetPost(request, env, filePath), request, env);
+        if (request.method === 'PUT') return wrapCors(() => handleSavePost(request, env, filePath), request, env);
+        if (request.method === 'DELETE') return wrapCors(() => handleDeletePost(request, env, filePath), request, env);
       }
 
       if (path.startsWith('/api/file/')) {
         const filePath = decodeURIComponent(path.slice('/api/file/'.length));
-        if (request.method === 'GET') return wrapCors(() => handleGetFile(request, env, filePath), request);
-        if (request.method === 'PUT') return wrapCors(() => handleSaveFile(request, env, filePath), request);
+        if (request.method === 'GET') return wrapCors(() => handleGetFile(request, env, filePath), request, env);
+        if (request.method === 'PUT') return wrapCors(() => handleSaveFile(request, env, filePath), request, env);
       }
 
       if (path.startsWith('/api/images/') && request.method === 'DELETE') {
         const filePath = decodeURIComponent(path.slice('/api/images/'.length));
-        return wrapCors(() => handleDeleteImage(request, env, filePath), request);
+        return wrapCors(() => handleDeleteImage(request, env, filePath), request, env);
       }
 
       if (path === '/api/batch' && request.method === 'POST') {
-        return wrapCors(() => handleBatchOperation(request, env), request);
+        return wrapCors(() => handleBatchOperation(request, env), request, env);
       }
 
       if (path === '/api/deploy/status' && request.method === 'GET') {
-        return wrapCors(() => handleDeployStatus(request, env), request);
+        return wrapCors(() => handleDeployStatus(request, env), request, env);
       }
 
       // Feed proxy:构建时 CI 经此反代抓取被 Cloudflare 拦截的友链 feed(白名单防开放代理滥用)
@@ -116,19 +121,19 @@ export default {
       if (path === '/api/health') {
         return wrapCors(async () => new Response(JSON.stringify({ status: 'ok' }), {
           headers: { 'Content-Type': 'application/json' },
-        }), request);
+        }), request, env);
       }
 
       return wrapCors(async () => new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
-      }), request);
+      }), request, env);
     } catch (err) {
       console.error('Worker error:', err);
       return wrapCors(async () => new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      }), request);
+      }), request, env);
     }
   },
 } satisfies ExportedHandler<Env>;

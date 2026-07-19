@@ -97,6 +97,8 @@ body {
    mobile layout viewport. Root clipping remains the final fail-safe only. */
 main,
 article,
+.post-header-row,
+.post-header-row > *,
 .post-content-row,
 .post-content-row > * {
   min-width: 0;
@@ -117,6 +119,25 @@ article,
   max-width: 100%;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Regression-locked desktop blog bounds. Do not move these columns while
+   debugging unrelated UI; tests/mobile-overflow-regression.mjs verifies the
+   rendered coordinates at the 1280px reference viewport. */
+@media (min-width: 1280px) {
+  /* The old layout translated the article 3rem to the right. Replacing that
+     transform with a 2.625rem left offset moves the rendered group left by
+     exactly 5.625rem (90px) without changing its internal geometry. */
+  .post-layout-article {
+    position: relative;
+    left: -2.625rem;
+  }
+
+  .post-article-header,
+  .post-article-body {
+    max-width: 54rem;
+    margin-left: auto;
+  }
 }
 
 /* The floating TOC is visible below Tailwind's lg breakpoint. Contain wide
@@ -334,8 +355,11 @@ article,
 
 /* 移动端表格：不折行，横向滑动看全列 */
 @media (max-width: 640px) {
-  .prose th, .prose td {
-    white-space: nowrap;
+  .prose table :is(th, td),
+  .prose table :is(th, td) * {
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
   }
 }
 .prose th {

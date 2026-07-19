@@ -22,47 +22,50 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
   <Header />
   <!-- KaTeX CSS only loaded on blog post pages -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
-  <article class="max-w-6xl mx-auto xl:translate-x-12 px-4 sm:px-6 lg:px-8 py-8 fade-in">
-    <header class="mb-4">
-      <!-- Category breadcrumb -->
-      {categories.length > 0 && (
-        <nav aria-label="Breadcrumb" class="flex items-center gap-1 text-sm text-text-muted mb-4 flex-wrap">
-          <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{lang === 'zh' ? '博客' : 'Blog'}</a>
-          <span class="text-text-muted">›</span>
-          {categories.map((cat, i) => {
-            const path = categories.slice(0, i + 1);
-            const label = getCategoryLabel(path, lang).split(' > ').pop();
-            const isLast = i === categories.length - 1;
-            return (
-              <Fragment>
-                {i > 0 && <span class="text-text-muted">›</span>}
-                {isLast ? (
-                  <span class="text-primary font-medium" aria-current="page">{label}</span>
-                ) : (
-                  <a href={`/${lang}/blog/category/${path.join('/')}/`} class="hover:text-accent transition-colors">{label}</a>
-                )}
-              </Fragment>
-            );
-          })}
-        </nav>
-      )}
-      <h1 class="text-3xl sm:text-4xl font-bold text-primary mb-4 leading-tight">{title}</h1>
-      <div class="article-title-line"></div>
-      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 text-sm text-text-muted">
-        {date && (
-          <time datetime={date.toISOString()}>
-            {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </time>
+  <article class="post-layout-article max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
+    <div class="post-header-row flex gap-8 relative">
+      <header class="post-article-header flex-1 min-w-0 mb-4">
+        <!-- Category breadcrumb -->
+        {categories.length > 0 && (
+          <nav aria-label="Breadcrumb" class="flex items-center gap-1 text-sm text-text-muted mb-4 flex-wrap">
+            <a href={`/${lang}/blog/`} class="hover:text-accent transition-colors">{lang === 'zh' ? '博客' : 'Blog'}</a>
+            <span class="text-text-muted">›</span>
+            {categories.map((cat, i) => {
+              const path = categories.slice(0, i + 1);
+              const label = getCategoryLabel(path, lang).split(' > ').pop();
+              const isLast = i === categories.length - 1;
+              return (
+                <Fragment>
+                  {i > 0 && <span class="text-text-muted">›</span>}
+                  {isLast ? (
+                    <span class="text-primary font-medium" aria-current="page">{label}</span>
+                  ) : (
+                    <a href={`/${lang}/blog/category/${path.join('/')}/`} class="hover:text-accent transition-colors">{label}</a>
+                  )}
+                </Fragment>
+              );
+            })}
+          </nav>
         )}
-        {tags.length > 0 && (
-          <div class="flex flex-wrap gap-1.5">
-            {tags.map((tag) => (
-              <span class="tag-chip">{tag}</span>
-            ))}
-          </div>
-        )}
-      </div>
-    </header>
+        <h1 class="text-3xl sm:text-4xl font-bold text-primary mb-4 leading-tight">{title}</h1>
+        <div class="article-title-line"></div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 text-sm text-text-muted">
+          {date && (
+            <time datetime={date.toISOString()}>
+              {date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </time>
+          )}
+          {tags.length > 0 && (
+            <div class="flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <span class="tag-chip">{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+      <div class="hidden lg:block w-56 shrink-0" aria-hidden="true"></div>
+    </div>
 
     <!-- Article body with TOC sidebar -->
 
@@ -103,12 +106,12 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
     <div class="post-content-row flex gap-8 relative">
       <!-- Main content -->
-      <div class="flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
+      <div class="post-article-body flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
         <slot />
       </div>
 
       <!-- Right-side TOC -->
-      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0 ml-auto">
+      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0">
         <div id="toc-container" class="sticky top-8">
           <h3 class="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
             {lang === 'zh' ? '目录' : 'Table of Contents'}

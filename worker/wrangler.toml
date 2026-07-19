@@ -8,6 +8,7 @@ GITHUB_APP_ID = "3478466"
 REPO_OWNER = "Alidadei"
 REPO_NAME = "alidadei.github.io"
 BRANCH = "master"
+ALLOWED_ORIGINS = "https://alidadei.github.io,http://localhost:*,http://127.0.0.1:*"
 
 [[kv_namespaces]]
 binding = "SESSIONS"

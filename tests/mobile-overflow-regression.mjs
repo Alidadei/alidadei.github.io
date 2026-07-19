@@ -12,7 +12,17 @@ const ASTRO_CLI = join(PROJECT_ROOT, 'node_modules', 'astro', 'bin', 'astro.mjs'
 const HOST = '127.0.0.1';
 const PROFILE_PREFIX = 'alidadei-mobile-overflow-';
 const WIDTHS = parseWidths(process.env.MOBILE_OVERFLOW_WIDTHS) ?? [320, 360, 390, 430];
+const ROUTE_FILTER = parseRoutes(process.env.MOBILE_OVERFLOW_ROUTES);
 const MAX_DISCOVERED_ROUTES = 250;
+const DESKTOP_BLOG_LAYOUT_LOCK = Object.freeze({
+  route: '/zh/blog/llm-post-training-basics-and-jargon/',
+  viewport: { width: 1280, height: 900 },
+  group: { left: 80, right: 1200, width: 1120 },
+  articleHeader: { left: 80, right: 944, width: 864 },
+  prose: { left: 80, right: 944, width: 864 },
+  sidebar: { left: 976, right: 1200, width: 224 },
+  proseToSidebarGap: 32,
+});
 
 class CdpClient {
   constructor(socket) {
@@ -116,20 +126,31 @@ async function main() {
         '--no-default-browser-check',
         'about:blank',
       ],
-      { cwd: PROJECT_ROOT, stdio: 'ignore', windowsHide: true },
+      { cwd: PROJECT_ROOT, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
     );
+    const readEdgeOutput = captureProcessOutput(state.edge);
     await waitForHttp(state.cdpOrigin + '/json/version', 20_000, state.edge);
 
-    const routes = await discoverRoutes(baseUrl);
-    const report = await runBrowserAudit({
-      cdpOrigin: state.cdpOrigin,
-      baseUrl,
-      routes,
-      widths: WIDTHS,
-    });
+    const routes = ROUTE_FILTER ?? await discoverRoutes(baseUrl);
+    let report;
+    try {
+      report = await runBrowserAudit({
+        cdpOrigin: state.cdpOrigin,
+        baseUrl,
+        routes,
+        widths: WIDTHS,
+      });
+    } catch (error) {
+      const edgeOutput = readEdgeOutput().trim();
+      if (edgeOutput) error.message += '\nEdge output:\n' + edgeOutput;
+      throw error;
+    }
 
     const failures = report.pageResults.filter((item) => item.issues.length > 0);
     const fixtureFailures = report.fixtureResults.filter((item) => item.issues.length > 0);
+    const desktopLayoutFailures = report.desktopLayoutResults.filter(
+      (item) => item.issues.length > 0,
+    );
 
     console.log(JSON.stringify({
       routes: routes.length,
@@ -138,16 +159,23 @@ async function main() {
       pageFailures: failures.length,
       fixtureChecks: report.fixtureResults.length,
       fixtureFailures: fixtureFailures.length,
+      desktopLayoutChecks: report.desktopLayoutResults.length,
+      desktopLayoutFailures: desktopLayoutFailures.length,
     }));
 
-    if (failures.length || fixtureFailures.length) {
-      console.error(JSON.stringify({ failures, fixtureFailures }, null, 2));
+    if (failures.length || fixtureFailures.length || desktopLayoutFailures.length) {
+      console.error(JSON.stringify({
+        failures,
+        fixtureFailures,
+        desktopLayoutFailures,
+      }, null, 2));
       return 1;
     }
 
     console.log(
       'PASS: 全站 ' + routes.length + ' 个路由及极端内容夹具在 '
-      + WIDTHS.join(', ') + 'px 下均无页面溢出、正文裁切或失控宽元素。',
+      + WIDTHS.join(', ') + 'px 下均无页面溢出、正文裁切或失控宽元素；'
+      + '桌面博客布局范围保持锁定。',
     );
     return 0;
   } finally {
@@ -156,6 +184,7 @@ async function main() {
 }
 
 async function runBrowserAudit({ cdpOrigin, baseUrl, routes, widths }) {
+  let auditStep = 'create-target';
   const targetResponse = await fetch(
     cdpOrigin + '/json/new?' + encodeURIComponent('about:blank'),
     { method: 'PUT' },
@@ -168,8 +197,10 @@ async function runBrowserAudit({ cdpOrigin, baseUrl, routes, widths }) {
   const client = await CdpClient.connect(target.webSocketDebuggerUrl);
   const pageResults = [];
   const fixtureResults = [];
+  const desktopLayoutResults = [];
 
   try {
+    auditStep = 'enable-page-and-runtime';
     await client.send('Page.enable');
     await client.send('Runtime.enable');
 
@@ -184,21 +215,129 @@ async function runBrowserAudit({ cdpOrigin, baseUrl, routes, widths }) {
       });
 
       for (const route of routes) {
+        auditStep = width + 'px ' + route;
         await navigateAndWait(client, baseUrl + route, route);
         const result = await evaluateByValue(client, inspectPageOverflow);
         pageResults.push({ width, route, ...result });
       }
 
+      auditStep = width + 'px synthetic-fixture';
       await navigateAndWait(client, baseUrl + '/zh/', '/zh/');
       const fixture = await evaluateByValue(client, inspectSyntheticFixture);
       fixtureResults.push({ width, route: '/zh/#overflow-fixture', ...fixture });
     }
+
+    auditStep = 'desktop-layout-lock';
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
+      height: DESKTOP_BLOG_LAYOUT_LOCK.viewport.height,
+      deviceScaleFactor: 1,
+      mobile: false,
+      screenWidth: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
+      screenHeight: DESKTOP_BLOG_LAYOUT_LOCK.viewport.height,
+    });
+    await navigateAndWait(
+      client,
+      baseUrl + DESKTOP_BLOG_LAYOUT_LOCK.route,
+      DESKTOP_BLOG_LAYOUT_LOCK.route,
+    );
+    const desktopLayout = await evaluateByValue(client, measureDesktopBlogLayout);
+    desktopLayoutResults.push({
+      width: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
+      route: DESKTOP_BLOG_LAYOUT_LOCK.route,
+      ...desktopLayout,
+      issues: compareDesktopBlogLayout(desktopLayout),
+    });
+  } catch (error) {
+    error.message += '\nAudit step: ' + auditStep;
+    throw error;
   } finally {
     await client.send('Target.closeTarget', { targetId: target.id }).catch(() => {});
     client.close();
   }
 
-  return { pageResults, fixtureResults };
+  return { pageResults, fixtureResults, desktopLayoutResults };
+}
+
+function measureDesktopBlogLayout() {
+  const toRect = (element) => {
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+    };
+  };
+
+  const articleHeader = document.querySelector('.post-article-header');
+  const prose = document.querySelector('.post-article-body');
+  const sidebar = document.getElementById('toc-sidebar');
+  const articleHeaderRect = toRect(articleHeader);
+  const proseRect = toRect(prose);
+  const sidebarRect = toRect(sidebar);
+  const visibleRects = [articleHeaderRect, proseRect, sidebarRect].filter(Boolean);
+  const group = visibleRects.length === 3
+    ? {
+        left: Math.min(...visibleRects.map(rect => rect.left)),
+        right: Math.max(...visibleRects.map(rect => rect.right)),
+        width: Math.max(...visibleRects.map(rect => rect.right))
+          - Math.min(...visibleRects.map(rect => rect.left)),
+      }
+    : null;
+
+  return {
+    viewportWidth: window.innerWidth,
+    articleHeader: articleHeaderRect,
+    prose: proseRect,
+    sidebar: sidebarRect,
+    sidebarDisplay: sidebar ? getComputedStyle(sidebar).display : null,
+    group,
+    proseToSidebarGap: proseRect && sidebarRect ? sidebarRect.left - proseRect.right : null,
+  };
+}
+
+function compareDesktopBlogLayout(actual) {
+  const tolerance = 0.75;
+  const issues = [];
+  const compareNumber = (label, value, expected) => {
+    if (!Number.isFinite(value) || Math.abs(value - expected) > tolerance) {
+      issues.push({ type: 'desktop-layout-drift', field: label, expected, actual: value });
+    }
+  };
+  const compareRect = (name, expected) => {
+    const rect = actual[name];
+    if (!rect) {
+      issues.push({ type: 'desktop-layout-element-missing', element: name });
+      return;
+    }
+    for (const field of ['left', 'right', 'width']) {
+      compareNumber(name + '.' + field, rect[field], expected[field]);
+    }
+  };
+
+  compareNumber(
+    'viewportWidth',
+    actual.viewportWidth,
+    DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
+  );
+  compareRect('group', DESKTOP_BLOG_LAYOUT_LOCK.group);
+  compareRect('articleHeader', DESKTOP_BLOG_LAYOUT_LOCK.articleHeader);
+  compareRect('prose', DESKTOP_BLOG_LAYOUT_LOCK.prose);
+  compareRect('sidebar', DESKTOP_BLOG_LAYOUT_LOCK.sidebar);
+  compareNumber(
+    'proseToSidebarGap',
+    actual.proseToSidebarGap,
+    DESKTOP_BLOG_LAYOUT_LOCK.proseToSidebarGap,
+  );
+  if (actual.sidebarDisplay === 'none' || actual.sidebarDisplay === null) {
+    issues.push({
+      type: 'desktop-layout-sidebar-hidden',
+      actual: actual.sidebarDisplay,
+    });
+  }
+
+  return issues;
 }
 
 async function navigateAndWait(client, url, expectedPath) {
@@ -347,6 +486,30 @@ function inspectPageOverflow() {
     }
   }
 
+  // 移动端表格依靠表格自身横向滚动展示完整行；单元格及其行内后代都不能
+  // 被全局的长文本断行规则重新开启换行。
+  for (const cell of document.querySelectorAll('.prose table th, .prose table td')) {
+    const candidates = [cell, ...cell.querySelectorAll('*')];
+    const wrappingElement = candidates.find((element) => {
+      if (!isRendered(element)) return false;
+      const style = getComputedStyle(element);
+      return style.whiteSpace !== 'nowrap'
+        || style.overflowWrap !== 'normal'
+        || style.wordBreak !== 'normal';
+    });
+    if (!wrappingElement) continue;
+
+    const style = getComputedStyle(wrappingElement);
+    issues.push({
+      type: 'mobile-table-wrap-enabled',
+      cell: describe(cell),
+      element: describe(wrappingElement),
+      whiteSpace: style.whiteSpace,
+      overflowWrap: style.overflowWrap,
+      wordBreak: style.wordBreak,
+    });
+  }
+
   return {
     viewportWidth,
     rootScrollWidth,
@@ -385,7 +548,7 @@ function inspectSyntheticFixture() {
     '<canvas data-case="canvas" width="2000" height="80" style="width:2000px;min-width:2000px"></canvas>',
     '<form data-case="form" style="width:2000px;min-width:2000px"><input data-case="input" style="width:2000px;min-width:2000px" value="' + longToken + '" /></form>',
     '<pre data-case="pre"><code>' + longToken + '</code></pre>',
-    '<table data-case="table"><tbody><tr><td>' + longToken + '</td></tr></tbody></table>',
+    '<table data-case="table"><tbody><tr><td>' + longToken + '</td><td><code data-table-inline-code>log(0.42) ≈ -0.87</code></td></tr></tbody></table>',
     '<div class="katex-display" data-case="display-math"><span style="display:inline-block;width:2000px;min-width:2000px">x=' + longToken + '</span></div>',
     '<p><span class="katex" data-case="inline-math"><span style="display:inline-block;width:2000px;min-width:2000px">x=' + longToken + '</span></span></p>',
   ].join('');
@@ -455,6 +618,21 @@ function inspectSyntheticFixture() {
         scrollWidth: element.scrollWidth,
       });
     }
+  }
+
+  const tableInlineCode = fixture.querySelector('[data-table-inline-code]');
+  const tableInlineCodeStyle = getComputedStyle(tableInlineCode);
+  if (
+    tableInlineCodeStyle.whiteSpace !== 'nowrap'
+    || tableInlineCodeStyle.overflowWrap !== 'normal'
+    || tableInlineCodeStyle.wordBreak !== 'normal'
+  ) {
+    issues.push({
+      type: 'fixture-table-inline-code-wrap-enabled',
+      whiteSpace: tableInlineCodeStyle.whiteSpace,
+      overflowWrap: tableInlineCodeStyle.overflowWrap,
+      wordBreak: tableInlineCodeStyle.wordBreak,
+    });
   }
 
   const rootScrollWidth = document.documentElement.scrollWidth;
@@ -560,6 +738,15 @@ function parseWidths(value) {
   if (!value) return null;
   const widths = value.split(',').map(Number).filter((width) => Number.isInteger(width) && width > 0);
   return widths.length > 0 ? widths : null;
+}
+
+function parseRoutes(value) {
+  if (!value) return null;
+  const routes = value
+    .split(',')
+    .map(route => normalizeRoute(route.trim()))
+    .filter(isAuditableRoute);
+  return routes.length > 0 ? [...new Set(routes)] : null;
 }
 
 function findEdgeExecutable() {

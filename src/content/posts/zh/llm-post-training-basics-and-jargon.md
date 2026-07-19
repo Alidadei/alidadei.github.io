@@ -33,7 +33,7 @@ lang: zh
 领域基础模型
   ↓ SFT：用“问题—理想回答”示范教模型如何听从指令进行规范回答
 指令模型（Instruct 系列）
-  ├─ 固定偏好对（chosen / rejected）────────→ DPO 等离线偏好优化
+  ├─ 固定偏好对（chosen / rejected）──→ DPO 等离线偏好优化
   └─ 奖励模型或规则 / 验证器 + 新生成的回答 ─→ PPO、GRPO 等在线强化学习
 ```
 
@@ -267,12 +267,12 @@ $$
 
 ```text
 模型输出 logits
-  ├─ 直接取最大值 ─────────────────────────→ greedy decoding
+  ├─ 直接取最大值 ────→ greedy decoding
   └─ temperature 调整（可选）
        ↓ softmax 得到概率
      top-k / top-p 截断候选（可选，可组合）
        ↓ 重新归一化
-     按剩余概率随机抽取 ───────────────────→ multinomial sampling
+     按剩余概率随机抽取 ────→ multinomial sampling
 ```
 
 所以，**多项式采样是最后“按概率抽一次”的动作；temperature、top-k 和 top-p 是抽之前对概率分布做的加工**。可以把它想成抽奖：multinomial sampling 负责真正伸手抽票，temperature 改变每类票的数量差距，top-k/top-p 则先把一部分小概率票拿出箱子。Hugging Face 的 [Generation 文档](https://huggingface.co/docs/transformers/main_classes/text_generation) 也是用 `do_sample` 决定是否随机采样，再用 temperature、top-k、top-p 操作 logits 或候选分布。
@@ -461,8 +461,8 @@ $$
 
 ```text
 Qwen2.5-7B-Instruct（SFT 起点）
-  ├─ 冻结一份 ─────────────────────────→ reference model
-  └─ 复制一份并继续训练 ───────────────→ current policy / actor
+  ├─ 冻结一份 ──────→ reference model
+  └─ 复制一份并继续训练 ───────→ current policy / actor
        └─ 每次生成一批回答时的时刻切片
             ├─ 真正生成这批回答的模型 ─→ behavior policy
             └─ 固定当时的权重或 logprob → old policy
