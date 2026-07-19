@@ -72,7 +72,11 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       class="lg:hidden fixed right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-bg-secondary/90 backdrop-blur border border-border shadow-md flex items-center justify-center text-text-muted hover:text-accent hover:border-accent transition-all"
       aria-label={lang === 'zh' ? '目录' : 'Table of Contents'}
     >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <svg id="toc-mobile-progress" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle id="toc-mobile-progress-track" cx="24" cy="24" r="22" />
+        <circle id="toc-mobile-progress-value" cx="24" cy="24" r="22" pathLength="1" />
+      </svg>
+      <svg class="relative z-10 w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
       </svg>
     </button>
@@ -98,7 +102,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     <!-- Mobile TOC backdrop -->
     <div id="toc-mobile-backdrop" class="lg:hidden fixed inset-0 z-45 bg-black/20 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
-    <div class="flex gap-8 relative">
+    <div class="post-content-row flex gap-8 relative">
       <!-- Main content -->
       <div class="flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
         <slot />
@@ -137,6 +141,9 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       const headings = prose.querySelectorAll('h2, h3, h4');
       if (headings.length === 0) {
         tocSidebar.style.display = 'none';
+        document.getElementById('toc-mobile-btn')?.style.setProperty('display', 'none');
+        document.getElementById('toc-mobile-panel')?.style.setProperty('display', 'none');
+        document.getElementById('toc-mobile-backdrop')?.style.setProperty('display', 'none');
         return;
       }
 
@@ -199,12 +206,6 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         }
       });
 
-      // Hide mobile TOC button if no headings
-      if (headings.length === 0) {
-        const tocBtn = document.getElementById('toc-mobile-btn');
-        if (tocBtn) tocBtn.style.display = 'none';
-      }
-
       // Mobile TOC panel: open / close
       const tocPanel = document.getElementById('toc-mobile-panel');
       const tocBtn = document.getElementById('toc-mobile-btn');
@@ -243,6 +244,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       // Scroll spy: highlight current heading
       const tocLinks = Array.from(tocNav.querySelectorAll('.toc-link'));
       const mobileLinks = tocNavMobile ? Array.from(tocNavMobile.querySelectorAll('.toc-link')) : [];
+      const mobileProgressValue = document.getElementById('toc-mobile-progress-value') as SVGCircleElement | null;
       const headingElements = Array.from(headings);
       const observedHeadingIndices = new Set<number>();
       const hasIntersectionObserver = 'IntersectionObserver' in window;
@@ -283,17 +285,32 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         }, candidates[0]);
       }
 
-      function updateIndicatorPosition(activeLink = tocLinks[activeIndex] as HTMLElement | undefined) {
-        if (!tocIndicator || !activeLink) return;
-        const trackRect = tocTrack.getBoundingClientRect();
-        const linkRect = activeLink.getBoundingClientRect();
-        const end = Math.min(
-          Math.max(linkRect.bottom - trackRect.top, 0),
-          tocTrack.clientHeight
-        );
-        // The line grows from the top of the track to the active item instead
-        // of replacing the track with a short active border.
-        tocIndicator.style.height = `${end}px`;
+      function getReadingProgress() {
+        const proseRect = prose.getBoundingClientRect();
+        const readableViewportHeight = Math.max(window.innerHeight - scrollOffset, 1);
+        const readingDistance = proseRect.height - readableViewportHeight;
+
+        if (readingDistance <= 0) {
+          return proseRect.bottom <= window.innerHeight ? 1 : 0;
+        }
+
+        const distanceRead = scrollOffset - proseRect.top;
+        return Math.min(Math.max(distanceRead / readingDistance, 0), 1);
+      }
+
+      function updateReadingProgress() {
+        const progress = getReadingProgress();
+        const serializedProgress = progress.toFixed(4);
+
+        if (tocIndicator) {
+          tocIndicator.style.height = `${progress * 100}%`;
+          tocIndicator.dataset.progress = serializedProgress;
+        }
+
+        if (mobileProgressValue) {
+          mobileProgressValue.style.strokeDashoffset = String(1 - progress);
+          mobileProgressValue.dataset.progress = serializedProgress;
+        }
       }
 
       function setActiveHeading(currentIndex: number, force = false) {
@@ -318,18 +335,31 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         setActiveState(tocLinks);
         setActiveState(mobileLinks);
 
-        // Grow one continuous indicator along the existing straight track.
-        // The track remains the original border color; the accent line covers
-        // the chapters already passed and ends at the current item.
+        // Chapter highlighting remains discrete. The continuous line is
+        // updated separately from the article's actual reading distance.
         const activeLink = tocLinks[currentIndex] as HTMLElement | undefined;
-        updateIndicatorPosition(activeLink);
 
-        // Keep the active desktop item visible without changing the existing
-        // straight border shape or page scroll position.
-        activeLink?.scrollIntoView({
-          block: 'nearest',
-          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-        });
+        // Keep the active desktop item visible by scrolling only the TOC nav.
+        // Element.scrollIntoView() may also move outer scroll containers and
+        // pull the article back upward while the user scrolls the page.
+        if (activeLink && tocNav.clientHeight > 0) {
+          const navRect = tocNav.getBoundingClientRect();
+          const linkRect = activeLink.getBoundingClientRect();
+          let nextScrollTop = tocNav.scrollTop;
+
+          if (linkRect.top < navRect.top) {
+            nextScrollTop += linkRect.top - navRect.top;
+          } else if (linkRect.bottom > navRect.bottom) {
+            nextScrollTop += linkRect.bottom - navRect.bottom;
+          }
+
+          if (nextScrollTop !== tocNav.scrollTop) {
+            tocNav.scrollTo({
+              top: nextScrollTop,
+              behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+          }
+        }
       }
 
       function updateActiveHeading(force = false) {
@@ -385,19 +415,20 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         if (!ticking) {
           requestAnimationFrame(() => {
             updateActiveHeading();
+            updateReadingProgress();
             ticking = false;
           });
           ticking = true;
         }
       });
-      window.addEventListener('resize', () => updateActiveHeading(true));
-      tocNav.addEventListener('scroll', () => {
-        if (activeIndex < 0) return;
-        updateIndicatorPosition();
+      window.addEventListener('resize', () => {
+        updateActiveHeading(true);
+        updateReadingProgress();
       });
 
       // Initial state
       updateActiveHeading();
+      updateReadingProgress();
     }
 
     // Run on page load and after Astro page transitions
