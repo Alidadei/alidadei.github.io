@@ -127,7 +127,7 @@ async function inspectViewport(viewport) {
           samples.push(await sampleAt(expectedProgress));
         }
 
-        const headings = [...prose.querySelectorAll('h2, h3, h4')];
+        const headings = [...prose.querySelectorAll('h2, h3, h4, h5, h6')];
         const lastHeading = headings.at(-1);
         let lastHeadingSample = null;
         if (lastHeading) {

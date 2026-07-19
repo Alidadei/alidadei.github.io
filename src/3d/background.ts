@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { getDaylightRenderProfile } from './daylight-profile';
 
 const container = document.getElementById('scene3d');
 let W = container.clientWidth, H = container.clientHeight;
@@ -38,6 +39,9 @@ const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2); dirLight.position.se
 const fillLight = new THREE.DirectionalLight(0xd4c0f0, 0.4); fillLight.position.set(-200, -100, 200); scene.add(fillLight);
 if (_mobile) { scene.add(new THREE.HemisphereLight(0xfff8f0, 0xe8d8c8, 0.5)); }
 
+let bloomPass: UnrealBloomPass | null = null;
+let outlinePass: ShaderPass | null = null;
+
 // ── Time-of-day brightness sync ──
 function getSunAltitude() {
   const h = new Date().getHours() + new Date().getMinutes() / 60;
@@ -49,15 +53,28 @@ function getSunAltitude() {
 function applyTimeBrightness() {
   const alt = getSunAltitude();
   const day = 0.4 + 0.6 * alt;
+  // The daylight gradient is shared already. Fade the desktop post-processing
+  // into the clearer mobile profile as dawn completes so both viewports show
+  // the same daytime sky without introducing a brightness jump at alt=0.15.
+  const daylightProfile = getDaylightRenderProfile(alt, _mobile);
+  renderer.toneMappingExposure = daylightProfile.exposure;
+
   if (_mobile) {
-    renderer.toneMappingExposure = 0.7 + 1.0 * day;
     dirLight.intensity = 0.5 + 1.2 * day;
     fillLight.intensity = 0.2 + 0.5 * day;
   } else {
-    renderer.toneMappingExposure = 0.6 + 0.8 * day;
     dirLight.intensity = 0.4 + 1.0 * day;
     fillLight.intensity = 0.15 + 0.35 * day;
   }
+
+  if (bloomPass) {
+    bloomPass.strength = daylightProfile.bloomStrength;
+    bloomPass.enabled = bloomPass.strength > 0.001;
+  }
+  if (outlinePass) {
+    outlinePass.uniforms.edgeStrength.value = daylightProfile.edgeStrength;
+  }
+
   const bgC = bgCtx.createLinearGradient(0, 0, 0, 512);
   if (alt < 0.15) {
     bgC.addColorStop(0, lerpColor('#2a2540', '#f5e6d3', alt / 0.15));
@@ -79,8 +96,6 @@ function lerpColor(a, b, t) {
   const bl = Math.round(pa[2] + (pb[2]-pa[2])*t);
   return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${bl.toString(16).padStart(2,'0')}`;
 }
-applyTimeBrightness();
-setInterval(applyTimeBrightness, 60000);
 
 // ── Toon Helper ──
 const toonColors = new Uint8Array([80, 160, 210, 255]);
@@ -282,7 +297,8 @@ const isMobile = window.innerWidth < 768;
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 if (!isMobile) {
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.4, 0.8, 0.75));
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(W, H), 0.4, 0.8, 0.75);
+  composer.addPass(bloomPass);
 }
 const OutlineShader = {
   uniforms: { tDiffuse: { value: null }, resolution: { value: new THREE.Vector2(W, H) }, edgeStrength: { value: isMobile ? 0.15 : 0.35 }, edgeColor: { value: new THREE.Vector3(0.227, 0.184, 0.271) } },
@@ -301,7 +317,11 @@ const OutlineShader = {
       float edge=length(vec2(gx,gy)); float ef=smoothstep(0.05,0.15,edge)*edgeStrength;
       gl_FragColor=vec4(mix(c.rgb,edgeColor,ef),c.a); }`,
 };
-composer.addPass(new ShaderPass(OutlineShader));
+outlinePass = new ShaderPass(OutlineShader);
+composer.addPass(outlinePass);
+
+applyTimeBrightness();
+setInterval(applyTimeBrightness, 60000);
 
 // ── Mouse Drag Orbit ──
 let isDragging = false, prevMX = 0, prevMY = 0;

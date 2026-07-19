@@ -1,6 +1,5 @@
 # 常用快捷命令
 
-项目根目录:R:\Code\MY project\alidadei.github.io
 所有命令都在项目根目录下执行(先 cd 到项目根)。Node 要求 >= 22.12.0。
 文档里的命令都是纯文本,直接双击选中、复制即可。
 
@@ -169,6 +168,8 @@ compress-posts 用法:
 | 命令            | 作用           | 说明                                                         |
 | --------------- | -------------- | ------------------------------------------------------------ |
 | npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景并自动选择可用端口 |
+| npm run sky-preview | 桌面天空全天预览 | 一键启动开发服务器和独立 Microsoft Edge，把首页一整天的天空配色压缩成约 2 分钟循环播放 |
+| npm run check:mobile-overflow | 移动端横向溢出回归 | 自动启动开发服务器和无界面 Microsoft Edge，遍历全站路由并在 320、360、390、430 px 下验证页面、正文和极端宽内容 |
 | npm run build   | 完整构建       | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
 | npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。会自动选择可用端口 |
 | npx kill-port   | 释放端口       | 应明确指定端口，如：  npx kill-port 4321                     |
@@ -177,6 +178,32 @@ dev 和 preview 的区别:
 
 - dev 是开发模式,改文件实时刷新,但缓存/压缩等行为和线上不同。
 - preview 跑的是 build 产物,和 GitHub Pages 线上完全一致。想确认线上效果用 preview。
+
+### 桌面端天空全天预览
+
+用途:把首页从 `00:00` 到 `23:59` 的天空配色压缩成约 2 分钟循环播放，也可以停在任意分钟检查。命令会自动选择可用端口、启动开发服务器、打开独立的 Microsoft Edge 并注入时间轴；不会修改日常 Edge 配置，也不会修改正常网页的时间和显示。
+
+在项目根目录只运行这一条命令:
+
+```powershell
+npm run sky-preview
+```
+
+启动成功后，终端会输出 `[sky-preview] 已就绪` 和一行 JSON。以下字段可用于核对:
+
+- `panel: true`:底部全天预览控制条已经显示。
+- `width: 1440`:当前按桌面端宽度渲染。
+- `frameReady: "complete"`:3D 背景已经加载完成。
+- `time` 与 `frameTime` 相同:首页天空与 3D 背景使用同一个模拟时间。
+
+控制条用法:
+
+- 默认自动播放,一整天约 2 分钟。
+- 拖动滑杆会自动暂停,可精确停在任意分钟。
+- 点「播放/暂停」继续或停止循环。
+- 点「当前时刻」跳到电脑当前时间并暂停。
+
+结束调试:关闭这个独立 Microsoft Edge 窗口，或在终端按 `Ctrl+C`。命令会同时停止开发服务器并清理本次预览使用的临时 Edge 配置目录。
 
 ---
 
@@ -193,6 +220,8 @@ dev 和 preview 的区别:
 | 换网站 favicon | npm run favicon -- <源图> |
 | 换关于页头像 | npm run avatar -- <源图> |
 | 改了 3D 背景代码 | npm run build:3d(或直接 npm run build) |
+| 查看桌面端天空一整天的配色 | npm run sky-preview |
+| 检查所有移动端横向溢出 | npm run check:mobile-overflow |
 | 提交推送前最终验证 | npm run build(必须全绿才能部署) |
 
 ---
@@ -220,7 +249,7 @@ dev 和 preview 的区别:
 
 启动 dev 或 preview 后,用浏览器内置的设备模拟即可调试手机端效果,不用真机:
 
-- Chrome / Edge:打开页面 → 按 F12 开发者工具 → 按 Ctrl+Shift+M(或点工具栏左上角的「设备」图标)切换到设备模式 → 顶部选手机型号(如 iPhone 12、Pixel 5)→ 刷新页面查看。
+- Microsoft Edge:打开页面 → 按 F12 开发者工具 → 按 Ctrl+Shift+M(或点工具栏左上角的「设备」图标)切换到设备模式 → 顶部选手机型号(如 iPhone 12、Pixel 5)→ 刷新页面查看。
 - 可调设备型号、屏幕尺寸、DPR,横竖屏切换。
 - 模拟触摸交互(无 hover),适合验证手机端按钮/菜单等只在触摸设备表现不同的样式。
 

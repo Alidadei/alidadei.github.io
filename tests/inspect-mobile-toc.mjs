@@ -106,7 +106,7 @@ async function inspectPage(path, width) {
         const layoutContent = article || document.querySelector('main');
         const prose = document.querySelector('.prose');
         const progressRing = document.getElementById('toc-mobile-progress');
-        const headingCount = prose?.querySelectorAll('h2, h3, h4').length || 0;
+        const headingCount = prose?.querySelectorAll('h2, h3, h4, h5, h6').length || 0;
         const buttonRect = button?.getBoundingClientRect();
         const progressRingRect = progressRing?.getBoundingClientRect();
         const articleStyle = article ? getComputedStyle(article) : null;
@@ -164,6 +164,28 @@ async function inspectPage(path, width) {
           })
           .sort((a, b) => b.scrollWidth - a.scrollWidth)
           .slice(0, 10);
+        const inlineMathElements = [...document.querySelectorAll(
+          '.prose :not(.katex-display) > .katex',
+        )];
+        const inlineMath = {
+          count: inlineMathElements.length,
+          overflowing: inlineMathElements.filter(
+            element => element.scrollWidth > element.clientWidth,
+          ).length,
+          samples: inlineMathElements.slice(0, 12).map(element => {
+            const style = getComputedStyle(element);
+            const scrollbarStyle = getComputedStyle(element, '::-webkit-scrollbar');
+            return {
+              text: element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 40) || '',
+              clientWidth: element.clientWidth,
+              scrollWidth: element.scrollWidth,
+              overflowX: style.overflowX,
+              scrollbarWidth: style.scrollbarWidth,
+              webkitScrollbarHeight: scrollbarStyle.height,
+              webkitScrollbarDisplay: scrollbarStyle.display,
+            };
+          }),
+        };
         const wideNonTableElements = [...document.body.querySelectorAll('*')]
           .filter(element => !element.closest('table') && !element.closest('#toc-mobile-panel'))
           .map(element => {
@@ -334,6 +356,7 @@ async function inspectPage(path, width) {
             clientWidth: prose.clientWidth,
             scrollWidth: prose.scrollWidth,
           },
+          inlineMath,
           ...(${includeDetails} ? { proseOverflowers, contentContainers, mathBlocks, wideNonTableElements, overflowers } : {}),
         };
       })()`,
@@ -473,6 +496,17 @@ const results = report.map((entry) => {
       errors.push('mobile menu did not close after an outside click');
     }
   }
+  if (entry.inlineMath?.count > 0) {
+    const visibleScrollbar = entry.inlineMath.samples.find(sample =>
+      sample.scrollbarWidth !== 'none'
+      || (sample.webkitScrollbarDisplay !== 'none' && sample.webkitScrollbarHeight !== '0px')
+    );
+    if (visibleScrollbar) {
+      errors.push(
+        `inline math exposes a scrollbar (${visibleScrollbar.scrollbarWidth}, ${visibleScrollbar.webkitScrollbarHeight})`,
+      );
+    }
+  }
   return {
     path: entry.path,
     width,
@@ -480,6 +514,7 @@ const results = report.map((entry) => {
     bodyScrollWidth: viewport.bodyScrollWidth,
     buttonRight: entry.button?.right,
     panelRight: entry.panel?.right,
+    inlineMath: entry.inlineMath,
     mobileHeaderLayer: entry.mobileHeaderLayer,
     pass: errors.length === 0,
     errors,

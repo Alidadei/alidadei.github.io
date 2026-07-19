@@ -136,8 +136,8 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       const tocTrack = document.getElementById('toc-track');
       if (!prose || !tocNav || !tocSidebar || !tocTrack) return;
 
-      // Find all headings h2-h4 in prose
-      const headings = prose.querySelectorAll('h2, h3, h4');
+      // H1 comes from frontmatter; article content supports H2 through H6.
+      const headings = prose.querySelectorAll('h2, h3, h4, h5, h6');
       if (headings.length === 0) {
         tocSidebar.style.display = 'none';
         document.getElementById('toc-mobile-btn')?.style.setProperty('display', 'none');
@@ -193,6 +193,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           cls += ' pl-3 text-[0.8rem]';
         } else if (level === 4) {
           cls += ' pl-6 text-[0.75rem] opacity-80';
+        } else if (level === 5) {
+          cls += ' pl-9 text-[0.72rem] opacity-75';
+        } else if (level === 6) {
+          cls += ' pl-12 text-[0.7rem] opacity-70';
         }
         link.className = cls;
 

@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && node scripts/run-astro.mjs dev",
-    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build && node scripts/bump-sw-version.mjs",
+    "sky-preview": "node scripts/sky-preview.mjs",
+    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build && node tests/check-rendered-markdown.mjs && node scripts/bump-sw-version.mjs",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",
@@ -15,6 +16,8 @@
     "favicon": "node scripts/set-favicon.mjs",
     "avatar": "node scripts/set-avatar.mjs",
     "compress-posts": "node scripts/compress-post-images.mjs",
+    "check:markdown": "node --test tests/post-heading-levels.test.mjs tests/remark-cjk-friendly-strong.test.mjs tests/shiki-text-diagram.test.mjs && node tests/check-rendered-markdown.mjs",
+    "check:mobile-overflow": "node tests/mobile-overflow-regression.mjs",
     "preview": "node scripts/run-astro.mjs preview",
     "astro": "astro"
   },

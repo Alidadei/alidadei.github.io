@@ -1,0 +1,154 @@
+---
+name: 技术博客排版规范
+description: 适配本项目(Astro + KaTeX)的 Markdown 技术博客排版规范,从草稿到可发布
+type: reference
+---
+
+# 技术博客排版规范(适配本项目)
+
+> 本规范严格对应项目实际:`src/content.config.ts` 的 posts schema、`src/data/categories.json` 分类树、`scripts/cms.mjs` 的 frontmatter 解析逻辑、PostLayout 的标题渲染规则。违反会导致 cms 工具失效或构建出错。
+
+## 核心原则
+
+内容一字不改,只调整格式、纠正错别字。
+
+## 发布前准备
+
+### 0. Frontmatter(必须,且必须是文件最开头)
+
+Astro content collection 要求每篇博客必须以 frontmatter 开头(位于两个 `---` 之间),否则不被识别。本项目标准格式:
+
+```yaml
+---
+title: '文章标题'
+date: 2026-04-23
+tags:
+  - 标签1
+  - 标签2
+categories: ['note', 'ai']
+knowledge: ['ai/nn-math']
+maturity: 基础
+lang: zh
+---
+```
+
+**格式铁律(务必遵守):**
+- **categories 必须写成单行内联数组**(上例那样),**不要**写成 YAML 多行块。原因:`scripts/cms.mjs` 的分类解析只认 `categories: [...]` 单行格式,写成多行会让 cms 工具识别不到分类。
+- **tags 必须写成 YAML 多行块**(`tags:` 换行后每行 `  - 标签`,两空格缩进),和上面一致。
+- 字符串统一用**单引号**,日期用裸日期(如 `2026-04-23`)。
+- frontmatter 必须是文件第一行,前面不能有任何内容。
+
+**字段说明:**
+| 字段 | 必填 | 类型 | 说明 |
+|------|------|------|------|
+| title | 是 | string | 文章标题,自动渲染为页面 H1 |
+| date | 是 | date | 发布日期(裸日期 YYYY-MM-DD) |
+| tags | 否(默认 []) | string[] | 标签,自由命名,写成多行块 |
+| categories | 否(默认回退 note) | string[] | 分类路径,**值必须是 categories.json 树里存在的 slug**;第 0 段(note/practice)= origin 产出方式,见下 |
+| knowledge | 否(默认 []) | string[] | 知识主题路径(单行内联数组),**值必须是 knowledge.json 里存在的 slug 路径**(构建时强校验),如 `['ai/llm/rl']`。可用路径见下,设计 rationale 见 `知识架构分类.md` |
+| maturity | 否 | 基础 \| 当下热点 \| 未来展望 | 时效定位,裸值;锚在 date 上(设计 rationale 见 `知识架构分类.md`) |
+| lang | 否(默认 zh) | zh \| en | 语言 |
+| description | 否 | string | 摘要,显示在列表页 |
+| image | 否 | string | 封面图路径 |
+| updated | 否 | date | 更新日期 |
+| draft | 否(默认 false) | boolean | 草稿,true 则不发布 |
+
+**categories 取值约束(重要):**
+- categories 是一条**从根到叶的路径**,每段都是 `src/data/categories.json` 里节点的 `slug`。
+- 当前可用 slug(对应 URL `/zh/blog/category/<slug>/`):
+  - 顶级:`note`(学习笔记)、`practice`(个人调研&实践)、`insights`(个人感悟)
+  - note 下:`ai`(AI)→ `transformer`(Transformer);`embedded`(嵌入式开发);`data-structure`(数据结构与算法)
+- 例:一篇讲 Transformer 的文章 → `categories: ['note', 'ai', 'transformer']`(三级都填,文章会自动出现在 note、note/ai、note/ai/transformer 三个分类页)。
+- 填了树里不存在的 slug → 文章从分类页消失(悬空)。拿不准就用 `npm run cms` 查/改。
+- slug 也是网址段,改 slug 会换 URL(用 cms 的「重命名 slug」可自动同步文章并生成旧链接重定向)。
+
+**knowledge / maturity(知识三轴):**
+- `knowledge: ['ai/llm/rl']` 单行内联数组,每项是 `knowledge.json` 主题树里的 slug 路径;**构建时强校验**,不存在会构建失败。当前可用路径:
+  - `ai/llm/rl`(强化学习)、`ai/llm/agent`(Agent)、`ai/nn-math`(神经网络数学)
+  - `programming/data-structure`(数据结构)、`programming/git`
+  - `electronics/embedded`(嵌入式)
+
+  新增/改名节点改 `knowledge.json`(slug 稳定、label 可改);新文章:先写好内容 md(无 frontmatter),再 `npm run new-post <文件>` 交互式补 frontmatter。
+- `maturity: 基础`(裸值,三选一:`基础` / `当下热点` / `未来展望`),锚在 `date` 上。
+- `categories[0]`(`note`/`practice`)即 origin 产出方式;与 categories 其余段(legacy 主题,现由 knowledge 承担)正交。
+- 三轴的设计 rationale(为何正交、maturity 为何独立防腐烂、沉淀机制)见 `知识架构分类.md`。
+
+**date 日期确定规则**(按优先级从高到低):
+1. 原文已明确标注的日期(如"生成日期:2026-01-23")
+2. 原文内容可推断的日期(如文中代码输出的运行日期)
+3. 源文件在本地磁盘上的最后修改日期(用 `stat` 命令读取)
+4. 以上均无 → 用转换当天的日期
+
+## 常见问题与规则
+
+### 1. 公式(本项目装了 remark-math + rehype-katex)
+
+- 行内 `$...$` 和块级 `$$...$$` **均可直接使用**,会被 KaTeX 渲染。
+- **下标必须用花括号**:`x_{group}` 而不是 `x_group`(后者 KaTeX 只把首个字符当下标,渲染成 x_g + "roup")。多字符下标、上标一律 `_{...}` / `^{...}`。
+- **希腊字母用 LaTeX 命令**:`\mu`、`\sigma`、`\epsilon`、`\pi`,不要在公式里裸写 Unicode 的 μ σ ε(KaTeX math 模式对裸 Unicode 支持不可靠)。正文文字(非公式)里用 Unicode 没问题。
+- **多行公式用 `aligned` 或 `\\` 换行**,不要把两行公式裸堆在一个 `$$` 块里。
+- **函数名用 `\mathrm` 或命令**:如 `\max`、`\mathrm{clip}`,避免被当变量斜体。
+
+### 2. 清除残缺的 Markdown 标记
+
+从富文本粘贴常产生乱码,典型:
+- `*T*`、`τ*τ*`、`*z*1` 等错乱斜体 → 替换为纯文本
+- `z1,z2,...,zn*z*1,*z*2,...,*z**n*` 等重复乱码 → 去重后用 Unicode 或纯文本表示
+
+### 3. 移除孤立标点
+
+列表或标题后单独占一行的冒号 `:` 是格式残留,直接删除。
+
+### 4. 标题层级(本项目特有,别搞反)
+
+- **正文的第一个标题必须从 `##`(h2)开始**,逐级递减(`##` → `###` → `####`)。
+- **禁止在正文里写 `#`(h1)**——因为 `title` 字段已经渲染为页面 H1 了,正文再写 `#` 会出现两个 H1,破坏标题结构。
+- 即:页面 H1 来自 frontmatter 的 title,正文从 H2 起。
+- 禁止给标题编号！标题用纯文字！
+
+### 5. 水平分割线
+
+统一用三横线 `---`,前后各空一行。
+
+### 6. 列表格式
+
+- 列表项之间不留多余空行
+- 嵌套列表缩进一致(与父项对齐)
+- 列表标题与内容在同一行,不分行
+
+### 7. 错别字
+
+重点检查技术术语拼写(如 temperature 误写成 tempreture 是常见错误)。
+
+### 8. 正文图片引用
+
+- **物理位置**:统一放入 `public/images/posts/` 目录。
+- **Markdown 引用**:从文章文件所在目录写相对路径,例如文章位于 `src/content/posts/zh/` 时使用
+  `![描述](../../../../public/images/posts/xxx.png)`。
+  - Typora 会按相对路径读取本地文件。
+  - Astro 构建前会自动把这个路径转换成 `/images/posts/xxx.png`,线上地址仍然从站点根开始。
+- **HTML(需缩放)**:如果必须使用 HTML,同样写文章目录相对路径,例如
+  `<img src="../../../../public/images/posts/xxx.png" alt="描述" style="zoom:50%;" />`;
+  构建时适配器会把 `src` 转为线上路径。
+- **不要手写** `/images/posts/xxx.png` 作为文章源文件的唯一引用——它在线上正常,但 Typora 离线打开文章时找不到磁盘根目录下的 `/images`。
+- 例:文件物理位置 `public/images/posts/id-card.png` → 源 Markdown 引用为 `../../../../public/images/posts/id-card.png` → 线上输出为 `/images/posts/id-card.png`。
+
+### 9. 文本流程图代码块(移动端兼容)
+
+- 文本流程图统一使用 `text`、`txt` 或 `plaintext` 围栏代码块,推荐使用 `text`。
+- 项目在每次 Astro 构建时会自动识别其中的流程图:包含分支/框线字符(如 `├`、`└`、`│`、`─`)或至少两个箭头的文本块会被标记为流程图。
+
+## 检查清单
+
+1. frontmatter 是否在文件最开头,格式是否标准(title/date 必填;**categories、knowledge 单行内联数组、tags 多行块、maturity 裸值**)
+2. categories 的每个 slug 是否都在 `categories.json` 树里存在(不存在就是悬空)
+3. knowledge 每项是否都在 `knowledge.json` 树里存在、maturity 是否合法(基础/当下热点/未来展望)——构建时会校验报错
+4. 公式下标是否用了 `_{}`、希腊字母是否用了 LaTeX 命令(检查裸 `_xxx` 和裸 μ/σ/π)
+5. 是否有残缺斜体标记(搜索 `*`)
+6. 是否有孤立冒号行
+7. **正文标题是否从 `##` 开始(不是 `#`)、层级是否逐级递减**
+8. 分割线是否统一为 `---`
+9. 列表空行是否清理
+10. 错别字是否纠正
+11. 文本流程图是否使用 `text` 围栏,且没有为手机端手动拆断连线
+12. 发布前 `npm run build` 是否全绿
