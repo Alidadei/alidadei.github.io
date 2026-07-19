@@ -2,6 +2,7 @@ const cdpBase = process.env.CDP_URL || 'http://127.0.0.1:9223';
 const baseUrl = process.env.TOC_BASE_URL || 'http://127.0.0.1:4173';
 
 const defaultPages = [
+  '/zh/',
   '/zh/blog/llm-post-training-basics-and-jargon/',
   '/zh/blog/claude-code-dynamic-workflows/',
 ];
@@ -98,10 +99,16 @@ async function inspectPage(path, width) {
       expression: `(async () => {
         const button = document.getElementById('toc-mobile-btn');
         const panel = document.getElementById('toc-mobile-panel');
+        const mobileMenuButton = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const siteHeader = mobileMenuButton?.closest('header');
         const article = document.querySelector('article');
+        const layoutContent = article || document.querySelector('main');
         const prose = document.querySelector('.prose');
+        const progressRing = document.getElementById('toc-mobile-progress');
         const headingCount = prose?.querySelectorAll('h2, h3, h4').length || 0;
         const buttonRect = button?.getBoundingClientRect();
+        const progressRingRect = progressRing?.getBoundingClientRect();
         const articleStyle = article ? getComputedStyle(article) : null;
         const visualWidth = window.visualViewport?.width || window.innerWidth;
         const proseRect = prose?.getBoundingClientRect();
@@ -201,6 +208,61 @@ async function inspectPage(path, width) {
           await new Promise(resolve => setTimeout(resolve, 400));
         }
         const panelRect = panel?.getBoundingClientRect();
+        const layoutContentTopBeforeMenu = layoutContent?.getBoundingClientRect().top;
+        const mobileMenuButtonRect = mobileMenuButton?.getBoundingClientRect();
+        const mobileMenuButtonCenterElement = mobileMenuButtonRect
+          ? document.elementFromPoint(
+            mobileMenuButtonRect.left + mobileMenuButtonRect.width / 2,
+            mobileMenuButtonRect.top + mobileMenuButtonRect.height / 2,
+          )
+          : null;
+        const mobileMenuButtonTopElement = mobileMenuButtonCenterElement
+          ?.closest('#mobile-menu-btn')?.id || null;
+        const mobileMenuButtonCenterTarget = mobileMenuButtonCenterElement?.id
+          || mobileMenuButtonCenterElement?.tagName.toLowerCase()
+          || null;
+
+        mobileMenuButtonCenterElement?.click();
+        await new Promise(resolve => setTimeout(resolve, 350));
+        const firstMobileMenuLink = mobileMenu?.querySelector('a');
+        const firstMobileMenuLinkRect = firstMobileMenuLink?.getBoundingClientRect();
+        const mobileMenuTextColor = firstMobileMenuLink
+          ? getComputedStyle(firstMobileMenuLink).color
+          : null;
+        const layoutContentTopAfterMenu = layoutContent?.getBoundingClientRect().top;
+        const mobileMenuTopElement = firstMobileMenuLinkRect
+          ? document.elementFromPoint(
+            firstMobileMenuLinkRect.left + firstMobileMenuLinkRect.width / 2,
+            firstMobileMenuLinkRect.top + firstMobileMenuLinkRect.height / 2,
+          )?.closest('#mobile-menu')?.id || null
+          : null;
+
+        mobileMenuButton?.click();
+        document.getElementById('toc-mobile-close')?.click();
+        await new Promise(resolve => setTimeout(resolve, 400));
+        const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        const targetScrollY = Math.min(1200, maxScrollY);
+        window.scrollTo(0, targetScrollY);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        const scrollYBeforeMenu = window.scrollY;
+        const scrolledHeaderTop = siteHeader?.getBoundingClientRect().top;
+
+        mobileMenuButton?.click();
+        await new Promise(resolve => setTimeout(resolve, 350));
+        const scrolledMenuRect = mobileMenu?.getBoundingClientRect();
+        const scrolledFirstLinkRect = firstMobileMenuLink?.getBoundingClientRect();
+        const scrolledMenuTopElement = scrolledFirstLinkRect
+          ? document.elementFromPoint(
+            scrolledFirstLinkRect.left + scrolledFirstLinkRect.width / 2,
+            scrolledFirstLinkRect.top + scrolledFirstLinkRect.height / 2,
+          )?.closest('#mobile-menu')?.id || null
+          : null;
+
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await new Promise(resolve => setTimeout(resolve, 350));
+        const outsideClickClosed = Number.parseFloat(mobileMenu?.style.maxHeight || '') === 0
+          && mobileMenu.style.opacity === '0'
+          && mobileMenuButton?.getAttribute('aria-expanded') === 'false';
 
         return {
           requestedWidth: ${width},
@@ -217,17 +279,51 @@ async function inspectPage(path, width) {
           button: buttonRect && {
             left: buttonRect.left,
             right: buttonRect.right,
+            top: buttonRect.top,
+            bottom: buttonRect.bottom,
             width: buttonRect.width,
+            height: buttonRect.height,
             expectedRight: visualWidth - 12,
             display: getComputedStyle(button).display,
             position: getComputedStyle(button).position,
             offsetParent: button.offsetParent?.tagName || null,
+          },
+          progressRing: progressRingRect && {
+            left: progressRingRect.left,
+            right: progressRingRect.right,
+            top: progressRingRect.top,
+            bottom: progressRingRect.bottom,
+            width: progressRingRect.width,
+            height: progressRingRect.height,
           },
           panel: panelRect && {
             left: panelRect.left,
             right: panelRect.right,
             width: panelRect.width,
             transform: getComputedStyle(panel).transform,
+          },
+          mobileHeaderLayer: siteHeader && {
+            headerZIndex: Number.parseInt(getComputedStyle(siteHeader).zIndex, 10),
+            tocPanelZIndex: panel ? Number.parseInt(getComputedStyle(panel).zIndex, 10) : null,
+            buttonDisplay: mobileMenuButton ? getComputedStyle(mobileMenuButton).display : null,
+            buttonColor: mobileMenuButton ? getComputedStyle(mobileMenuButton).color : null,
+            buttonTopElement: mobileMenuButtonTopElement,
+            buttonCenterTarget: mobileMenuButtonCenterTarget,
+            menuTopElement: mobileMenuTopElement,
+            menuTextColor: mobileMenuTextColor,
+            menuPosition: mobileMenu ? getComputedStyle(mobileMenu).position : null,
+            menuMaxHeight: mobileMenu ? getComputedStyle(mobileMenu).maxHeight : null,
+            contentTopBeforeMenu: layoutContentTopBeforeMenu,
+            contentTopAfterMenu: layoutContentTopAfterMenu,
+            scrolledMenu: {
+              targetScrollY,
+              scrollYBeforeMenu,
+              scrollYAfterMenu: window.scrollY,
+              headerTop: scrolledHeaderTop,
+              menuTop: scrolledMenuRect?.top,
+              menuTopElement: scrolledMenuTopElement,
+            },
+            outsideClickClosed,
           },
           article: article && {
             width: article.getBoundingClientRect().width,
@@ -290,7 +386,7 @@ const results = report.map((entry) => {
   if (!near(viewport.rootScrollWidth, width)) errors.push(`root scroll width is ${viewport.rootScrollWidth}px`);
   if (viewport.bodyScrollWidth > width + 0.75) errors.push(`body scroll width is ${viewport.bodyScrollWidth}px`);
   if (entry.headingCount === 0) {
-    if (!entry.button || entry.button.display !== 'none') {
+    if (entry.button && entry.button.display !== 'none') {
       errors.push('TOC button is visible even though the article has no TOC headings');
     }
   } else {
@@ -298,12 +394,83 @@ const results = report.map((entry) => {
     else {
       if (entry.button.display === 'none') errors.push('TOC button is hidden');
       if (!near(entry.button.right, width - 12)) errors.push(`TOC button right edge is ${entry.button.right}px`);
-      if (!near(entry.button.width, 40)) errors.push(`TOC button width is ${entry.button.width}px`);
+      if (!near(entry.button.width, 32)) errors.push(`TOC button width is ${entry.button.width}px`);
+    }
+    if (!entry.progressRing) errors.push('TOC progress ring is missing');
+    else if (!near(entry.progressRing.width, 36) || !near(entry.progressRing.height, 36)) {
+      errors.push(`TOC progress ring is ${entry.progressRing.width}×${entry.progressRing.height}px`);
+    } else {
+      const buttonCenterX = (entry.button.left + entry.button.right) / 2;
+      const buttonCenterY = (entry.button.top + entry.button.bottom) / 2;
+      const ringCenterX = (entry.progressRing.left + entry.progressRing.right) / 2;
+      const ringCenterY = (entry.progressRing.top + entry.progressRing.bottom) / 2;
+      if (!near(ringCenterX, buttonCenterX, 0.1) || !near(ringCenterY, buttonCenterY, 0.1)) {
+        errors.push(`TOC progress ring center is (${ringCenterX}, ${ringCenterY}), button center is (${buttonCenterX}, ${buttonCenterY})`);
+      }
     }
     if (!entry.panel) errors.push('TOC panel is missing');
     else {
       if (!near(entry.panel.right, width)) errors.push(`open TOC panel right edge is ${entry.panel.right}px`);
       if (entry.panel.left < -0.75) errors.push(`open TOC panel starts at ${entry.panel.left}px`);
+    }
+  }
+  if (!entry.mobileHeaderLayer) errors.push('mobile site header is missing');
+  else if (entry.mobileHeaderLayer.buttonDisplay !== 'none') {
+    if (entry.headingCount > 0) {
+      if (!(entry.mobileHeaderLayer.headerZIndex > entry.mobileHeaderLayer.tocPanelZIndex)) {
+        errors.push(
+          `mobile header z-index ${entry.mobileHeaderLayer.headerZIndex} does not exceed TOC panel z-index ${entry.mobileHeaderLayer.tocPanelZIndex}`,
+        );
+      }
+    }
+    if (entry.mobileHeaderLayer.buttonTopElement !== 'mobile-menu-btn') {
+      errors.push('hamburger button is covered by another layer');
+    }
+    if (entry.mobileHeaderLayer.buttonCenterTarget !== 'mobile-menu-btn') {
+      errors.push(`hamburger button center targets ${entry.mobileHeaderLayer.buttonCenterTarget}`);
+    }
+    if (entry.mobileHeaderLayer.menuTopElement !== 'mobile-menu') {
+      errors.push('expanded mobile menu is covered by another layer');
+    }
+    if (entry.mobileHeaderLayer.buttonColor !== 'rgb(141, 110, 99)') {
+      errors.push(`hamburger button color is ${entry.mobileHeaderLayer.buttonColor}`);
+    }
+    if (entry.mobileHeaderLayer.menuTextColor !== 'rgb(141, 110, 99)') {
+      errors.push(`mobile menu text color is ${entry.mobileHeaderLayer.menuTextColor}`);
+    }
+    if (entry.mobileHeaderLayer.menuPosition !== 'fixed') {
+      errors.push(`expanded mobile menu position is ${entry.mobileHeaderLayer.menuPosition}`);
+    }
+    if (!near(
+      entry.mobileHeaderLayer.contentTopAfterMenu,
+      entry.mobileHeaderLayer.contentTopBeforeMenu,
+    )) {
+      errors.push(
+        `page content moved from ${entry.mobileHeaderLayer.contentTopBeforeMenu}px to ${entry.mobileHeaderLayer.contentTopAfterMenu}px when the mobile menu opened`,
+      );
+    }
+    const scrolledMenu = entry.mobileHeaderLayer.scrolledMenu;
+    if (scrolledMenu.targetScrollY > 0) {
+      if (!near(scrolledMenu.scrollYBeforeMenu, scrolledMenu.targetScrollY)) {
+        errors.push(`page only scrolled to ${scrolledMenu.scrollYBeforeMenu}px`);
+      }
+      if (!near(scrolledMenu.scrollYAfterMenu, scrolledMenu.scrollYBeforeMenu)) {
+        errors.push(
+          `page scroll moved from ${scrolledMenu.scrollYBeforeMenu}px to ${scrolledMenu.scrollYAfterMenu}px when the mobile menu opened`,
+        );
+      }
+      if (!near(scrolledMenu.headerTop, 0)) {
+        errors.push(`scrolled mobile header top is ${scrolledMenu.headerTop}px`);
+      }
+      if (!near(scrolledMenu.menuTop, 64)) {
+        errors.push(`scrolled mobile menu top is ${scrolledMenu.menuTop}px`);
+      }
+      if (scrolledMenu.menuTopElement !== 'mobile-menu') {
+        errors.push('scrolled mobile menu is outside the visible top layer');
+      }
+    }
+    if (!entry.mobileHeaderLayer.outsideClickClosed) {
+      errors.push('mobile menu did not close after an outside click');
     }
   }
   return {
@@ -313,6 +480,7 @@ const results = report.map((entry) => {
     bodyScrollWidth: viewport.bodyScrollWidth,
     buttonRight: entry.button?.right,
     panelRight: entry.panel?.right,
+    mobileHeaderLayer: entry.mobileHeaderLayer,
     pass: errors.length === 0,
     errors,
     ...(includeDetails ? { details: entry } : {}),

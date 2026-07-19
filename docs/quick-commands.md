@@ -25,6 +25,13 @@ public\images
 博客正文图片仍放在 `public\images\posts`。文章 Markdown 使用相对路径
 `../../../../public/images/posts/xxx.png`，这样 Typora 可以本地预览；Astro 构建时会自动转换为线上路径 `/images/posts/xxx.png`。
 
+## 图注
+
+<figure style="text-align: center;">
+  <img src=" " style="width: 60%; max-width: 360px; margin: 1.5em auto 0.5em;" />
+  <figcaption style="font-size: 0.9em; color: #777;"> 这是图注 </figcaption>
+</figure>
+
 ## 其他内容地址
 
 维护网站正文与配置时改这些源文件(都是源,不是构建产物):

@@ -10,8 +10,8 @@ const altUrl = getSafeAlternateUrl(Astro.url);
 const switchLabel = getUI(lang, 'lang.switch');
 ---
 
-<header class="sticky top-0 z-50 backdrop-blur-sm bg-transparent">
-  <div class="flex items-center justify-between h-16 px-6 sm:px-8 lg:px-12">
+<header class="sticky top-0 z-[60] md:z-50 bg-transparent">
+  <div class="flex items-center justify-between h-16 px-6 sm:px-8 lg:px-12 bg-transparent backdrop-blur-sm">
       <!-- Logo -->
       <a href={`/${lang}/`} class="logo-text text-2xl font-bold transition-colors inline-flex items-center gap-4">
         {siteConfig.name}
@@ -49,27 +49,29 @@ const switchLabel = getUI(lang, 'lang.switch');
       <!-- Mobile menu button -->
       <button
         id="mobile-menu-btn"
-        class="md:hidden p-2.5 rounded-md text-text-secondary hover:bg-bg-secondary"
+        class="md:hidden relative z-10 p-2.5 rounded-md text-[#8D6E63] hover:bg-bg-secondary touch-manipulation"
         aria-label="Toggle menu"
+        aria-controls="mobile-menu"
+        aria-expanded="false"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
     </div>
 
     <!-- Mobile Navigation -->
-    <nav id="mobile-menu" class="md:hidden overflow-hidden transition-all duration-300 ease-in-out px-6 sm:px-8 lg:px-12" style="max-height: 0; opacity: 0;">
+    <nav id="mobile-menu" class="md:hidden fixed inset-x-0 top-16 z-20 overflow-hidden transition-all duration-300 ease-in-out px-6 sm:px-8 lg:px-12 bg-transparent backdrop-blur-sm" style="max-height: 0; opacity: 0;">
       {navItems.map((item) => {
         const isActive = Astro.url.pathname.replace(/\/$/, '') === item.href.replace(/\/$/, '');
         return (
           <a
             href={item.href}
             class:list={[
-              'block px-3 py-3 text-base font-bold rounded-md transition-colors',
+              'block px-3 py-3 text-base font-bold rounded-md text-[#8D6E63] transition-opacity',
               isActive
-                ? 'text-accent font-bold'
-                : 'text-text-muted hover:text-text-secondary',
+                ? 'font-bold'
+                : 'hover:opacity-80',
             ]}
           >
             {item.label}
@@ -78,7 +80,7 @@ const switchLabel = getUI(lang, 'lang.switch');
       })}
       <a
         href={altUrl}
-        class="block px-3 py-3 text-base font-semibold text-text-muted hover:text-accent transition-colors"
+        class="block px-3 py-3 text-base font-semibold text-[#8D6E63] hover:opacity-80 transition-opacity"
       >
         {switchLabel}
       </a>
@@ -88,23 +90,27 @@ const switchLabel = getUI(lang, 'lang.switch');
 <script>
   const btn = document.getElementById('mobile-menu-btn');
   const menu = document.getElementById('mobile-menu');
-  const hamburgerSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
-  const closeSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+  const hamburgerSVG = `<svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
+  const closeSVG = `<svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
   let menuOpen = false;
 
   function closeMenu() {
     menuOpen = false;
     if (menu) { menu.style.maxHeight = '0'; menu.style.opacity = '0'; }
-    document.body.style.overflow = '';
-    if (btn) btn.innerHTML = hamburgerSVG;
+    if (btn) {
+      btn.innerHTML = hamburgerSVG;
+      btn.setAttribute('aria-expanded', 'false');
+    }
   }
 
   btn?.addEventListener('click', () => {
     menuOpen = !menuOpen;
     if (menuOpen) {
       if (menu) { menu.style.maxHeight = '300px'; menu.style.opacity = '1'; }
-      document.body.style.overflow = 'hidden';
-      if (btn) btn.innerHTML = closeSVG;
+      if (btn) {
+        btn.innerHTML = closeSVG;
+        btn.setAttribute('aria-expanded', 'true');
+      }
     } else {
       closeMenu();
     }
@@ -113,6 +119,13 @@ const switchLabel = getUI(lang, 'lang.switch');
   // Close menu when clicking nav links
   menu?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', closeMenu);
+  });
+
+  // Close the mobile menu when clicking anywhere outside it.
+  document.addEventListener('click', (event) => {
+    if (!menuOpen || !(event.target instanceof Node)) return;
+    if (btn?.contains(event.target) || menu?.contains(event.target)) return;
+    closeMenu();
   });
 </script>
 

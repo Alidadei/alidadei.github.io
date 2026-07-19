@@ -145,6 +145,7 @@ async function inspectViewport(viewport) {
 
         const buttonRect = button.getBoundingClientRect();
         const ringRect = ring.getBoundingClientRect();
+        const ringValueStyle = getComputedStyle(ringValue);
         return {
           viewport: { width: window.innerWidth, height: window.innerHeight },
           readingStart,
@@ -156,6 +157,12 @@ async function inspectViewport(viewport) {
             buttonDisplay: getComputedStyle(button).display,
             button: { left: buttonRect.left, right: buttonRect.right, top: buttonRect.top, bottom: buttonRect.bottom },
             ring: { left: ringRect.left, right: ringRect.right, top: ringRect.top, bottom: ringRect.bottom },
+            ringStroke: {
+              width: ringValueStyle.strokeWidth,
+              linecap: ringValueStyle.strokeLinecap,
+              filter: ringValueStyle.filter,
+              transitionDuration: ringValueStyle.transitionDuration,
+            },
           },
         };
       })()`,
@@ -207,10 +214,23 @@ for (const viewport of viewports) {
       }
 
       if (viewport.name === 'mobile') {
-        const { button, ring, buttonDisplay } = details.mobileGeometry;
+        const { button, ring, ringStroke, buttonDisplay } = details.mobileGeometry;
         if (buttonDisplay === 'none') errors.push('mobile TOC button is hidden');
         if (!(ring.left < button.left && ring.right > button.right && ring.top < button.top && ring.bottom > button.bottom)) {
           errors.push('mobile progress ring does not surround the TOC button');
+        }
+        const buttonCenterX = (button.left + button.right) / 2;
+        const buttonCenterY = (button.top + button.bottom) / 2;
+        const ringCenterX = (ring.left + ring.right) / 2;
+        const ringCenterY = (ring.top + ring.bottom) / 2;
+        if (!near(ringCenterX, buttonCenterX, 0.1) || !near(ringCenterY, buttonCenterY, 0.1)) {
+          errors.push(`mobile progress ring center is (${ringCenterX}, ${ringCenterY}), button center is (${buttonCenterX}, ${buttonCenterY})`);
+        }
+        if (ringStroke.width !== '1px') errors.push(`mobile progress stroke width is ${ringStroke.width}`);
+        if (ringStroke.linecap !== 'butt') errors.push(`mobile progress stroke linecap is ${ringStroke.linecap}`);
+        if (ringStroke.filter !== 'none') errors.push(`mobile progress stroke filter is ${ringStroke.filter}`);
+        if (ringStroke.transitionDuration !== '0s') {
+          errors.push(`mobile progress transition duration is ${ringStroke.transitionDuration}`);
         }
       }
     }

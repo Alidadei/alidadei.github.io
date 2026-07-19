@@ -397,32 +397,23 @@ code {
 /* TOC sidebar styles */
 #toc-mobile-progress {
   position: absolute;
-  inset: -4px;
-  width: 48px;
-  height: 48px;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 36px;
   overflow: visible;
   pointer-events: none;
-  transform: rotate(-90deg);
+  transform: translate(-50%, -50%) rotate(-90deg);
   z-index: 0;
 }
-#toc-mobile-progress-track,
 #toc-mobile-progress-value {
   fill: none;
   vector-effect: non-scaling-stroke;
-}
-#toc-mobile-progress-track {
-  stroke: var(--color-border);
-  stroke-width: 2;
-  opacity: 0.9;
-}
-#toc-mobile-progress-value {
   stroke: var(--color-accent);
-  stroke-width: 2.5;
-  stroke-linecap: round;
+  stroke-width: 1;
+  stroke-linecap: butt;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  filter: drop-shadow(0 1px 2px rgba(176, 125, 79, 0.3));
-  transition: stroke-dashoffset 0.1s linear;
 }
 .toc-link {
   transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
