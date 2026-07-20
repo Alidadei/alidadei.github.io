@@ -7,6 +7,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { getDaylightRenderProfile, getPaleSurfaceRenderProfile } from './daylight-profile';
+import {
+  applyOrbitCameraPose,
+  DEFAULT_ORBIT_HORIZONTAL,
+  DEFAULT_ORBIT_VERTICAL,
+  projectConvexMeshToScreen,
+  screenPointToWorld,
+  worldPointToScreen,
+} from './sky-depth-sync';
 
 const container = document.getElementById('scene3d');
 let W = container.clientWidth, H = container.clientHeight;
@@ -288,10 +296,16 @@ for (const d of floaterDefs) {
 
 // ── Clouds ──
 const clouds = [];
-for (const c of [{ x: -250, y: 150, z: -200, s: 1.0, sp: 0.07 }, { x: 280, y: 135, z: -250, s: 1.3, sp: 0.05 }]) {
+const cloudOccluders: THREE.Mesh[] = [];
+// Keep the near clouds inside the sunrise/sunset arc. Their previous Y values
+// left a permanent screen-space gap, so depth ordering could never be seen.
+for (const c of [{ x: -250, y: 108, z: -200, s: 1.0, sp: 0.07 }, { x: 280, y: 108, z: -250, s: 1.3, sp: 0.05 }]) {
   const cloud = new THREE.Group();
   for (const p of [{ r: 30, x: 0, y: 0, z: 0 }, { r: 24, x: 28, y: 5, z: 5 }, { r: 22, x: -25, y: 3, z: -3 }, { r: 18, x: 15, y: 12, z: -8 }, { r: 20, x: -12, y: 10, z: 6 }]) {
-    const puff = toon(new THREE.SphereGeometry(p.r, 12, 8), 0xfff8f0, 1.5, paleSurfaceProfile); puff.position.set(p.x, p.y, p.z); cloud.add(puff);
+    const puff = toon(new THREE.SphereGeometry(p.r, 12, 8), 0xfff8f0, 1.5, paleSurfaceProfile);
+    puff.position.set(p.x, p.y, p.z);
+    cloud.add(puff);
+    cloudOccluders.push(puff.children[1] as THREE.Mesh);
   }
   cloud.position.set(c.x, c.y, c.z); cloud.scale.setScalar(c.s); cloud.userData = { bx: c.x, by: c.y, sp: c.sp };
   scene.add(cloud); clouds.push(cloud);
@@ -330,10 +344,88 @@ setInterval(applyTimeBrightness, 60000);
 
 // ── Mouse Drag Orbit ──
 let isDragging = false, prevMX = 0, prevMY = 0;
-let orbitH = 0, orbitH_target = 0;
-let orbitV = 0.35, orbitV_target = 0.35;
+let orbitH = DEFAULT_ORBIT_HORIZONTAL, orbitH_target = DEFAULT_ORBIT_HORIZONTAL;
+let orbitV = DEFAULT_ORBIT_VERTICAL, orbitV_target = DEFAULT_ORBIT_VERTICAL;
 const ORBIT_CENTER = new THREE.Vector3(20, 35, 0);
 const ORBIT_RADIUS = _mobile ? 480 : 350;
+
+// ── CSS sun / 3D cloud depth sync ──
+// The sun keeps its existing DOM/CSS painting. Only its world projection and
+// the cloud-shaped mask come from this scene, so camera motion and occlusion
+// use the exact same camera matrix as the clouds.
+let sunWorldPosition: THREE.Vector3 | null = null;
+let lastDepthSyncFrame = -Infinity;
+const depthSyncWorldPoint = new THREE.Vector3();
+const depthSyncCameraPoint = new THREE.Vector3();
+const DEPTH_SYNC_FRAME_INTERVAL = 1000 / 30;
+const DEPTH_SYNC_INIT = 'cloud-sun-depth:init';
+const DEPTH_SYNC_READY = 'cloud-sun-depth:ready';
+const DEPTH_SYNC_FRAME = 'cloud-sun-depth:frame';
+
+function postDepthSyncReady() {
+  if (window.parent === window) return;
+  window.parent.postMessage({ type: DEPTH_SYNC_READY }, window.location.origin);
+}
+
+window.addEventListener('message', (event) => {
+  if (event.source !== window.parent || event.origin !== window.location.origin) return;
+  const message = event.data;
+  if (message?.type !== DEPTH_SYNC_INIT) return;
+
+  const screenX = Number(message.center?.x);
+  const screenY = Number(message.center?.y);
+  const viewportWidth = Number(message.viewport?.width);
+  const viewportHeight = Number(message.viewport?.height);
+  if (![screenX, screenY, viewportWidth, viewportHeight].every(Number.isFinite)
+    || viewportWidth <= 0 || viewportHeight <= 0) return;
+
+  const referenceCamera = camera.clone();
+  referenceCamera.aspect = viewportWidth / viewportHeight;
+  referenceCamera.updateProjectionMatrix();
+  applyOrbitCameraPose(
+    referenceCamera,
+    ORBIT_CENTER,
+    ORBIT_RADIUS,
+    DEFAULT_ORBIT_HORIZONTAL,
+    DEFAULT_ORBIT_VERTICAL,
+  );
+  sunWorldPosition = screenPointToWorld(
+    referenceCamera,
+    screenX,
+    screenY,
+    viewportWidth,
+    viewportHeight,
+  );
+});
+
+function postDepthSyncFrame(timestamp: number) {
+  if (!sunWorldPosition || window.parent === window
+    || timestamp - lastDepthSyncFrame < DEPTH_SYNC_FRAME_INTERVAL) return;
+  lastDepthSyncFrame = timestamp;
+
+  camera.updateMatrixWorld(true);
+  scene.updateMatrixWorld(true);
+  const sun = worldPointToScreen(camera, sunWorldPosition, W, H);
+  const sunDepth = -depthSyncCameraPoint
+    .copy(sunWorldPosition)
+    .applyMatrix4(camera.matrixWorldInverse)
+    .z;
+  const clouds = cloudOccluders
+    .filter((mesh) => {
+      mesh.getWorldPosition(depthSyncWorldPoint);
+      const cloudDepth = -depthSyncCameraPoint
+        .copy(depthSyncWorldPoint)
+        .applyMatrix4(camera.matrixWorldInverse)
+        .z;
+      return cloudDepth > camera.near && cloudDepth < sunDepth;
+    })
+    .map((mesh) => projectConvexMeshToScreen(mesh, camera, W, H))
+    .filter((polygon) => polygon !== null);
+
+  window.parent.postMessage({ type: DEPTH_SYNC_FRAME, sun, clouds }, window.location.origin);
+}
+
+postDepthSyncReady();
 
 container.addEventListener('mousedown', (e) => { isDragging = true; prevMX = e.clientX; prevMY = e.clientY; });
 window.addEventListener('mousemove', (e) => {
@@ -366,7 +458,7 @@ const clock = new THREE.Clock();
 let nextPageFlip = 4, pageFlipProgress = -1;
 let nextBlinkAt = 3, blinkProgress = -1;
 
-function animate() {
+function animate(timestamp = 0) {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
 
@@ -379,11 +471,7 @@ function animate() {
   orbitH += (orbitH_target - orbitH) * 0.1;
   orbitV += (orbitV_target - orbitV) * 0.1;
 
-  const yAngle = orbitV * Math.PI * 0.5;
-  camera.position.x = ORBIT_CENTER.x + Math.sin(orbitH) * Math.cos(yAngle) * ORBIT_RADIUS;
-  camera.position.z = ORBIT_CENTER.z + Math.cos(orbitH) * Math.cos(yAngle) * ORBIT_RADIUS;
-  camera.position.y = ORBIT_CENTER.y + Math.sin(yAngle) * ORBIT_RADIUS;
-  camera.lookAt(ORBIT_CENTER);
+  applyOrbitCameraPose(camera, ORBIT_CENTER, ORBIT_RADIUS, orbitH, orbitV);
 
   for (const puff of canopyPuffs) puff.position.y = puff.userData.baseY + Math.sin(t * puff.userData.speed + puff.userData.amp) * puff.userData.amp;
   robot.position.y = 20 + Math.sin(t * 0.8) * 1.0;
@@ -411,6 +499,8 @@ function animate() {
     f.rotation.y += d.spinSpeed;
   }
   for (const c of clouds) { c.position.x = c.userData.bx + Math.sin(t * c.userData.sp) * 30; }
+
+  postDepthSyncFrame(timestamp);
 
   composer.render();
 }

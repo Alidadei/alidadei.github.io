@@ -18,6 +18,8 @@
     "compress-posts": "node scripts/compress-post-images.mjs",
     "check:markdown": "node --test tests/post-heading-levels.test.mjs tests/remark-cjk-friendly-strong.test.mjs tests/shiki-text-diagram.test.mjs && node tests/check-rendered-markdown.mjs",
     "check:mobile-overflow": "node tests/mobile-overflow-regression.mjs",
+    "check:sky-depth": "node --experimental-strip-types --test tests/sky-depth-sync.test.mjs",
+    "check:sky-depth:edge": "node tests/cloud-sun-browser-regression.mjs",
     "check:worker-security": "node --experimental-strip-types --test tests/worker-cors.test.mjs",
     "preview": "node scripts/run-astro.mjs preview",
     "astro": "astro"

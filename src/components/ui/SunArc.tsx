@@ -5,6 +5,19 @@ interface SunArcProps {
   lang: 'zh' | 'en';
 }
 
+interface CloudSunDepthFrame {
+  type: 'cloud-sun-depth:frame';
+  sun: { x: number; y: number; visible: boolean };
+  clouds: Array<{ points: Array<{ x: number; y: number }> }>;
+}
+
+const DEPTH_SYNC_INIT = 'cloud-sun-depth:init';
+const DEPTH_SYNC_READY = 'cloud-sun-depth:ready';
+const DEPTH_SYNC_FRAME = 'cloud-sun-depth:frame';
+const SUN_LAYER_SIZE = 128;
+const SUN_MASK_ID = 'sun-cloud-depth-mask';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
 // 五行颜色映射
 const wuxingColor: Record<string, string> = {
   // 木
@@ -108,6 +121,10 @@ function LunarDate({ lang }: { lang: 'zh' | 'en' }) {
 
 export default function SunArc({ lang }: SunArcProps) {
   const [time, setTime] = useState<{ hour: number; min: number } | null>(null);
+  const sunReferenceRef = useRef<HTMLSpanElement>(null);
+  const sunLayerRef = useRef<HTMLDivElement>(null);
+  const cloudMaskRef = useRef<SVGGElement>(null);
+  const postSunReferenceRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const now = new Date();
@@ -117,6 +134,94 @@ export default function SunArc({ lang }: SunArcProps) {
       setTime({ hour: n.getHours(), min: n.getMinutes() });
     }, 30000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const iframe = document.getElementById('bg-3d') as HTMLIFrameElement | null;
+    if (!iframe) return;
+
+    let referenceFrame = 0;
+    const postSunReference = () => {
+      cancelAnimationFrame(referenceFrame);
+      referenceFrame = requestAnimationFrame(() => {
+        const marker = sunReferenceRef.current;
+        if (!marker || !iframe.contentWindow) return;
+        const rect = marker.getBoundingClientRect();
+        iframe.contentWindow.postMessage({
+          type: DEPTH_SYNC_INIT,
+          // Convert the hidden marker back to its document-space origin so a
+          // time tick while the article list is scrolled cannot move the sky.
+          center: { x: rect.left + window.scrollX, y: rect.top + window.scrollY },
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+        }, window.location.origin);
+      });
+    };
+
+    const updateCloudMask = (message: CloudSunDepthFrame) => {
+      const layer = sunLayerRef.current;
+      const mask = cloudMaskRef.current;
+      const { sun } = message;
+      if (!layer || !mask || !Number.isFinite(sun?.x) || !Number.isFinite(sun?.y)) return;
+
+      if (!sun.visible) {
+        layer.style.visibility = 'hidden';
+        return;
+      }
+
+      const layerLeft = sun.x - SUN_LAYER_SIZE / 2;
+      const layerTop = sun.y - SUN_LAYER_SIZE / 2;
+      layer.style.position = 'fixed';
+      layer.style.left = `${layerLeft}px`;
+      layer.style.top = `${layerTop}px`;
+      layer.style.visibility = 'visible';
+      layer.dataset.depthSynced = 'true';
+
+      const polygons = Array.isArray(message.clouds) ? message.clouds : [];
+      while (mask.children.length < polygons.length) {
+        const polygon = document.createElementNS(SVG_NAMESPACE, 'polygon');
+        polygon.setAttribute('fill', '#000');
+        polygon.setAttribute('stroke', '#000');
+        polygon.setAttribute('stroke-width', '2');
+        polygon.setAttribute('stroke-linejoin', 'round');
+        mask.appendChild(polygon);
+      }
+
+      Array.from(mask.children).forEach((child, index) => {
+        const polygon = polygons[index];
+        if (!polygon?.points?.length) {
+          child.setAttribute('display', 'none');
+          return;
+        }
+        child.removeAttribute('display');
+        child.setAttribute('points', polygon.points
+          .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+          .map((point) => `${point.x - layerLeft},${point.y - layerTop}`)
+          .join(' '));
+      });
+    };
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== iframe.contentWindow) return;
+      if (event.data?.type === DEPTH_SYNC_READY) {
+        postSunReference();
+      } else if (event.data?.type === DEPTH_SYNC_FRAME) {
+        updateCloudMask(event.data as CloudSunDepthFrame);
+      }
+    };
+
+    postSunReferenceRef.current = postSunReference;
+    iframe.addEventListener('load', postSunReference);
+    window.addEventListener('resize', postSunReference);
+    window.addEventListener('message', onMessage);
+    postSunReference();
+
+    return () => {
+      cancelAnimationFrame(referenceFrame);
+      postSunReferenceRef.current = null;
+      iframe.removeEventListener('load', postSunReference);
+      window.removeEventListener('resize', postSunReference);
+      window.removeEventListener('message', onMessage);
+    };
   }, []);
 
   // 水合前 ready=false:不渲染任何依赖时间的视觉(SSR 用 null,避免闪现错误时段的太阳/天空)
@@ -190,6 +295,11 @@ export default function SunArc({ lang }: SunArcProps) {
   const glowColor = altitude > 0.5
     ? `rgba(255,240,180,${0.15 + 0.2 * altitude})`
     : `rgba(255,140,40,${0.1 + 0.15 * altitude})`;
+
+  useEffect(() => {
+    if (!ready || !isDay) return;
+    postSunReferenceRef.current?.();
+  }, [ready, isDay, sunX, sunY]);
 
   const greeting = ready
     ? (lang === 'zh'
@@ -272,33 +382,80 @@ export default function SunArc({ lang }: SunArcProps) {
         </div>
       )}
 
-      {/* Sun glow */}
+      {/*
+        Keep the existing CSS sun untouched. The invisible reference marker
+        defines its original arc position; the iframe projects that point with
+        the 3D camera and supplies exact cloud silhouettes for this SVG mask.
+      */}
       {ready && isDay && (
-        <div
-          className="absolute rounded-full transition-all duration-[2000ms]"
-          style={{
-            width: `${glowSize}px`,
-            height: `${glowSize}px`,
-            left: `calc(${sunX}% - ${glowSize / 2}px)`,
-            top: `calc(${sunY}% - ${glowSize / 2}px - ${sunLiftPx}px)`,
-            background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-          }}
-        />
-      )}
-
-      {/* Sun disc */}
-      {ready && isDay && (
-        <div
-          className="absolute rounded-full transition-all duration-[2000ms]"
-          style={{
-            width: '16px',
-            height: '16px',
-            left: `calc(${sunX}% - 8px)`,
-            top: `calc(${sunY}% - 8px - ${sunLiftPx}px)`,
-            background: `radial-gradient(circle at 35% 35%, ${sunCore}, ${altitude > 0.3 ? '#ffe090' : '#d06020'})`,
-            boxShadow: `0 0 ${8 + 12 * altitude}px ${altitude > 0.5 ? `rgba(255,220,100,${0.3 + 0.3 * altitude})` : `rgba(255,140,40,${0.2 + 0.2 * altitude})`}`,
-          }}
-        />
+        <>
+          <span
+            ref={sunReferenceRef}
+            aria-hidden="true"
+            className="absolute pointer-events-none"
+            style={{
+              width: 0,
+              height: 0,
+              left: `${sunX}%`,
+              top: `calc(${sunY}% - ${sunLiftPx}px)`,
+              visibility: 'hidden',
+            }}
+          />
+          <svg aria-hidden="true" width="0" height="0" className="absolute">
+            <defs>
+              <mask
+                id={SUN_MASK_ID}
+                maskUnits="userSpaceOnUse"
+                maskContentUnits="userSpaceOnUse"
+                x="0"
+                y="0"
+                width={SUN_LAYER_SIZE}
+                height={SUN_LAYER_SIZE}
+                style={{ maskType: 'luminance' }}
+              >
+                <rect width={SUN_LAYER_SIZE} height={SUN_LAYER_SIZE} fill="#fff" />
+                <g ref={cloudMaskRef} />
+              </mask>
+            </defs>
+          </svg>
+          <div
+            ref={sunLayerRef}
+            data-sun-depth-layer
+            className="absolute pointer-events-none"
+            style={{
+              width: `${SUN_LAYER_SIZE}px`,
+              height: `${SUN_LAYER_SIZE}px`,
+              left: `calc(${sunX}% - ${SUN_LAYER_SIZE / 2}px)`,
+              top: `calc(${sunY}% - ${SUN_LAYER_SIZE / 2}px - ${sunLiftPx}px)`,
+              WebkitMask: `url(#${SUN_MASK_ID})`,
+              mask: `url(#${SUN_MASK_ID})`,
+            }}
+          >
+            {/* Sun glow: visual values intentionally identical to the original. */}
+            <div
+              className="absolute rounded-full transition-all duration-[2000ms]"
+              style={{
+                width: `${glowSize}px`,
+                height: `${glowSize}px`,
+                left: `${(SUN_LAYER_SIZE - glowSize) / 2}px`,
+                top: `${(SUN_LAYER_SIZE - glowSize) / 2}px`,
+                background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
+              }}
+            />
+            {/* Sun disc: visual values intentionally identical to the original. */}
+            <div
+              className="absolute rounded-full transition-all duration-[2000ms]"
+              style={{
+                width: '16px',
+                height: '16px',
+                left: `${SUN_LAYER_SIZE / 2 - 8}px`,
+                top: `${SUN_LAYER_SIZE / 2 - 8}px`,
+                background: `radial-gradient(circle at 35% 35%, ${sunCore}, ${altitude > 0.3 ? '#ffe090' : '#d06020'})`,
+                boxShadow: `0 0 ${8 + 12 * altitude}px ${altitude > 0.5 ? `rgba(255,220,100,${0.3 + 0.3 * altitude})` : `rgba(255,140,40,${0.2 + 0.2 * altitude})`}`,
+              }}
+            />
+          </div>
+        </>
       )}
 
       {/* Top left: lunar date + greeting */}
