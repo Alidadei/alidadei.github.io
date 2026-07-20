@@ -181,6 +181,8 @@ export default function SunArc({ lang }: SunArcProps) {
     ? 30 - altitude * 28   // range: 30% (horizon) → 2% (noon peak)
     : 40 - altitude * 38;  // range: 40% (horizon) → 2% (noon peak)
 
+  const sunLiftPx = 50;
+
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
   const glowSize = 60 + 40 * altitude;
@@ -277,7 +279,7 @@ export default function SunArc({ lang }: SunArcProps) {
             width: `${glowSize}px`,
             height: `${glowSize}px`,
             left: `calc(${sunX}% - ${glowSize / 2}px)`,
-            top: `calc(${sunY}% - ${glowSize / 2}px)`,
+            top: `calc(${sunY}% - ${glowSize / 2}px - ${sunLiftPx}px)`,
             background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
           }}
         />
@@ -291,7 +293,7 @@ export default function SunArc({ lang }: SunArcProps) {
             width: '16px',
             height: '16px',
             left: `calc(${sunX}% - 8px)`,
-            top: `calc(${sunY}% - 8px)`,
+            top: `calc(${sunY}% - 8px - ${sunLiftPx}px)`,
             background: `radial-gradient(circle at 35% 35%, ${sunCore}, ${altitude > 0.3 ? '#ffe090' : '#d06020'})`,
             boxShadow: `0 0 ${8 + 12 * altitude}px ${altitude > 0.5 ? `rgba(255,220,100,${0.3 + 0.3 * altitude})` : `rgba(255,140,40,${0.2 + 0.2 * altitude})`}`,
           }}
