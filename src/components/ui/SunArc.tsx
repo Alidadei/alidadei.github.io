@@ -8,15 +8,17 @@ interface SunArcProps {
 interface CloudSunDepthFrame {
   type: 'cloud-sun-depth:frame';
   sun: { x: number; y: number; visible: boolean };
-  clouds: Array<{ points: Array<{ x: number; y: number }> }>;
+  occlusionRuns: Array<[x: number, y: number, width: number]>;
+  discCoverage: number;
+  skyMotion: { x: number; y: number };
 }
 
 const DEPTH_SYNC_INIT = 'cloud-sun-depth:init';
+const DEPTH_SYNC_ACTIVE = 'cloud-sun-depth:active';
 const DEPTH_SYNC_READY = 'cloud-sun-depth:ready';
 const DEPTH_SYNC_FRAME = 'cloud-sun-depth:frame';
 const SUN_LAYER_SIZE = 128;
 const SUN_MASK_ID = 'sun-cloud-depth-mask';
-const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 // 五行颜色映射
 const wuxingColor: Record<string, string> = {
@@ -123,7 +125,7 @@ export default function SunArc({ lang }: SunArcProps) {
   const [time, setTime] = useState<{ hour: number; min: number } | null>(null);
   const sunReferenceRef = useRef<HTMLSpanElement>(null);
   const sunLayerRef = useRef<HTMLDivElement>(null);
-  const cloudMaskRef = useRef<SVGGElement>(null);
+  const occlusionMaskRef = useRef<SVGPathElement>(null);
   const postSunReferenceRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -157,9 +159,9 @@ export default function SunArc({ lang }: SunArcProps) {
       });
     };
 
-    const updateCloudMask = (message: CloudSunDepthFrame) => {
+    const updateSceneMask = (message: CloudSunDepthFrame) => {
       const layer = sunLayerRef.current;
-      const mask = cloudMaskRef.current;
+      const mask = occlusionMaskRef.current;
       const { sun } = message;
       if (!layer || !mask || !Number.isFinite(sun?.x) || !Number.isFinite(sun?.y)) return;
 
@@ -175,29 +177,24 @@ export default function SunArc({ lang }: SunArcProps) {
       layer.style.top = `${layerTop}px`;
       layer.style.visibility = 'visible';
       layer.dataset.depthSynced = 'true';
+      layer.dataset.occlusionSource = 'full-scene';
 
-      const polygons = Array.isArray(message.clouds) ? message.clouds : [];
-      while (mask.children.length < polygons.length) {
-        const polygon = document.createElementNS(SVG_NAMESPACE, 'polygon');
-        polygon.setAttribute('fill', '#000');
-        polygon.setAttribute('stroke', '#000');
-        polygon.setAttribute('stroke-width', '2');
-        polygon.setAttribute('stroke-linejoin', 'round');
-        mask.appendChild(polygon);
-      }
-
-      Array.from(mask.children).forEach((child, index) => {
-        const polygon = polygons[index];
-        if (!polygon?.points?.length) {
-          child.setAttribute('display', 'none');
-          return;
-        }
-        child.removeAttribute('display');
-        child.setAttribute('points', polygon.points
-          .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
-          .map((point) => `${point.x - layerLeft},${point.y - layerTop}`)
-          .join(' '));
-      });
+      const runs = Array.isArray(message.occlusionRuns) ? message.occlusionRuns : [];
+      const path = runs
+        .filter(([x, y, width]) => [x, y, width].every(Number.isFinite) && width > 0)
+        .map(([x, y, width]) => `M${x} ${y}h${width}v1h-${width}Z`)
+        .join(' ');
+      mask.setAttribute('d', path);
+      layer.dataset.occlusionRunCount = String(runs.length);
+      layer.dataset.discCoverage = Number.isFinite(message.discCoverage)
+        ? String(message.discCoverage)
+        : '0';
+      layer.dataset.skyMotionX = Number.isFinite(message.skyMotion?.x)
+        ? String(message.skyMotion.x)
+        : '0';
+      layer.dataset.skyMotionY = Number.isFinite(message.skyMotion?.y)
+        ? String(message.skyMotion.y)
+        : '0';
     };
 
     const onMessage = (event: MessageEvent) => {
@@ -205,7 +202,7 @@ export default function SunArc({ lang }: SunArcProps) {
       if (event.data?.type === DEPTH_SYNC_READY) {
         postSunReference();
       } else if (event.data?.type === DEPTH_SYNC_FRAME) {
-        updateCloudMask(event.data as CloudSunDepthFrame);
+        updateSceneMask(event.data as CloudSunDepthFrame);
       }
     };
 
@@ -217,6 +214,7 @@ export default function SunArc({ lang }: SunArcProps) {
 
     return () => {
       cancelAnimationFrame(referenceFrame);
+      iframe.contentWindow?.postMessage({ type: DEPTH_SYNC_ACTIVE, active: false }, window.location.origin);
       postSunReferenceRef.current = null;
       iframe.removeEventListener('load', postSunReference);
       window.removeEventListener('resize', postSunReference);
@@ -287,7 +285,7 @@ export default function SunArc({ lang }: SunArcProps) {
     : 40 - altitude * 38;  // range: 40% (horizon) → 2% (noon peak)
 
     // 控制总体太阳高度的抬升量
-  const sunLiftPx = 40;
+  const sunLiftPx = 50;
 
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
@@ -297,8 +295,12 @@ export default function SunArc({ lang }: SunArcProps) {
     : `rgba(255,140,40,${0.1 + 0.15 * altitude})`;
 
   useEffect(() => {
-    if (!ready || !isDay) return;
-    postSunReferenceRef.current?.();
+    const iframe = document.getElementById('bg-3d') as HTMLIFrameElement | null;
+    iframe?.contentWindow?.postMessage({
+      type: DEPTH_SYNC_ACTIVE,
+      active: ready && isDay,
+    }, window.location.origin);
+    if (ready && isDay) postSunReferenceRef.current?.();
   }, [ready, isDay, sunX, sunY]);
 
   const greeting = ready
@@ -385,12 +387,13 @@ export default function SunArc({ lang }: SunArcProps) {
       {/*
         Keep the existing CSS sun untouched. The invisible reference marker
         defines its original arc position; the iframe projects that point with
-        the 3D camera and supplies exact cloud silhouettes for this SVG mask.
+        the 3D camera and supplies a full-scene occlusion buffer for this mask.
       */}
       {ready && isDay && (
         <>
           <span
             ref={sunReferenceRef}
+            data-sun-reference
             aria-hidden="true"
             className="absolute pointer-events-none"
             style={{
@@ -414,13 +417,14 @@ export default function SunArc({ lang }: SunArcProps) {
                 style={{ maskType: 'luminance' }}
               >
                 <rect width={SUN_LAYER_SIZE} height={SUN_LAYER_SIZE} fill="#fff" />
-                <g ref={cloudMaskRef} />
+                <path ref={occlusionMaskRef} fill="#000" />
               </mask>
             </defs>
           </svg>
           <div
             ref={sunLayerRef}
             data-sun-depth-layer
+            data-sun-lift-px={sunLiftPx}
             className="absolute pointer-events-none"
             style={{
               width: `${SUN_LAYER_SIZE}px`,

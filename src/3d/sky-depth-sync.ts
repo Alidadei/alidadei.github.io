@@ -10,9 +10,7 @@ export interface ScreenPoint {
   visible: boolean;
 }
 
-export interface ScreenPolygon {
-  points: Array<{ x: number; y: number }>;
-}
+export type OcclusionRun = [x: number, y: number, width: number];
 
 export function scaleOrbitAngleForDistance(
   currentAngle: number,
@@ -22,6 +20,90 @@ export function scaleOrbitAngleForDistance(
 ) {
   const response = Math.max(0, Math.min(1, sceneRadius / distantRadius));
   return referenceAngle + (currentAngle - referenceAngle) * response;
+}
+
+export function equalArcMotionScale(
+  currentAngle: number,
+  referenceAngle: number,
+  sceneRadius: number,
+  distantRadius: number,
+) {
+  const sceneAngleDelta = currentAngle - referenceAngle;
+  if (Math.abs(sceneAngleDelta) < Number.EPSILON || sceneRadius <= 0 || distantRadius <= 0) {
+    return 1;
+  }
+
+  const distantAngle = scaleOrbitAngleForDistance(
+    currentAngle,
+    referenceAngle,
+    sceneRadius,
+    distantRadius,
+  );
+  const sceneTravel = sceneAngleDelta * sceneRadius;
+  const distantTravel = (distantAngle - referenceAngle) * distantRadius;
+  return distantTravel / sceneTravel;
+}
+
+/**
+ * Convert a WebGL RGBA readback into top-to-bottom one-pixel-high mask runs.
+ * WebGL readbacks start at the bottom row, while SVG mask coordinates start
+ * at the top row, so the row order is deliberately inverted here.
+ */
+export function encodeOcclusionRuns(
+  pixels: ArrayLike<number>,
+  width: number,
+  height: number,
+  threshold = 128,
+): OcclusionRun[] {
+  if (width <= 0 || height <= 0 || pixels.length < width * height * 4) {
+    throw new RangeError('Occlusion buffer dimensions do not match its RGBA pixels.');
+  }
+
+  const runs: OcclusionRun[] = [];
+  for (let y = 0; y < height; y += 1) {
+    const sourceY = height - 1 - y;
+    let start = -1;
+    for (let x = 0; x <= width; x += 1) {
+      const occupied = x < width
+        && pixels[(sourceY * width + x) * 4] < threshold;
+      if (occupied && start < 0) start = x;
+      if (!occupied && start >= 0) {
+        runs.push([start, y, x - start]);
+        start = -1;
+      }
+    }
+  }
+  return runs;
+}
+
+export function occlusionCoverageInCircle(
+  pixels: ArrayLike<number>,
+  width: number,
+  height: number,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  threshold = 128,
+) {
+  if (width <= 0 || height <= 0 || pixels.length < width * height * 4) {
+    throw new RangeError('Occlusion buffer dimensions do not match its RGBA pixels.');
+  }
+
+  let covered = 0;
+  let samples = 0;
+  const minX = Math.max(0, Math.floor(centerX - radius));
+  const maxX = Math.min(width - 1, Math.ceil(centerX + radius));
+  const minY = Math.max(0, Math.floor(centerY - radius));
+  const maxY = Math.min(height - 1, Math.ceil(centerY + radius));
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      if ((x - centerX) ** 2 + (y - centerY) ** 2 > radius ** 2) continue;
+      samples += 1;
+      const sourceY = height - 1 - y;
+      if (pixels[(sourceY * width + x) * 4] < threshold) covered += 1;
+    }
+  }
+  return samples ? covered / samples : 0;
 }
 
 export function applyOrbitCameraPose(
@@ -79,72 +161,4 @@ export function worldPointToScreen(
       && projected.z >= -1
       && projected.z <= 1,
   };
-}
-
-function cross(
-  origin: { x: number; y: number },
-  a: { x: number; y: number },
-  b: { x: number; y: number },
-) {
-  return (a.x - origin.x) * (b.y - origin.y)
-    - (a.y - origin.y) * (b.x - origin.x);
-}
-
-export function convexHull(points: Array<{ x: number; y: number }>) {
-  if (points.length <= 3) return points;
-
-  const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
-  const lower: Array<{ x: number; y: number }> = [];
-  for (const point of sorted) {
-    while (lower.length >= 2 && cross(lower.at(-2)!, lower.at(-1)!, point) <= 0) {
-      lower.pop();
-    }
-    lower.push(point);
-  }
-
-  const upper: Array<{ x: number; y: number }> = [];
-  for (let index = sorted.length - 1; index >= 0; index -= 1) {
-    const point = sorted[index];
-    while (upper.length >= 2 && cross(upper.at(-2)!, upper.at(-1)!, point) <= 0) {
-      upper.pop();
-    }
-    upper.push(point);
-  }
-
-  lower.pop();
-  upper.pop();
-  return lower.concat(upper);
-}
-
-export function projectConvexMeshToScreen(
-  mesh: THREE.Mesh,
-  camera: THREE.PerspectiveCamera,
-  viewportWidth: number,
-  viewportHeight: number,
-): ScreenPolygon | null {
-  const positions = mesh.geometry.getAttribute('position');
-  if (!positions) return null;
-
-  mesh.updateWorldMatrix(true, false);
-  camera.updateMatrixWorld(true);
-
-  const points: Array<{ x: number; y: number }> = [];
-  const vertex = new THREE.Vector3();
-  const cameraSpace = new THREE.Vector3();
-  const projected = new THREE.Vector3();
-  for (let index = 0; index < positions.count; index += 1) {
-    vertex.fromBufferAttribute(positions, index).applyMatrix4(mesh.matrixWorld);
-    cameraSpace.copy(vertex).applyMatrix4(camera.matrixWorldInverse);
-    if (cameraSpace.z >= -camera.near || cameraSpace.z <= -camera.far) continue;
-
-    projected.copy(vertex).project(camera);
-    if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) continue;
-    points.push({
-      x: (projected.x + 1) * 0.5 * viewportWidth,
-      y: (1 - projected.y) * 0.5 * viewportHeight,
-    });
-  }
-
-  const hull = convexHull(points);
-  return hull.length >= 3 ? { points: hull } : null;
 }

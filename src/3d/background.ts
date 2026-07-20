@@ -11,9 +11,9 @@ import {
   applyOrbitCameraPose,
   DEFAULT_ORBIT_HORIZONTAL,
   DEFAULT_ORBIT_VERTICAL,
-  projectConvexMeshToScreen,
-  scaleOrbitAngleForDistance,
-  screenPointToWorld,
+  encodeOcclusionRuns,
+  equalArcMotionScale,
+  occlusionCoverageInCircle,
   SUN_WORLD_DISTANCE,
   worldPointToScreen,
 } from './sky-depth-sync';
@@ -35,7 +35,6 @@ scene.background = new THREE.CanvasTexture(bgCanvas);
 // ── Camera ──
 const camera = new THREE.PerspectiveCamera(45, W / H, 1, 2000);
 camera.position.set(0, 50, 350); camera.lookAt(0, 30, 0);
-const sunProjectionCamera = camera.clone();
 
 // ── Renderer ──
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -299,16 +298,19 @@ for (const d of floaterDefs) {
 
 // ── Clouds ──
 const clouds = [];
-const cloudOccluders: THREE.Mesh[] = [];
+const cloudDefinitions = [
+  { x: -250, y: 108, z: -200, s: 1.0, sp: 0.07 },
+  { x: 280, y: 108, z: -250, s: 1.3, sp: 0.05 },
+];
+const cloudMotionAnchors = cloudDefinitions.map(({ x, y, z }) => new THREE.Vector3(x, y, z));
 // Keep the near clouds inside the sunrise/sunset arc. Their previous Y values
 // left a permanent screen-space gap, so depth ordering could never be seen.
-for (const c of [{ x: -250, y: 108, z: -200, s: 1.0, sp: 0.07 }, { x: 280, y: 108, z: -250, s: 1.3, sp: 0.05 }]) {
+for (const c of cloudDefinitions) {
   const cloud = new THREE.Group();
   for (const p of [{ r: 30, x: 0, y: 0, z: 0 }, { r: 24, x: 28, y: 5, z: 5 }, { r: 22, x: -25, y: 3, z: -3 }, { r: 18, x: 15, y: 12, z: -8 }, { r: 20, x: -12, y: 10, z: 6 }]) {
     const puff = toon(new THREE.SphereGeometry(p.r, 12, 8), 0xfff8f0, 1.5, paleSurfaceProfile);
     puff.position.set(p.x, p.y, p.z);
     cloud.add(puff);
-    cloudOccluders.push(puff.children[1] as THREE.Mesh);
   }
   cloud.position.set(c.x, c.y, c.z); cloud.scale.setScalar(c.s); cloud.userData = { bx: c.x, by: c.y, sp: c.sp };
   scene.add(cloud); clouds.push(cloud);
@@ -352,18 +354,124 @@ let orbitV = DEFAULT_ORBIT_VERTICAL, orbitV_target = DEFAULT_ORBIT_VERTICAL;
 const ORBIT_CENTER = new THREE.Vector3(20, 35, 0);
 const ORBIT_RADIUS = _mobile ? 480 : 350;
 
-// ── CSS sun / 3D cloud depth sync ──
-// The sun keeps its existing DOM/CSS painting and reference height. Clouds use
-// the scene camera directly; the distant sun responds by sceneRadius / sunRadius,
-// producing the smaller angular motion expected from the far layer.
-let sunWorldPosition: THREE.Vector3 | null = null;
-let lastDepthSyncFrame = -Infinity;
-const depthSyncWorldPoint = new THREE.Vector3();
-const depthSyncCameraPoint = new THREE.Vector3();
+// ── CSS sun / full-scene depth sync ──
+// The DOM sun keeps its existing paint. Its position follows the fixed cloud
+// layer's screen displacement. The far layer therefore travels the same arc
+// distance with a smaller angle (nearRadius / sunRadius).
+const SUN_LAYER_SIZE = 128;
+const SUN_DISC_SAMPLE_RADIUS = 7;
 const DEPTH_SYNC_FRAME_INTERVAL = 1000 / 30;
 const DEPTH_SYNC_INIT = 'cloud-sun-depth:init';
+const DEPTH_SYNC_ACTIVE = 'cloud-sun-depth:active';
 const DEPTH_SYNC_READY = 'cloud-sun-depth:ready';
 const DEPTH_SYNC_FRAME = 'cloud-sun-depth:frame';
+const sceneOcclusionTarget = new THREE.WebGLRenderTarget(SUN_LAYER_SIZE, SUN_LAYER_SIZE, {
+  minFilter: THREE.NearestFilter,
+  magFilter: THREE.NearestFilter,
+  format: THREE.RGBAFormat,
+  type: THREE.UnsignedByteType,
+  depthBuffer: true,
+  stencilBuffer: false,
+});
+sceneOcclusionTarget.texture.generateMipmaps = false;
+const sceneOcclusionPixels = new Uint8Array(SUN_LAYER_SIZE * SUN_LAYER_SIZE * 4);
+const sceneOcclusionCamera = camera.clone();
+const sceneOcclusionMaterial = new THREE.MeshBasicMaterial({
+  color: 0x000000,
+  side: THREE.DoubleSide,
+  fog: false,
+  toneMapped: false,
+});
+const savedClearColor = new THREE.Color();
+let depthSyncActive = false;
+let sunReferenceScreen: THREE.Vector2 | null = null;
+let cloudReferenceScreen: THREE.Vector2 | null = null;
+let lastDepthSyncFrame = -Infinity;
+
+function projectCloudLayerCenter(
+  sourceCamera: THREE.PerspectiveCamera,
+  viewportWidth: number,
+  viewportHeight: number,
+) {
+  const points = cloudMotionAnchors
+    .map((anchor) => worldPointToScreen(sourceCamera, anchor, viewportWidth, viewportHeight))
+    .filter((point) => point.visible && Number.isFinite(point.x) && Number.isFinite(point.y));
+  if (!points.length) return null;
+  return new THREE.Vector2(
+    points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  );
+}
+
+function renderSceneOcclusion(sunX: number, sunY: number) {
+  sceneOcclusionCamera.copy(camera);
+  sceneOcclusionCamera.clearViewOffset();
+  sceneOcclusionCamera.setViewOffset(
+    W,
+    H,
+    sunX - SUN_LAYER_SIZE / 2,
+    sunY - SUN_LAYER_SIZE / 2,
+    SUN_LAYER_SIZE,
+    SUN_LAYER_SIZE,
+  );
+  sceneOcclusionCamera.updateProjectionMatrix();
+  sceneOcclusionCamera.updateMatrixWorld(true);
+
+  const previousTarget = renderer.getRenderTarget();
+  const previousBackground = scene.background;
+  const previousOverrideMaterial = scene.overrideMaterial;
+  const previousAutoClear = renderer.autoClear;
+  const previousClearAlpha = renderer.getClearAlpha();
+  const previousViewport = renderer.getViewport(new THREE.Vector4());
+  const previousScissor = renderer.getScissor(new THREE.Vector4());
+  const previousScissorTest = renderer.getScissorTest();
+  renderer.getClearColor(savedClearColor);
+
+  try {
+    renderer.setRenderTarget(sceneOcclusionTarget);
+    renderer.setViewport(0, 0, SUN_LAYER_SIZE, SUN_LAYER_SIZE);
+    renderer.setScissorTest(false);
+    renderer.setClearColor(0xffffff, 1);
+    renderer.autoClear = true;
+    scene.background = null;
+    scene.overrideMaterial = sceneOcclusionMaterial;
+    renderer.clear(true, true, true);
+    renderer.render(scene, sceneOcclusionCamera);
+    renderer.readRenderTargetPixels(
+      sceneOcclusionTarget,
+      0,
+      0,
+      SUN_LAYER_SIZE,
+      SUN_LAYER_SIZE,
+      sceneOcclusionPixels,
+    );
+  } finally {
+    scene.background = previousBackground;
+    scene.overrideMaterial = previousOverrideMaterial;
+    renderer.setRenderTarget(previousTarget);
+    renderer.setClearColor(savedClearColor, previousClearAlpha);
+    renderer.autoClear = previousAutoClear;
+    renderer.setViewport(previousViewport);
+    renderer.setScissor(previousScissor);
+    renderer.setScissorTest(previousScissorTest);
+  }
+
+  return {
+    occlusionRuns: encodeOcclusionRuns(
+      sceneOcclusionPixels,
+      SUN_LAYER_SIZE,
+      SUN_LAYER_SIZE,
+    ),
+    discCoverage: occlusionCoverageInCircle(
+      sceneOcclusionPixels,
+      SUN_LAYER_SIZE,
+      SUN_LAYER_SIZE,
+      SUN_LAYER_SIZE / 2,
+      SUN_LAYER_SIZE / 2,
+      SUN_DISC_SAMPLE_RADIUS,
+    ),
+  };
+}
 
 function postDepthSyncReady() {
   if (window.parent === window) return;
@@ -373,6 +481,10 @@ function postDepthSyncReady() {
 window.addEventListener('message', (event) => {
   if (event.source !== window.parent || event.origin !== window.location.origin) return;
   const message = event.data;
+  if (message?.type === DEPTH_SYNC_ACTIVE) {
+    depthSyncActive = Boolean(message.active);
+    return;
+  }
   if (message?.type !== DEPTH_SYNC_INIT) return;
 
   const screenX = Number(message.center?.x);
@@ -392,59 +504,59 @@ window.addEventListener('message', (event) => {
     DEFAULT_ORBIT_HORIZONTAL,
     DEFAULT_ORBIT_VERTICAL,
   );
-  sunWorldPosition = screenPointToWorld(
+  sunReferenceScreen = new THREE.Vector2(screenX, screenY);
+  cloudReferenceScreen = projectCloudLayerCenter(
     referenceCamera,
-    screenX,
-    screenY,
     viewportWidth,
     viewportHeight,
   );
+  depthSyncActive = cloudReferenceScreen !== null;
 });
 
 function postDepthSyncFrame(timestamp: number) {
-  if (!sunWorldPosition || window.parent === window
+  if (!depthSyncActive || !sunReferenceScreen || !cloudReferenceScreen
+    || window.parent === window
     || timestamp - lastDepthSyncFrame < DEPTH_SYNC_FRAME_INTERVAL) return;
   lastDepthSyncFrame = timestamp;
 
   camera.updateMatrixWorld(true);
   scene.updateMatrixWorld(true);
-  const sunOrbitHorizontal = scaleOrbitAngleForDistance(
-    orbitH,
-    DEFAULT_ORBIT_HORIZONTAL,
-    ORBIT_RADIUS,
-    SUN_WORLD_DISTANCE,
-  );
-  const sunOrbitVertical = scaleOrbitAngleForDistance(
-    orbitV,
-    DEFAULT_ORBIT_VERTICAL,
-    ORBIT_RADIUS,
-    SUN_WORLD_DISTANCE,
-  );
-  applyOrbitCameraPose(
-    sunProjectionCamera,
-    ORBIT_CENTER,
-    ORBIT_RADIUS,
-    sunOrbitHorizontal,
-    sunOrbitVertical,
-  );
-  const sun = worldPointToScreen(sunProjectionCamera, sunWorldPosition, W, H);
-  const sunDepth = -depthSyncCameraPoint
-    .copy(sunWorldPosition)
-    .applyMatrix4(camera.matrixWorldInverse)
-    .z;
-  const clouds = cloudOccluders
-    .filter((mesh) => {
-      mesh.getWorldPosition(depthSyncWorldPoint);
-      const cloudDepth = -depthSyncCameraPoint
-        .copy(depthSyncWorldPoint)
-        .applyMatrix4(camera.matrixWorldInverse)
-        .z;
-      return cloudDepth > camera.near && cloudDepth < sunDepth;
-    })
-    .map((mesh) => projectConvexMeshToScreen(mesh, camera, W, H))
-    .filter((polygon) => polygon !== null);
+  const currentCloudScreen = projectCloudLayerCenter(camera, W, H);
+  if (!currentCloudScreen) return;
 
-  window.parent.postMessage({ type: DEPTH_SYNC_FRAME, sun, clouds }, window.location.origin);
+  const skyMotion = {
+    x: (currentCloudScreen.x - cloudReferenceScreen.x) * equalArcMotionScale(
+      orbitH,
+      DEFAULT_ORBIT_HORIZONTAL,
+      ORBIT_RADIUS,
+      SUN_WORLD_DISTANCE,
+    ),
+    y: (currentCloudScreen.y - cloudReferenceScreen.y) * equalArcMotionScale(
+      orbitV,
+      DEFAULT_ORBIT_VERTICAL,
+      ORBIT_RADIUS,
+      SUN_WORLD_DISTANCE,
+    ),
+  };
+  const sun = {
+    x: sunReferenceScreen.x + skyMotion.x,
+    y: sunReferenceScreen.y + skyMotion.y,
+    visible: true,
+  };
+  sun.visible = sun.x + SUN_LAYER_SIZE / 2 > 0
+    && sun.x - SUN_LAYER_SIZE / 2 < W
+    && sun.y + SUN_LAYER_SIZE / 2 > 0
+    && sun.y - SUN_LAYER_SIZE / 2 < H;
+  const occlusion = sun.visible
+    ? renderSceneOcclusion(sun.x, sun.y)
+    : { occlusionRuns: [], discCoverage: 0 };
+
+  window.parent.postMessage({
+    type: DEPTH_SYNC_FRAME,
+    sun,
+    skyMotion,
+    ...occlusion,
+  }, window.location.origin);
 }
 
 postDepthSyncReady();
@@ -531,7 +643,6 @@ animate();
 window.addEventListener('resize', () => {
   W = container.clientWidth; H = container.clientHeight;
   camera.aspect = W / H; camera.updateProjectionMatrix();
-  sunProjectionCamera.aspect = W / H; sunProjectionCamera.updateProjectionMatrix();
   renderer.setSize(W, H); composer.setSize(W, H);
 });
 

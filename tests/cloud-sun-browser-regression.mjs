@@ -48,25 +48,26 @@ const fixedTimeInjection = String.raw`(() => {
 
 const diagnosticsExpression = String.raw`(() => {
   const layer = document.querySelector('[data-sun-depth-layer]');
-  const marker = document.querySelector('[aria-hidden="true"][style*="visibility: hidden"]');
+  const marker = document.querySelector('[data-sun-reference]');
   const frame = document.getElementById('bg-3d');
   if (!layer || !marker || !frame) return null;
   const layerRect = layer.getBoundingClientRect();
   const markerRect = marker.getBoundingClientRect();
-  const polygons = Array.from(document.querySelectorAll('#sun-cloud-depth-mask polygon'));
-  const globalPolygons = polygons.map((polygon) => {
-    const points = polygon.getAttribute('points')?.trim() ?? '';
-    return points ? points.split(/\s+/).map((pair) => {
-      const [x, y] = pair.split(',').map(Number);
-      return { x: x + layerRect.left, y: y + layerRect.top };
-    }) : [];
-  });
+  const maskPath = document.querySelector('#sun-cloud-depth-mask path');
   const disc = layer.lastElementChild;
   const glow = layer.firstElementChild;
   const discRect = disc?.getBoundingClientRect();
   const glowRect = glow?.getBoundingClientRect();
   return {
     synced: layer.dataset.depthSynced === 'true',
+    occlusionSource: layer.dataset.occlusionSource ?? null,
+    occlusionRunCount: Number(layer.dataset.occlusionRunCount ?? '0'),
+    discCoverage: Number(layer.dataset.discCoverage ?? '0'),
+    skyMotion: {
+      x: Number(layer.dataset.skyMotionX ?? '0'),
+      y: Number(layer.dataset.skyMotionY ?? '0'),
+    },
+    sunLiftPx: Number(layer.dataset.sunLiftPx ?? '0'),
     scrollY: window.scrollY,
     frameReady: frame.contentDocument?.readyState ?? null,
     layer: { left: layerRect.left, top: layerRect.top, width: layerRect.width, height: layerRect.height },
@@ -86,7 +87,7 @@ const diagnosticsExpression = String.raw`(() => {
       background: glow.style.background,
     } : null,
     mask: getComputedStyle(layer).maskImage || getComputedStyle(layer).webkitMaskImage,
-    polygons: globalPolygons,
+    maskPathLength: maskPath?.getAttribute('d')?.length ?? 0,
   };
 })()`;
 
@@ -168,64 +169,6 @@ async function findPort(preferred) {
     if (available) return port;
   }
   throw new Error(`No free port near ${preferred}.`);
-}
-
-function pointInPolygon(point, polygon) {
-  let inside = false;
-  for (let current = 0, previous = polygon.length - 1; current < polygon.length; previous = current++) {
-    const a = polygon[current];
-    const b = polygon[previous];
-    const crosses = (a.y > point.y) !== (b.y > point.y)
-      && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x;
-    if (crosses) inside = !inside;
-  }
-  return inside;
-}
-
-function distanceToPolygonBoundary(point, polygon) {
-  let distance = Infinity;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const start = polygon[index];
-    const end = polygon[(index + 1) % polygon.length];
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const lengthSquared = dx * dx + dy * dy;
-    const ratio = lengthSquared === 0
-      ? 0
-      : Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared));
-    distance = Math.min(distance, Math.hypot(
-      point.x - (start.x + ratio * dx),
-      point.y - (start.y + ratio * dy),
-    ));
-  }
-  return distance;
-}
-
-function distanceToPolygon(point, polygon) {
-  return pointInPolygon(point, polygon) ? 0 : distanceToPolygonBoundary(point, polygon);
-}
-
-function polygonCenter(polygon) {
-  return polygon.reduce((center, point) => ({
-    x: center.x + point.x / polygon.length,
-    y: center.y + point.y / polygon.length,
-  }), { x: 0, y: 0 });
-}
-
-function discCoverage(center, radius, polygons) {
-  let covered = 0;
-  let samples = 0;
-  for (let dx = -radius; dx <= radius; dx += 1) {
-    for (let dy = -radius; dy <= radius; dy += 1) {
-      if (dx * dx + dy * dy > radius * radius) continue;
-      samples += 1;
-      const point = { x: center.x + dx, y: center.y + dy };
-      if (polygons.some((polygon) => polygon.length >= 3 && pointInPolygon(point, polygon))) {
-        covered += 1;
-      }
-    }
-  }
-  return covered / samples;
 }
 
 async function evaluate(client, expression) {
@@ -313,13 +256,16 @@ async function main() {
 
     const initial = await waitFor(async () => {
       const value = await evaluate(client, diagnosticsExpression);
-      return value?.synced && value.frameReady === 'complete' && value.polygons.length === 10
+      return value?.synced
+        && value.frameReady === 'complete'
+        && value.occlusionSource === 'full-scene'
         ? value
         : null;
-    }, 30_000, 'sun/cloud depth synchronization');
+    }, 30_000, 'sun/full-scene depth synchronization');
 
     assert.ok(Math.abs(initial.center.x - initial.marker.x) < 0.75);
     assert.ok(Math.abs(initial.center.y - initial.marker.y) < 0.75);
+    assert.equal(initial.sunLiftPx, 50);
     assert.equal(initial.disc.width, 16);
     assert.equal(initial.disc.height, 16);
     assert.match(initial.disc.background, /radial-gradient/);
@@ -351,7 +297,7 @@ async function main() {
     await delay(300);
 
     let overlap = null;
-    let closest = { distance: Infinity, minutes: null, point: null, polygons: null };
+    let closest = { coverage: -1, minutes: null, value: null };
     const defaultTimeSamples = [
       ...Array.from({ length: 61 }, (_, index) => 5 * 60 + 30 + index * 2),
       ...Array.from({ length: 61 }, (_, index) => 16 * 60 + 30 + index * 2),
@@ -361,17 +307,8 @@ async function main() {
       await delay(160);
       const value = await evaluate(client, diagnosticsExpression);
       if (!value?.disc) continue;
-      const discCenter = {
-        x: value.disc.left + value.disc.width / 2,
-        y: value.disc.top + value.disc.height / 2,
-      };
-      const nearest = Math.min(...value.polygons
-        .filter((polygon) => polygon.length >= 3)
-        .map((polygon) => distanceToPolygon(discCenter, polygon)));
-      if (nearest < closest.distance) {
-        closest = { distance: nearest, minutes, point: discCenter, polygons: value.polygons };
-      }
-      const coverage = discCoverage(discCenter, 7, value.polygons);
+      const coverage = value.discCoverage;
+      if (coverage > closest.coverage) closest = { coverage, minutes, value };
       if (coverage >= 0.15 && coverage <= 0.85) {
         overlap = { minutes, vertical: 0.35, coverage, value };
         break;
@@ -387,24 +324,19 @@ async function main() {
         await adjustCameraVertical(client, vertical - currentVertical);
         currentVertical = vertical;
         const value = await evaluate(client, diagnosticsExpression);
-        const discCenter = {
-          x: value.disc.left + value.disc.width / 2,
-          y: value.disc.top + value.disc.height / 2,
-        };
-        const nearest = Math.min(...value.polygons
-          .filter((polygon) => polygon.length >= 3)
-          .map((polygon) => distanceToPolygon(discCenter, polygon)));
-        if (nearest < closest.distance) {
-          closest = { distance: nearest, minutes: closest.minutes, point: discCenter, polygons: value.polygons };
+        const coverage = value.discCoverage;
+        if (coverage > closest.coverage) {
+          closest = { coverage, minutes: closest.minutes, value };
         }
-        const coverage = discCoverage(discCenter, 7, value.polygons);
         if (coverage >= 0.15 && coverage <= 0.85) {
           overlap = { minutes: closest.minutes, vertical, coverage, value };
           break;
         }
       }
     }
-    assert.ok(overlap, `The sun path never crossed a cloud silhouette. Closest: ${JSON.stringify(closest)}`);
+    assert.ok(overlap, `The sun path never crossed a scene silhouette. Closest: ${JSON.stringify(closest)}`);
+    assert.ok(overlap.value.occlusionRunCount > 0);
+    assert.ok(overlap.value.maskPathLength > 0);
 
     const screenshot = await client.send('Page.captureScreenshot', {
       format: 'png',
@@ -413,7 +345,8 @@ async function main() {
     const screenshotPath = join(PROJECT_ROOT, 'record', 'cloud-sun-occlusion-edge.png');
     await writeFile(screenshotPath, Buffer.from(screenshot.data, 'base64'));
 
-    const beforePitch = overlap.value;
+    await delay(100);
+    const beforePitch = await evaluate(client, diagnosticsExpression);
     const pitchKey = overlap.vertical >= 0.6 ? 'w' : 's';
     await evaluate(client, `(() => {
       const target = document.getElementById('bg-3d')?.contentWindow;
@@ -422,13 +355,11 @@ async function main() {
     })()`);
     await delay(1300);
     const afterPitch = await evaluate(client, diagnosticsExpression);
-    const beforeCloud = polygonCenter(beforePitch.polygons[0]);
-    const afterCloud = polygonCenter(afterPitch.polygons[0]);
     const sunDeltaY = afterPitch.center.y - beforePitch.center.y;
-    const cloudDeltaY = afterCloud.y - beforeCloud.y;
+    const cloudLayerDeltaY = afterPitch.skyMotion.y - beforePitch.skyMotion.y;
     assert.ok(Math.abs(sunDeltaY) > 1);
-    assert.equal(Math.sign(sunDeltaY), Math.sign(cloudDeltaY));
-    assert.ok(Math.abs(sunDeltaY) < Math.abs(cloudDeltaY));
+    assert.equal(Math.sign(sunDeltaY), Math.sign(cloudLayerDeltaY));
+    assert.ok(Math.abs(sunDeltaY - cloudLayerDeltaY) < 0.75);
 
     await client.send('Emulation.setDeviceMetricsOverride', {
       width: 390,
@@ -439,10 +370,12 @@ async function main() {
     await client.send('Page.navigate', { url: previewUrl });
     const mobile = await waitFor(async () => {
       const value = await evaluate(client, diagnosticsExpression);
-      return value?.synced && value.frameReady === 'complete' && value.polygons.length === 10
+      return value?.synced
+        && value.frameReady === 'complete'
+        && value.occlusionSource === 'full-scene'
         ? value
         : null;
-    }, 30_000, 'mobile sun/cloud depth synchronization');
+    }, 30_000, 'mobile sun/full-scene depth synchronization');
     assert.ok(Math.abs(mobile.center.x - mobile.marker.x) < 0.75);
     assert.ok(Math.abs(mobile.center.y - mobile.marker.y) < 0.75);
     assert.equal(mobile.disc.width, 16);
@@ -464,8 +397,8 @@ async function main() {
       overlapCoverage: overlap.coverage,
       overlapCenter: overlap.value.center,
       sunDeltaY,
-      cloudDeltaY,
-      sunToCloudMotionRatio: Math.abs(sunDeltaY / cloudDeltaY),
+      cloudLayerDeltaY,
+      sunToCloudMotionRatio: Math.abs(sunDeltaY / cloudLayerDeltaY),
       mobileCenterError: {
         x: mobile.center.x - mobile.marker.x,
         y: mobile.center.y - mobile.marker.y,

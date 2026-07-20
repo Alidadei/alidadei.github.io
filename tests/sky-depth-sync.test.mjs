@@ -3,10 +3,11 @@ import test from 'node:test';
 import * as THREE from 'three';
 import {
   applyOrbitCameraPose,
-  convexHull,
   DEFAULT_ORBIT_HORIZONTAL,
   DEFAULT_ORBIT_VERTICAL,
-  projectConvexMeshToScreen,
+  encodeOcclusionRuns,
+  equalArcMotionScale,
+  occlusionCoverageInCircle,
   scaleOrbitAngleForDistance,
   screenPointToWorld,
   SUN_WORLD_DISTANCE,
@@ -42,61 +43,58 @@ test('the default 3D camera preserves the existing CSS sun center', () => {
   assert.equal(actual.visible, true);
 });
 
-test('the distant sun keeps its reference height and rotates less than a near cloud', () => {
-  const referenceCamera = createCamera();
-  const sunWorld = screenPointToWorld(referenceCamera, 1000, 90, WIDTH, HEIGHT);
-  const cloudWorld = new THREE.Vector3(280, 108, -250);
-
+test('the distant sun uses a smaller angle for the same cloud-layer travel distance', () => {
   for (const sceneVertical of [0.05, 0.65]) {
-    const sceneCamera = createCamera();
-    const sunCamera = createCamera();
-    const beforeSun = worldPointToScreen(sunCamera, sunWorld, WIDTH, HEIGHT);
-    const beforeCloud = worldPointToScreen(sceneCamera, cloudWorld, WIDTH, HEIGHT);
     const sunVertical = scaleOrbitAngleForDistance(
       sceneVertical,
       DEFAULT_ORBIT_VERTICAL,
       RADIUS,
       SUN_WORLD_DISTANCE,
     );
-
-    applyOrbitCameraPose(sceneCamera, CENTER, RADIUS, DEFAULT_ORBIT_HORIZONTAL, sceneVertical);
-    applyOrbitCameraPose(sunCamera, CENTER, RADIUS, DEFAULT_ORBIT_HORIZONTAL, sunVertical);
-    const afterSun = worldPointToScreen(sunCamera, sunWorld, WIDTH, HEIGHT);
-    const afterCloud = worldPointToScreen(sceneCamera, cloudWorld, WIDTH, HEIGHT);
-    const sunDeltaY = afterSun.y - beforeSun.y;
-    const cloudDeltaY = afterCloud.y - beforeCloud.y;
-
-    assert.ok(Math.abs(beforeSun.y - 90) < 1e-6);
+    const cloudTravel = Math.abs(sceneVertical - DEFAULT_ORBIT_VERTICAL) * RADIUS;
+    const sunTravel = Math.abs(sunVertical - DEFAULT_ORBIT_VERTICAL) * SUN_WORLD_DISTANCE;
     assert.ok(Math.abs(sunVertical - DEFAULT_ORBIT_VERTICAL)
       < Math.abs(sceneVertical - DEFAULT_ORBIT_VERTICAL));
-    assert.notEqual(Math.sign(sunDeltaY), 0);
-    assert.equal(Math.sign(sunDeltaY), Math.sign(cloudDeltaY));
-    assert.ok(Math.abs(sunDeltaY) < Math.abs(cloudDeltaY));
+    assert.ok(Math.abs(sunTravel - cloudTravel) < 1e-10);
+    assert.ok(Math.abs(equalArcMotionScale(
+      sceneVertical,
+      DEFAULT_ORBIT_VERTICAL,
+      RADIUS,
+      SUN_WORLD_DISTANCE,
+    ) - 1) < 1e-12);
   }
 });
 
-test('cloud occlusion uses the projected hull of the rendered outline mesh', () => {
-  const camera = createCamera();
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(30, 12, 8));
-  mesh.position.set(280, 135, -250);
-  mesh.scale.setScalar(1.015);
-  mesh.updateMatrixWorld(true);
+test('the full-scene WebGL readback becomes a top-origin SVG mask', () => {
+  const width = 4;
+  const height = 3;
+  const pixels = new Uint8Array(width * height * 4).fill(255);
+  const blockScreenPixel = (x, y) => {
+    const sourceY = height - 1 - y;
+    const offset = (sourceY * width + x) * 4;
+    pixels.fill(0, offset, offset + 4);
+  };
+  blockScreenPixel(1, 0);
+  blockScreenPixel(2, 0);
+  blockScreenPixel(3, 1);
+  blockScreenPixel(0, 2);
 
-  const polygon = projectConvexMeshToScreen(mesh, camera, WIDTH, HEIGHT);
-  assert.ok(polygon);
-  assert.ok(polygon.points.length >= 8);
-  assert.ok(polygon.points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)));
-
-  assert.deepEqual(convexHull([
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 1, y: 1 },
-    { x: 0, y: 1 },
-    { x: 0.5, y: 0.5 },
-  ]), [
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 1, y: 1 },
-    { x: 0, y: 1 },
+  assert.deepEqual(encodeOcclusionRuns(pixels, width, height), [
+    [1, 0, 2],
+    [3, 1, 1],
+    [0, 2, 1],
   ]);
+});
+
+test('disc coverage reads the same top-origin scene mask', () => {
+  const width = 5;
+  const height = 5;
+  const pixels = new Uint8Array(width * height * 4).fill(255);
+  for (const [x, y] of [[2, 1], [1, 2], [2, 2], [3, 2], [2, 3]]) {
+    const sourceY = height - 1 - y;
+    const offset = (sourceY * width + x) * 4;
+    pixels.fill(0, offset, offset + 4);
+  }
+
+  assert.equal(occlusionCoverageInCircle(pixels, width, height, 2, 2, 1), 1);
 });
