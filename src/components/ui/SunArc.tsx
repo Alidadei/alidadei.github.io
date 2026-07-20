@@ -181,7 +181,8 @@ export default function SunArc({ lang }: SunArcProps) {
     ? 30 - altitude * 28   // range: 30% (horizon) → 2% (noon peak)
     : 40 - altitude * 38;  // range: 40% (horizon) → 2% (noon peak)
 
-  const sunLiftPx = 50;
+    // 控制总体太阳高度的抬升量
+  const sunLiftPx = 40;
 
   // Sun appearance
   const sunCore = altitude > 0.5 ? '#fff8e0' : altitude > 0.2 ? '#ffd080' : '#ff8030';
