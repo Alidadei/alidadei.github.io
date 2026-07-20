@@ -20,3 +20,9 @@ export function getDaylightRenderProfile(altitude: number, isMobile: boolean) {
   };
 }
 
+export function getPaleSurfaceRenderProfile(isMobile: boolean) {
+  return {
+    emissive: 0xfff8f0,
+    emissiveIntensity: isMobile ? 0 : 0.3,
+  };
+}

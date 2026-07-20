@@ -6,7 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { getDaylightRenderProfile } from './daylight-profile';
+import { getDaylightRenderProfile, getPaleSurfaceRenderProfile } from './daylight-profile';
 
 const container = document.getElementById('scene3d');
 let W = container.clientWidth, H = container.clientHeight;
@@ -102,9 +102,13 @@ const toonColors = new Uint8Array([80, 160, 210, 255]);
 const toonGradient = new THREE.DataTexture(toonColors, 4, 1, THREE.RedFormat);
 toonGradient.minFilter = THREE.NearestFilter; toonGradient.magFilter = THREE.NearestFilter; toonGradient.needsUpdate = true;
 
-function toon(geo, color, outlineW = 2) {
+function toon(geo, color, outlineW = 2, materialOverrides = {}) {
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(geo, new THREE.MeshToonMaterial({ color, gradientMap: toonGradient })));
+  g.add(new THREE.Mesh(geo, new THREE.MeshToonMaterial({
+    color,
+    gradientMap: toonGradient,
+    ...materialOverrides,
+  })));
   const o = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x3a2f45, side: THREE.BackSide }));
   const s = 1 + outlineW * 0.01; o.scale.set(s, s, s);
   g.add(o); return g;
@@ -187,7 +191,8 @@ scene.add(tree);
 // ── Robot (sitting under tree) ──
 const robot = new THREE.Group(); robot.position.set(35, 20, 12); robot.rotation.y = 1.2;
 const body = toon(new THREE.BoxGeometry(18, 22, 14), 0xb3e5fc, 2); body.rotation.x = -0.12; robot.add(body);
-const head = toon(new THREE.SphereGeometry(10, 12, 10), 0xfff8f0, 2); head.position.y = 20; head.rotation.x = -0.2; robot.add(head);
+const paleSurfaceProfile = getPaleSurfaceRenderProfile(_mobile);
+const head = toon(new THREE.SphereGeometry(10, 12, 10), 0xfff8f0, 2, paleSurfaceProfile); head.position.y = 20; head.rotation.x = -0.2; robot.add(head);
 const antenna = toon(new THREE.CylinderGeometry(0.8, 0.8, 8, 6), 0xffe082, 1.5); antenna.position.set(0, 28, 0); robot.add(antenna);
 const antBall = toon(new THREE.SphereGeometry(2, 8, 6), 0xffe082, 1.5); antBall.position.set(0, 33, 0); robot.add(antBall);
 
@@ -286,7 +291,7 @@ const clouds = [];
 for (const c of [{ x: -250, y: 150, z: -200, s: 1.0, sp: 0.07 }, { x: 280, y: 135, z: -250, s: 1.3, sp: 0.05 }]) {
   const cloud = new THREE.Group();
   for (const p of [{ r: 30, x: 0, y: 0, z: 0 }, { r: 24, x: 28, y: 5, z: 5 }, { r: 22, x: -25, y: 3, z: -3 }, { r: 18, x: 15, y: 12, z: -8 }, { r: 20, x: -12, y: 10, z: 6 }]) {
-    const puff = toon(new THREE.SphereGeometry(p.r, 12, 8), 0xfff8f0, 1.5); puff.position.set(p.x, p.y, p.z); cloud.add(puff);
+    const puff = toon(new THREE.SphereGeometry(p.r, 12, 8), 0xfff8f0, 1.5, paleSurfaceProfile); puff.position.set(p.x, p.y, p.z); cloud.add(puff);
   }
   cloud.position.set(c.x, c.y, c.z); cloud.scale.setScalar(c.s); cloud.userData = { bx: c.x, by: c.y, sp: c.sp };
   scene.add(cloud); clouds.push(cloud);

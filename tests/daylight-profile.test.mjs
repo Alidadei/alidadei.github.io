@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getDaylightRenderProfile } from '../src/3d/daylight-profile.ts';
+import {
+  getDaylightRenderProfile,
+  getPaleSurfaceRenderProfile,
+} from '../src/3d/daylight-profile.ts';
 
 test('desktop reuses the mobile rendering profile in full daylight', () => {
   const mobile = getDaylightRenderProfile(1, true);
@@ -28,3 +31,13 @@ test('desktop transitions smoothly during dawn and dusk', () => {
   assert.equal(profile.edgeStrength, 0.25);
 });
 
+test('desktop lifts only pale scene surfaces while mobile keeps its original material output', () => {
+  assert.deepEqual(getPaleSurfaceRenderProfile(false), {
+    emissive: 0xfff8f0,
+    emissiveIntensity: 0.3,
+  });
+  assert.deepEqual(getPaleSurfaceRenderProfile(true), {
+    emissive: 0xfff8f0,
+    emissiveIntensity: 0,
+  });
+});
