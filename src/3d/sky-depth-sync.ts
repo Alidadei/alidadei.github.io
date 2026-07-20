@@ -14,6 +14,16 @@ export interface ScreenPolygon {
   points: Array<{ x: number; y: number }>;
 }
 
+export function scaleOrbitAngleForDistance(
+  currentAngle: number,
+  referenceAngle: number,
+  sceneRadius: number,
+  distantRadius: number,
+) {
+  const response = Math.max(0, Math.min(1, sceneRadius / distantRadius));
+  return referenceAngle + (currentAngle - referenceAngle) * response;
+}
+
 export function applyOrbitCameraPose(
   camera: THREE.PerspectiveCamera,
   center: THREE.Vector3,

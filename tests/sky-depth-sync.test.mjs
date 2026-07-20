@@ -7,6 +7,7 @@ import {
   DEFAULT_ORBIT_HORIZONTAL,
   DEFAULT_ORBIT_VERTICAL,
   projectConvexMeshToScreen,
+  scaleOrbitAngleForDistance,
   screenPointToWorld,
   SUN_WORLD_DISTANCE,
   worldPointToScreen,
@@ -41,21 +42,37 @@ test('the default 3D camera preserves the existing CSS sun center', () => {
   assert.equal(actual.visible, true);
 });
 
-test('pitching the shared camera moves the distant sun and cloud in the same direction', () => {
-  const camera = createCamera();
-  const sunWorld = screenPointToWorld(camera, 1000, 90, WIDTH, HEIGHT);
-  const cloudWorld = new THREE.Vector3(280, 135, -250);
-  const beforeSun = worldPointToScreen(camera, sunWorld, WIDTH, HEIGHT);
-  const beforeCloud = worldPointToScreen(camera, cloudWorld, WIDTH, HEIGHT);
+test('the distant sun keeps its reference height and rotates less than a near cloud', () => {
+  const referenceCamera = createCamera();
+  const sunWorld = screenPointToWorld(referenceCamera, 1000, 90, WIDTH, HEIGHT);
+  const cloudWorld = new THREE.Vector3(280, 108, -250);
 
-  applyOrbitCameraPose(camera, CENTER, RADIUS, DEFAULT_ORBIT_HORIZONTAL, 0.65);
-  const afterSun = worldPointToScreen(camera, sunWorld, WIDTH, HEIGHT);
-  const afterCloud = worldPointToScreen(camera, cloudWorld, WIDTH, HEIGHT);
-  const sunDeltaY = afterSun.y - beforeSun.y;
-  const cloudDeltaY = afterCloud.y - beforeCloud.y;
+  for (const sceneVertical of [0.05, 0.65]) {
+    const sceneCamera = createCamera();
+    const sunCamera = createCamera();
+    const beforeSun = worldPointToScreen(sunCamera, sunWorld, WIDTH, HEIGHT);
+    const beforeCloud = worldPointToScreen(sceneCamera, cloudWorld, WIDTH, HEIGHT);
+    const sunVertical = scaleOrbitAngleForDistance(
+      sceneVertical,
+      DEFAULT_ORBIT_VERTICAL,
+      RADIUS,
+      SUN_WORLD_DISTANCE,
+    );
 
-  assert.notEqual(Math.sign(sunDeltaY), 0);
-  assert.equal(Math.sign(sunDeltaY), Math.sign(cloudDeltaY));
+    applyOrbitCameraPose(sceneCamera, CENTER, RADIUS, DEFAULT_ORBIT_HORIZONTAL, sceneVertical);
+    applyOrbitCameraPose(sunCamera, CENTER, RADIUS, DEFAULT_ORBIT_HORIZONTAL, sunVertical);
+    const afterSun = worldPointToScreen(sunCamera, sunWorld, WIDTH, HEIGHT);
+    const afterCloud = worldPointToScreen(sceneCamera, cloudWorld, WIDTH, HEIGHT);
+    const sunDeltaY = afterSun.y - beforeSun.y;
+    const cloudDeltaY = afterCloud.y - beforeCloud.y;
+
+    assert.ok(Math.abs(beforeSun.y - 90) < 1e-6);
+    assert.ok(Math.abs(sunVertical - DEFAULT_ORBIT_VERTICAL)
+      < Math.abs(sceneVertical - DEFAULT_ORBIT_VERTICAL));
+    assert.notEqual(Math.sign(sunDeltaY), 0);
+    assert.equal(Math.sign(sunDeltaY), Math.sign(cloudDeltaY));
+    assert.ok(Math.abs(sunDeltaY) < Math.abs(cloudDeltaY));
+  }
 });
 
 test('cloud occlusion uses the projected hull of the rendered outline mesh', () => {

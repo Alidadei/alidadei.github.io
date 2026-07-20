@@ -428,6 +428,7 @@ async function main() {
     const cloudDeltaY = afterCloud.y - beforeCloud.y;
     assert.ok(Math.abs(sunDeltaY) > 1);
     assert.equal(Math.sign(sunDeltaY), Math.sign(cloudDeltaY));
+    assert.ok(Math.abs(sunDeltaY) < Math.abs(cloudDeltaY));
 
     await client.send('Emulation.setDeviceMetricsOverride', {
       width: 390,
@@ -464,6 +465,7 @@ async function main() {
       overlapCenter: overlap.value.center,
       sunDeltaY,
       cloudDeltaY,
+      sunToCloudMotionRatio: Math.abs(sunDeltaY / cloudDeltaY),
       mobileCenterError: {
         x: mobile.center.x - mobile.marker.x,
         y: mobile.center.y - mobile.marker.y,

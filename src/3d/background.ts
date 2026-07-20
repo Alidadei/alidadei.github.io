@@ -12,7 +12,9 @@ import {
   DEFAULT_ORBIT_HORIZONTAL,
   DEFAULT_ORBIT_VERTICAL,
   projectConvexMeshToScreen,
+  scaleOrbitAngleForDistance,
   screenPointToWorld,
+  SUN_WORLD_DISTANCE,
   worldPointToScreen,
 } from './sky-depth-sync';
 
@@ -33,6 +35,7 @@ scene.background = new THREE.CanvasTexture(bgCanvas);
 // ── Camera ──
 const camera = new THREE.PerspectiveCamera(45, W / H, 1, 2000);
 camera.position.set(0, 50, 350); camera.lookAt(0, 30, 0);
+const sunProjectionCamera = camera.clone();
 
 // ── Renderer ──
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -350,9 +353,9 @@ const ORBIT_CENTER = new THREE.Vector3(20, 35, 0);
 const ORBIT_RADIUS = _mobile ? 480 : 350;
 
 // ── CSS sun / 3D cloud depth sync ──
-// The sun keeps its existing DOM/CSS painting. Only its world projection and
-// the cloud-shaped mask come from this scene, so camera motion and occlusion
-// use the exact same camera matrix as the clouds.
+// The sun keeps its existing DOM/CSS painting and reference height. Clouds use
+// the scene camera directly; the distant sun responds by sceneRadius / sunRadius,
+// producing the smaller angular motion expected from the far layer.
 let sunWorldPosition: THREE.Vector3 | null = null;
 let lastDepthSyncFrame = -Infinity;
 const depthSyncWorldPoint = new THREE.Vector3();
@@ -405,7 +408,26 @@ function postDepthSyncFrame(timestamp: number) {
 
   camera.updateMatrixWorld(true);
   scene.updateMatrixWorld(true);
-  const sun = worldPointToScreen(camera, sunWorldPosition, W, H);
+  const sunOrbitHorizontal = scaleOrbitAngleForDistance(
+    orbitH,
+    DEFAULT_ORBIT_HORIZONTAL,
+    ORBIT_RADIUS,
+    SUN_WORLD_DISTANCE,
+  );
+  const sunOrbitVertical = scaleOrbitAngleForDistance(
+    orbitV,
+    DEFAULT_ORBIT_VERTICAL,
+    ORBIT_RADIUS,
+    SUN_WORLD_DISTANCE,
+  );
+  applyOrbitCameraPose(
+    sunProjectionCamera,
+    ORBIT_CENTER,
+    ORBIT_RADIUS,
+    sunOrbitHorizontal,
+    sunOrbitVertical,
+  );
+  const sun = worldPointToScreen(sunProjectionCamera, sunWorldPosition, W, H);
   const sunDepth = -depthSyncCameraPoint
     .copy(sunWorldPosition)
     .applyMatrix4(camera.matrixWorldInverse)
@@ -509,6 +531,7 @@ animate();
 window.addEventListener('resize', () => {
   W = container.clientWidth; H = container.clientHeight;
   camera.aspect = W / H; camera.updateProjectionMatrix();
+  sunProjectionCamera.aspect = W / H; sunProjectionCamera.updateProjectionMatrix();
   renderer.setSize(W, H); composer.setSize(W, H);
 });
 
