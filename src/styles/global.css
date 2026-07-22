@@ -612,6 +612,7 @@ code {
   position: absolute;
   left: 50%;
   top: 50%;
+  /* Keep the progress arc close to the 32px menu ball. */
   width: 36px;
   height: 36px;
   overflow: visible;
@@ -625,8 +626,9 @@ code {
   stroke: var(--color-accent);
   stroke-width: 1;
   stroke-linecap: butt;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  /* Start hidden; JS installs the browser's measured circumference. */
+  stroke-dasharray: 0 9999;
+  stroke-dashoffset: 0;
 }
 .toc-link {
   transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;

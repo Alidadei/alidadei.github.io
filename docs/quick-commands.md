@@ -170,6 +170,7 @@ compress-posts 用法:
 | npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景、自动选择可用端口，并清除本站遗留的生产 SW/CSS 缓存 |
 | npm run sky-preview | 桌面天空全天预览 | 一键启动开发服务器和独立 Microsoft Edge，把首页一整天的天空配色压缩成约 2 分钟循环播放 |
 | npm run check:dev-cache | 开发缓存回归 | 验证 dev 只清除本站生产 Service Worker/缓存，并防止自动刷新死循环 |
+| npm run check:reading-progress | 阅读进度单测 | 验证正文起止、短文章与手机动态视觉视口的进度几何计算 |
 | npm run check:mobile-overflow | 移动端横向溢出回归 | 自动启动开发服务器和无界面 Microsoft Edge，遍历全站路由并在 320、360、390、430 px 下验证页面、正文和极端宽内容 |
 | npm run build   | 完整构建       | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
 | npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。会自动选择可用端口 |
@@ -223,6 +224,7 @@ npm run sky-preview
 | 换关于页头像 | npm run avatar -- <源图> |
 | 改了 3D 背景代码 | npm run build:3d(或直接 npm run build) |
 | 查看桌面端天空一整天的配色 | npm run sky-preview |
+| 检查博客阅读进度几何 | npm run check:reading-progress |
 | 检查所有移动端横向溢出 | npm run check:mobile-overflow |
 | 提交推送前最终验证 | npm run build(必须全绿才能部署) |
 

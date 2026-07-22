@@ -371,10 +371,13 @@ alidadei.github.io/
 ├── tests/                             # 验证脚本
 │   ├── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
 │   ├── dev-service-worker-cleanup.test.mjs # 开发态 SW/缓存清理回归
+│   ├── inspect-reading-progress.mjs   # Chrome 真实弧长 + 动态视觉视口回归
+│   ├── reading-progress.test.mjs      # 阅读进度纯函数单测
 │   └── mobile-overflow-regression.mjs # 移动端溢出 + 多宽度桌面博客布局/字体回归
 │
 ├── record/                            # 实验与验证结果
-│   └── desktop-blog-responsive-layout.md # 桌面博客响应式布局双浏览器实测
+│   ├── desktop-blog-responsive-layout.md # 桌面博客响应式布局双浏览器实测
+│   └── mobile-toc-regression.md       # 移动目录、阅读进度与滚动回归
 │
 ├── docs/                              # 文档
 │   ├── knowledge-graph-en/            # 知识图谱
@@ -422,6 +425,7 @@ alidadei.github.io/
 │   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
 │   ├── lib/dev-service-worker.mjs     # dev 中清除本站生产 SW/缓存，必要时单次刷新
 │   ├── lib/i18n.ts                    # i18n 路由工具
+│   ├── lib/reading-progress.mjs       # 基于 visualViewport 的正文阅读进度纯函数
 │   └── lib/feed.ts                    # RSS 解析 (构建时抓友链 feed, 失败回退不破坏构建)
 │   │
 │   ├── layouts/                       # 布局
@@ -571,7 +575,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 图片懒加载 | AwardWall 所有证书图片使用 `loading="lazy"` |
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
-| 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端右侧悬浮按钮 + 滑出面板 + scroll spy |
+| 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端右侧 32px 目录球 + 贴球的 36px/1px 进度环 + 滑出面板 + scroll spy；正文底部到达阅读线或页面最大可滚位置才完成，未完成时保留约 2px 可见缺口；进度圈使用 `visualViewport.pageTop/height` 与 SVG `getTotalLength()`，地址栏/键盘/缩放变化时重算 |
 | 桌面博客布局 | 以1749px视口的正文215–1336px、目录1366–1645px为基准，使用vw定位、1121fr/279fr网格和30px比例间距，字体通过clamp(px, px + vw, px)缩放 |
 | 触摸目标 | Header 汉堡按钮 `p-2.5`，导航链接 `py-3`，Footer 图标 `p-2`，AwardWall `p-3` |
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |

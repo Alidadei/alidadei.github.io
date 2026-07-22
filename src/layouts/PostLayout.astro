@@ -72,11 +72,11 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     <!-- Mobile floating TOC button (visible below lg) -->
     <button
       id="toc-mobile-btn"
-      class="lg:hidden fixed right-3 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-bg-secondary/90 backdrop-blur border border-border shadow-md flex items-center justify-center text-text-muted hover:text-accent hover:border-accent transition-all touch-manipulation"
+      class="lg:hidden fixed right-3 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-bg-secondary flex items-center justify-center text-text-muted hover:text-accent transition-all touch-manipulation"
       aria-label={lang === 'zh' ? '目录' : 'Table of Contents'}
     >
       <svg id="toc-mobile-progress" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-        <circle id="toc-mobile-progress-value" cx="24" cy="24" r="22" pathLength="1" />
+        <circle id="toc-mobile-progress-value" cx="24" cy="24" r="22" />
       </svg>
       <svg class="relative z-10 w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
@@ -132,6 +132,11 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
   <!-- TOC generation script -->
   <script>
+    import {
+      calculateReadingProgress,
+      calculateVisibleRingProgress,
+    } from '../lib/reading-progress.mjs';
+
     function initTOC() {
       const prose = document.querySelector('.prose');
       const tocNav = document.getElementById('toc-nav');
@@ -251,6 +256,10 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
       const tocLinks = Array.from(tocNav.querySelectorAll('.toc-link'));
       const mobileLinks = tocNavMobile ? Array.from(tocNavMobile.querySelectorAll('.toc-link')) : [];
       const mobileProgressValue = document.getElementById('toc-mobile-progress-value') as SVGCircleElement | null;
+      const mobileProgressLength = mobileProgressValue?.getTotalLength() ?? 0;
+      if (mobileProgressValue && mobileProgressLength > 0) {
+        mobileProgressValue.style.strokeDasharray = `${mobileProgressLength} ${mobileProgressLength}`;
+      }
       const headingElements = Array.from(headings);
       const observedHeadingIndices = new Set<number>();
       const hasIntersectionObserver = 'IntersectionObserver' in window;
@@ -293,15 +302,27 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
 
       function getReadingProgress() {
         const proseRect = prose.getBoundingClientRect();
-        const readableViewportHeight = Math.max(window.innerHeight - scrollOffset, 1);
-        const readingDistance = proseRect.height - readableViewportHeight;
+        const visualViewport = window.visualViewport;
+        const viewportTop = visualViewport?.pageTop ?? window.scrollY;
+        const viewportHeight = visualViewport?.height ?? window.innerHeight;
+        const contentTop = proseRect.top + window.scrollY;
+        const documentHeight = Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+        );
+        const maximumViewportTop = Math.max(
+          documentHeight - window.innerHeight + (visualViewport?.offsetTop ?? 0),
+          0,
+        );
 
-        if (readingDistance <= 0) {
-          return proseRect.bottom <= window.innerHeight ? 1 : 0;
-        }
-
-        const distanceRead = scrollOffset - proseRect.top;
-        return Math.min(Math.max(distanceRead / readingDistance, 0), 1);
+        return calculateReadingProgress({
+          contentTop,
+          contentBottom: contentTop + proseRect.height,
+          viewportTop,
+          viewportHeight,
+          topOffset: scrollOffset,
+          maximumViewportTop,
+        });
       }
 
       function updateReadingProgress() {
@@ -313,9 +334,13 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           tocIndicator.dataset.progress = serializedProgress;
         }
 
-        if (mobileProgressValue) {
-          mobileProgressValue.style.strokeDashoffset = String(1 - progress);
+        if (mobileProgressValue && mobileProgressLength > 0) {
+          const visibleRingProgress = calculateVisibleRingProgress(progress);
+          mobileProgressValue.style.strokeDashoffset = String(
+            mobileProgressLength * (1 - visibleRingProgress),
+          );
           mobileProgressValue.dataset.progress = serializedProgress;
+          mobileProgressValue.dataset.visibleProgress = visibleRingProgress.toFixed(4);
         }
       }
 
@@ -415,22 +440,29 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
         });
       });
 
-      // Throttled scroll listener
+      // Deduplicate layout- and visual-viewport events into one paint update.
       let ticking = false;
-      window.addEventListener('scroll', () => {
-        if (!ticking) {
-          requestAnimationFrame(() => {
-            updateActiveHeading();
-            updateReadingProgress();
-            ticking = false;
-          });
-          ticking = true;
-        }
-      });
-      window.addEventListener('resize', () => {
-        updateActiveHeading(true);
-        updateReadingProgress();
-      });
+      let forceActiveUpdate = false;
+      function scheduleTOCUpdate(force = false) {
+        forceActiveUpdate ||= force;
+        if (ticking) return;
+
+        ticking = true;
+        requestAnimationFrame(() => {
+          updateActiveHeading(forceActiveUpdate);
+          updateReadingProgress();
+          forceActiveUpdate = false;
+          ticking = false;
+        });
+      }
+
+      window.addEventListener('scroll', () => scheduleTOCUpdate());
+      window.addEventListener('resize', () => scheduleTOCUpdate(true));
+      window.visualViewport?.addEventListener('scroll', () => scheduleTOCUpdate());
+      window.visualViewport?.addEventListener('resize', () => scheduleTOCUpdate(true));
+      if ('ResizeObserver' in window) {
+        new ResizeObserver(() => scheduleTOCUpdate(true)).observe(prose);
+      }
 
       // Initial state
       updateActiveHeading();

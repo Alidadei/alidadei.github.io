@@ -1,11 +1,27 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { calculateVisibleRingProgress } from '../src/lib/reading-progress.mjs';
+
 const cdpBase = process.env.CDP_URL || 'http://127.0.0.1:9228';
 const baseUrl = process.env.TOC_BASE_URL || 'http://127.0.0.1:4321';
 const pagePath = process.env.TOC_PAGE_PATH || '/zh/blog/llm-post-training-basics-and-jargon/';
+const screenshotDir = process.env.TOC_SCREENSHOT_DIR || '';
+const landmarkHeadingText = 'Reward model 与偏好概率';
+const requiresLandmarkHeading = pagePath.includes('/llm-post-training-basics-and-jargon/');
 
 const viewports = [
   { name: 'desktop', width: 1280, height: 900, mobile: false },
   { name: 'mobile', width: 390, height: 844, mobile: true },
-];
+  {
+    name: 'mobile-visual-viewport',
+    width: 390,
+    height: 844,
+    mobile: true,
+    visualHeight: 600,
+    visualOffsetTop: 200,
+  },
+].filter(viewport => !process.env.TOC_VIEWPORT || viewport.name === process.env.TOC_VIEWPORT);
 
 class CdpClient {
   constructor(socket) {
@@ -66,6 +82,34 @@ async function inspectViewport(viewport) {
       screenWidth: viewport.width,
       screenHeight: viewport.height,
     });
+    if (viewport.visualHeight) {
+      await client.send('Page.addScriptToEvaluateOnNewDocument', {
+        source: `(() => {
+          let visualHeight = ${viewport.visualHeight};
+          let visualOffsetTop = ${viewport.visualOffsetTop ?? 0};
+          const emulatedVisualViewport = new EventTarget();
+          Object.defineProperties(emulatedVisualViewport, {
+            height: { get: () => visualHeight },
+            width: { get: () => window.innerWidth },
+            pageTop: { get: () => window.scrollY + visualOffsetTop },
+            pageLeft: { get: () => window.scrollX },
+            offsetTop: { get: () => visualOffsetTop },
+            offsetLeft: { get: () => 0 },
+            scale: { get: () => 1 },
+          });
+          Object.defineProperty(window, 'visualViewport', {
+            configurable: true,
+            get: () => emulatedVisualViewport,
+          });
+          window.__setReadingProgressVisualViewport = (nextHeight, nextOffsetTop) => {
+            visualHeight = nextHeight;
+            visualOffsetTop = nextOffsetTop;
+            emulatedVisualViewport.dispatchEvent(new Event('resize'));
+            emulatedVisualViewport.dispatchEvent(new Event('scroll'));
+          };
+        })();`,
+      });
+    }
     await client.send('Page.navigate', { url: `${baseUrl}${pagePath}` });
     await client.send('Runtime.evaluate', {
       expression: `new Promise(resolve => {
@@ -93,9 +137,21 @@ async function inspectViewport(viewport) {
         const initialProseRect = prose.getBoundingClientRect();
         const proseTop = initialProseRect.top + window.scrollY;
         const proseBottom = initialProseRect.bottom + window.scrollY;
+        const visualViewport = window.visualViewport;
+        const viewportHeight = visualViewport?.height ?? window.innerHeight;
+        const viewportOffsetTop = visualViewport?.offsetTop ?? 0;
+        const documentHeight = Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+        );
+        const maximumViewportTop = Math.max(
+          documentHeight - window.innerHeight + viewportOffsetTop,
+          0,
+        );
         const readingStart = proseTop - scrollOffset;
-        const readingEnd = proseBottom - window.innerHeight;
+        const readingEnd = Math.min(proseBottom - scrollOffset, maximumViewportTop);
         const readingDistance = readingEnd - readingStart;
+        const ringLength = ringValue.getTotalLength();
         const expectedProgresses = [0, 0.25, 0.5, 0.75, 1];
 
         const settle = () => new Promise(resolve => {
@@ -104,7 +160,8 @@ async function inspectViewport(viewport) {
         const clamp = value => Math.min(Math.max(value, 0), 1);
 
         async function sampleAt(expectedProgress) {
-          const requestedScrollY = readingStart + readingDistance * expectedProgress;
+          const targetViewportTop = readingStart + readingDistance * expectedProgress;
+          const requestedScrollY = targetViewportTop - (window.visualViewport?.offsetTop ?? 0);
           window.scrollTo({ top: requestedScrollY, behavior: 'auto' });
           await settle();
 
@@ -115,10 +172,13 @@ async function inspectViewport(viewport) {
             expectedProgress,
             requestedScrollY,
             actualScrollY: window.scrollY,
+            actualViewportTop: window.visualViewport?.pageTop ?? window.scrollY,
             dataProgress: Number(indicator.dataset.progress),
             ringDataProgress: Number(ringValue.dataset.progress),
             indicatorRatio: trackHeight > 0 ? indicatorHeight / trackHeight : null,
-            ringProgress: Number.isFinite(dashOffset) ? 1 - dashOffset : null,
+            ringProgress: Number.isFinite(dashOffset) && ringLength > 0
+              ? 1 - dashOffset / ringLength
+              : null,
           };
         }
 
@@ -127,16 +187,105 @@ async function inspectViewport(viewport) {
           samples.push(await sampleAt(expectedProgress));
         }
 
+        let visualResizeSample = null;
+        if (typeof window.__setReadingProgressVisualViewport === 'function') {
+          const requestedViewportTop = readingStart + readingDistance * 0.5;
+          const requestedScrollY = requestedViewportTop - (window.visualViewport?.offsetTop ?? 0);
+          window.scrollTo({ top: requestedScrollY, behavior: 'auto' });
+          await settle();
+          const previousHeight = window.visualViewport.height;
+          const previousOffsetTop = window.visualViewport.offsetTop;
+          const nextHeight = Math.max(previousHeight - 100, 1);
+          const nextOffsetTop = previousOffsetTop + 20;
+          window.__setReadingProgressVisualViewport(nextHeight, nextOffsetTop);
+          await settle();
+          const resizedMaximumViewportTop = Math.max(
+            documentHeight - window.innerHeight + nextOffsetTop,
+            0,
+          );
+          const resizedReadingEnd = Math.min(
+            proseBottom - scrollOffset,
+            resizedMaximumViewportTop,
+          );
+          const resizedDistance = resizedReadingEnd - readingStart;
+          const expectedProgress = clamp(
+            ((window.visualViewport.pageTop ?? window.scrollY) - readingStart) / resizedDistance,
+          );
+          visualResizeSample = {
+            previousHeight,
+            nextHeight,
+            previousOffsetTop,
+            nextOffsetTop,
+            expectedProgress,
+            dataProgress: Number(indicator.dataset.progress),
+            ringDataProgress: Number(ringValue.dataset.progress),
+          };
+          window.__setReadingProgressVisualViewport(previousHeight, previousOffsetTop);
+          await settle();
+        }
+
+        const formerReadingEnd = proseBottom - viewportHeight;
+        let prematureCompletionSample = null;
+        if (formerReadingEnd < readingEnd - 1) {
+          const requestedScrollY = formerReadingEnd - (window.visualViewport?.offsetTop ?? 0);
+          window.scrollTo({ top: requestedScrollY, behavior: 'auto' });
+          await settle();
+          const dashOffset = Number.parseFloat(getComputedStyle(ringValue).strokeDashoffset);
+          const ringRect = ring.getBoundingClientRect();
+          const viewBoxWidth = ring.viewBox.baseVal.width;
+          prematureCompletionSample = {
+            formerReadingEnd,
+            expectedProgress: clamp((formerReadingEnd - readingStart) / readingDistance),
+            dataProgress: Number(indicator.dataset.progress),
+            ringDataProgress: Number(ringValue.dataset.progress),
+            visibleRingDataProgress: Number(ringValue.dataset.visibleProgress),
+            ringProgress: Number.isFinite(dashOffset) && ringLength > 0
+              ? 1 - dashOffset / ringLength
+              : null,
+            renderedGapCssPixels: Number.isFinite(dashOffset) && viewBoxWidth > 0
+              ? dashOffset * ringRect.width / viewBoxWidth
+              : null,
+          };
+        }
+
         const headings = [...prose.querySelectorAll('h2, h3, h4, h5, h6')];
+        const landmarkHeading = headings.find(
+          heading => heading.textContent?.trim().includes(${JSON.stringify(landmarkHeadingText)}),
+        );
+        let landmarkHeadingSample = null;
+        if (landmarkHeading) {
+          const landmarkTop = landmarkHeading.getBoundingClientRect().top + window.scrollY;
+          const landmarkViewportTop = landmarkTop - scrollOffset;
+          const requestedScrollY = landmarkViewportTop - (window.visualViewport?.offsetTop ?? 0);
+          window.scrollTo({ top: requestedScrollY, behavior: 'auto' });
+          await settle();
+          const actualViewportTop = window.visualViewport?.pageTop ?? window.scrollY;
+          const dashOffset = Number.parseFloat(getComputedStyle(ringValue).strokeDashoffset);
+          landmarkHeadingSample = {
+            text: landmarkHeading.textContent?.trim() || null,
+            requestedScrollY,
+            actualScrollY: window.scrollY,
+            expectedProgress: clamp((actualViewportTop - readingStart) / readingDistance),
+            dataProgress: Number(indicator.dataset.progress),
+            ringDataProgress: Number(ringValue.dataset.progress),
+            visibleRingDataProgress: Number(ringValue.dataset.visibleProgress),
+            ringProgress: Number.isFinite(dashOffset) && ringLength > 0
+              ? 1 - dashOffset / ringLength
+              : null,
+            activeText: document.querySelector('#toc-nav .toc-link.is-active')?.textContent?.trim() || null,
+          };
+        }
+
         const lastHeading = headings.at(-1);
         let lastHeadingSample = null;
         if (lastHeading) {
           const lastHeadingTop = lastHeading.getBoundingClientRect().top + window.scrollY;
-          const lastHeadingScrollY = lastHeadingTop - scrollOffset;
+          const lastHeadingViewportTop = lastHeadingTop - scrollOffset;
+          const lastHeadingScrollY = lastHeadingViewportTop - (window.visualViewport?.offsetTop ?? 0);
           window.scrollTo({ top: lastHeadingScrollY, behavior: 'auto' });
           await settle();
           lastHeadingSample = {
-            expectedProgress: clamp((lastHeadingScrollY - readingStart) / readingDistance),
+            expectedProgress: clamp((lastHeadingViewportTop - readingStart) / readingDistance),
             dataProgress: Number(indicator.dataset.progress),
             activeText: document.querySelector('#toc-nav .toc-link.is-active')?.textContent?.trim() || null,
             lastHeadingText: lastHeading.textContent?.trim() || null,
@@ -145,19 +294,36 @@ async function inspectViewport(viewport) {
 
         const buttonRect = button.getBoundingClientRect();
         const ringRect = ring.getBoundingClientRect();
+        const buttonStyle = getComputedStyle(button);
         const ringValueStyle = getComputedStyle(ringValue);
         return {
-          viewport: { width: window.innerWidth, height: window.innerHeight },
+          viewport: {
+            width: window.innerWidth,
+            layoutHeight: window.innerHeight,
+            visualHeight: viewportHeight,
+            visualPageTop: window.visualViewport?.pageTop ?? window.scrollY,
+          },
           readingStart,
           readingEnd,
           readingDistance,
           samples,
+          visualResizeSample,
+          prematureCompletionSample,
+          landmarkHeadingSample,
           lastHeadingSample,
           mobileGeometry: {
             buttonDisplay: getComputedStyle(button).display,
             button: { left: buttonRect.left, right: buttonRect.right, top: buttonRect.top, bottom: buttonRect.bottom },
+            buttonBorder: {
+              width: buttonStyle.borderTopWidth,
+              style: buttonStyle.borderTopStyle,
+              color: buttonStyle.borderTopColor,
+            },
+            buttonShadow: buttonStyle.boxShadow,
             ring: { left: ringRect.left, right: ringRect.right, top: ringRect.top, bottom: ringRect.bottom },
             ringStroke: {
+              pathLength: ringLength,
+              dasharray: ringValueStyle.strokeDasharray,
               width: ringValueStyle.strokeWidth,
               linecap: ringValueStyle.strokeLinecap,
               filter: ringValueStyle.filter,
@@ -170,14 +336,57 @@ async function inspectViewport(viewport) {
       awaitPromise: true,
     });
 
-    return evaluation.result.value;
+    const details = evaluation.result.value;
+    if (screenshotDir && viewport.mobile) {
+      await client.send('Runtime.evaluate', {
+        expression: `(async () => {
+          const prose = document.querySelector('.prose');
+          const heading = [...(prose?.querySelectorAll('h2, h3, h4, h5, h6') || [])]
+            .find(item => item.textContent?.trim().includes(${JSON.stringify(landmarkHeadingText)}));
+          const header = document.querySelector('header') || document.querySelector('nav');
+          const offset = (header ? header.getBoundingClientRect().height : 0) + 24;
+          if (heading) {
+            const top = heading.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top, behavior: 'auto' });
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 200))));
+          }
+        })()`,
+        awaitPromise: true,
+      });
+      const clipEvaluation = await client.send('Runtime.evaluate', {
+        expression: `(() => {
+          const rect = document.getElementById('toc-mobile-progress')?.getBoundingClientRect();
+          return rect ? {
+            x: Math.max(rect.left + window.scrollX - 8, 0),
+            y: Math.max(rect.top + window.scrollY - 8, 0),
+            width: rect.width + 16,
+            height: rect.height + 16,
+          } : null;
+        })()`,
+        returnByValue: true,
+      });
+      const clip = clipEvaluation.result?.value;
+      if (clip) {
+        const screenshot = await client.send('Page.captureScreenshot', {
+          format: 'png',
+          fromSurface: true,
+          clip: { ...clip, scale: 4 },
+        });
+        const screenshotPath = join(screenshotDir, `${viewport.name}-reward-model-ring.png`);
+        await mkdir(screenshotDir, { recursive: true });
+        await writeFile(screenshotPath, Buffer.from(screenshot.data, 'base64'));
+        details.screenshotPath = screenshotPath;
+      }
+    }
+
+    return details;
   } finally {
     client.close();
     await fetch(`${cdpBase}/json/close/${target.id}`).catch(() => {});
   }
 }
 
-const near = (actual, expected, tolerance = 0.025) =>
+const near = (actual, expected, tolerance = 0.002) =>
   Number.isFinite(actual) && Math.abs(actual - expected) <= tolerance;
 
 const results = [];
@@ -197,11 +406,62 @@ for (const viewport of viewports) {
         if (!near(sample.ringDataProgress, sample.expectedProgress)) {
           errors.push(`ring data progress ${sample.ringDataProgress} at expected ${sample.expectedProgress}`);
         }
-        if (viewport.name === 'desktop' && !near(sample.indicatorRatio, sample.expectedProgress)) {
+        if (!viewport.mobile && !near(sample.indicatorRatio, sample.expectedProgress)) {
           errors.push(`indicator ratio ${sample.indicatorRatio} at expected ${sample.expectedProgress}`);
         }
-        if (viewport.name === 'mobile' && !near(sample.ringProgress, sample.expectedProgress, 0.035)) {
+        if (viewport.mobile && !near(sample.ringProgress, sample.expectedProgress)) {
           errors.push(`ring progress ${sample.ringProgress} at expected ${sample.expectedProgress}`);
+        }
+      }
+
+      if (viewport.visualHeight && !near(details.viewport.visualHeight, viewport.visualHeight, 0.1)) {
+        errors.push(`visual viewport height is ${details.viewport.visualHeight}, expected ${viewport.visualHeight}`);
+      }
+      const visualResize = details.visualResizeSample;
+      if (visualResize) {
+        if (!near(visualResize.dataProgress, visualResize.expectedProgress, 0.0005)) {
+          errors.push(
+            `visual resize data progress ${visualResize.dataProgress}, expected ${visualResize.expectedProgress}`,
+          );
+        }
+        if (!near(visualResize.ringDataProgress, visualResize.expectedProgress, 0.0005)) {
+          errors.push(
+            `visual resize ring progress ${visualResize.ringDataProgress}, expected ${visualResize.expectedProgress}`,
+          );
+        }
+      }
+      const prematureCompletion = details.prematureCompletionSample;
+      if (prematureCompletion) {
+        const expectedVisibleRingProgress = calculateVisibleRingProgress(
+          prematureCompletion.expectedProgress,
+        );
+        if (!near(prematureCompletion.dataProgress, prematureCompletion.expectedProgress)) {
+          errors.push(
+            `former endpoint data progress ${prematureCompletion.dataProgress}, expected ${prematureCompletion.expectedProgress}`,
+          );
+        }
+        if (!near(prematureCompletion.ringDataProgress, prematureCompletion.expectedProgress)) {
+          errors.push(
+            `former endpoint ring progress ${prematureCompletion.ringDataProgress}, expected ${prematureCompletion.expectedProgress}`,
+          );
+        }
+        if (prematureCompletion.dataProgress >= 1) {
+          errors.push('progress is full when the article bottom merely enters the viewport');
+        }
+        if (!near(prematureCompletion.visibleRingDataProgress, expectedVisibleRingProgress)) {
+          errors.push(
+            `former endpoint visible ring data ${prematureCompletion.visibleRingDataProgress}, expected ${expectedVisibleRingProgress}`,
+          );
+        }
+        if (!near(prematureCompletion.ringProgress, expectedVisibleRingProgress)) {
+          errors.push(
+            `former endpoint rendered ring ${prematureCompletion.ringProgress}, expected ${expectedVisibleRingProgress}`,
+          );
+        }
+        if (viewport.mobile && prematureCompletion.renderedGapCssPixels < 1.9) {
+          errors.push(
+            `former endpoint ring gap is only ${prematureCompletion.renderedGapCssPixels}px`,
+          );
         }
       }
 
@@ -213,11 +473,59 @@ for (const viewport of viewports) {
         errors.push('progress is full at the last heading before the article is finished');
       }
 
-      if (viewport.name === 'mobile') {
-        const { button, ring, ringStroke, buttonDisplay } = details.mobileGeometry;
+      const landmark = details.landmarkHeadingSample;
+      if (!landmark && requiresLandmarkHeading) {
+        errors.push(`landmark heading ${landmarkHeadingText} was not found`);
+      } else if (landmark) {
+        const expectedVisibleRingProgress = calculateVisibleRingProgress(landmark.expectedProgress);
+        if (!near(landmark.dataProgress, landmark.expectedProgress)) {
+          errors.push(`landmark data progress ${landmark.dataProgress}, expected ${landmark.expectedProgress}`);
+        }
+        if (!near(landmark.ringDataProgress, landmark.expectedProgress)) {
+          errors.push(`landmark ring data ${landmark.ringDataProgress}, expected ${landmark.expectedProgress}`);
+        }
+        if (!near(landmark.visibleRingDataProgress, expectedVisibleRingProgress)) {
+          errors.push(
+            `landmark visible ring data ${landmark.visibleRingDataProgress}, expected ${expectedVisibleRingProgress}`,
+          );
+        }
+        if (!near(landmark.ringProgress, expectedVisibleRingProgress)) {
+          errors.push(`landmark rendered ring ${landmark.ringProgress}, expected ${expectedVisibleRingProgress}`);
+        }
+        if (landmark.dataProgress >= 1 || landmark.ringProgress >= 1) {
+          errors.push('progress is full at the Reward model landmark');
+        }
+      }
+
+      if (viewport.mobile) {
+        const {
+          button,
+          buttonBorder,
+          buttonShadow,
+          ring,
+          ringStroke,
+          buttonDisplay,
+        } = details.mobileGeometry;
         if (buttonDisplay === 'none') errors.push('mobile TOC button is hidden');
+        if (buttonBorder.width !== '0px' && buttonBorder.style !== 'none') {
+          errors.push(
+            `mobile TOC button has a full ${buttonBorder.width} ${buttonBorder.style} border beneath the progress ring`,
+          );
+        }
+        if (buttonShadow !== 'none') {
+          errors.push(`mobile TOC button shadow can visually complete the progress ring: ${buttonShadow}`);
+        }
         if (!(ring.left < button.left && ring.right > button.right && ring.top < button.top && ring.bottom > button.bottom)) {
           errors.push('mobile progress ring does not surround the TOC button');
+        }
+        const minimumOuterSeparation = Math.min(
+          button.left - ring.left,
+          ring.right - button.right,
+          button.top - ring.top,
+          ring.bottom - button.bottom,
+        );
+        if (minimumOuterSeparation < 1.5) {
+          errors.push(`mobile progress SVG is only ${minimumOuterSeparation}px outside the menu ball`);
         }
         const buttonCenterX = (button.left + button.right) / 2;
         const buttonCenterY = (button.top + button.bottom) / 2;
@@ -227,6 +535,10 @@ for (const viewport of viewports) {
           errors.push(`mobile progress ring center is (${ringCenterX}, ${ringCenterY}), button center is (${buttonCenterX}, ${buttonCenterY})`);
         }
         if (ringStroke.width !== '1px') errors.push(`mobile progress stroke width is ${ringStroke.width}`);
+        const dashLength = Number.parseFloat(ringStroke.dasharray);
+        if (!near(dashLength, ringStroke.pathLength, 0.01)) {
+          errors.push(`mobile progress dash length is ${dashLength}, path length is ${ringStroke.pathLength}`);
+        }
         if (ringStroke.linecap !== 'butt') errors.push(`mobile progress stroke linecap is ${ringStroke.linecap}`);
         if (ringStroke.filter !== 'none') errors.push(`mobile progress stroke filter is ${ringStroke.filter}`);
         if (ringStroke.transitionDuration !== '0s') {
@@ -247,6 +559,7 @@ for (const viewport of viewports) {
 
 const failures = results.filter(result => !result.pass);
 console.log(JSON.stringify({
+  screenshotDir: screenshotDir || null,
   checked: results.length,
   passed: results.length - failures.length,
   failed: failures.length,
