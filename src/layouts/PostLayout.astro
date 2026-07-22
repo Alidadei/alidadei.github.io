@@ -23,7 +23,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
   <!-- KaTeX CSS only loaded on blog post pages -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <article class="post-layout-article max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
-    <div class="post-header-row flex gap-8 relative">
+    <div class="post-header-row relative">
       <header class="post-article-header flex-1 min-w-0 mb-4">
         <!-- Category breadcrumb -->
         {categories.length > 0 && (
@@ -64,7 +64,7 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
           )}
         </div>
       </header>
-      <div class="hidden lg:block w-56 shrink-0" aria-hidden="true"></div>
+      <div class="post-toc-placeholder hidden lg:block" aria-hidden="true"></div>
     </div>
 
     <!-- Article body with TOC sidebar -->
@@ -104,14 +104,14 @@ const { title, description, date, tags = [], image, categories = [], lang = 'zh'
     <!-- Mobile TOC backdrop -->
     <div id="toc-mobile-backdrop" class="lg:hidden fixed inset-0 z-45 bg-black/20 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
-    <div class="post-content-row flex gap-8 relative">
+    <div class="post-content-row relative">
       <!-- Main content -->
-      <div class="post-article-body flex-1 min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
+      <div class="post-article-body min-w-0 prose prose-lg max-w-none prose-headings:text-primary prose-a:text-accent">
         <slot />
       </div>
 
       <!-- Right-side TOC -->
-      <aside id="toc-sidebar" class="hidden lg:block w-56 shrink-0">
+      <aside id="toc-sidebar" class="hidden lg:block">
         <div id="toc-container" class="sticky top-8">
           <h3 class="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
             {lang === 'zh' ? '目录' : 'Table of Contents'}

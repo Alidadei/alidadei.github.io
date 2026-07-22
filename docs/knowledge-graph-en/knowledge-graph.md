@@ -281,9 +281,11 @@ global.css
 │
 ├── 基础排版 (body 字体/行高/平滑)
 ├── 动画 (.fade-in / .stagger-in)
-├── 文章排版 (.prose h1-h4 / blockquote / table / code)
+├── 文章排版 (.prose h1-h6 / blockquote / table / code)
 │   ├── img: max-width:100% + height:auto (防溢出)
 │   └── table: display:block + overflow-x:auto (横向滚动)
+├── 桌面博客响应式布局 (1749px 基准线 + 1121fr/279fr 双列网格)
+│   └── 字体: clamp(px, px + vw, px)，覆盖正文/标题/H2-H6/TOC
 ├── 组件样式 (.post-card / .tag-chip / .toc-link)
 ├── 滚动条美化
 └── prefers-reduced-motion 适配
@@ -367,7 +369,11 @@ alidadei.github.io/
 │   ├── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
 │   └── new-post.mjs                   # 给已有内容 md(无 frontmatter)补 frontmatter (npm run new-post <文件>)
 ├── tests/                             # 验证脚本
-│   └── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
+│   ├── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
+│   └── mobile-overflow-regression.mjs # 移动端溢出 + 多宽度桌面博客布局/字体回归
+│
+├── record/                            # 实验与验证结果
+│   └── desktop-blog-responsive-layout.md # 桌面博客响应式布局双浏览器实测
 │
 ├── docs/                              # 文档
 │   ├── knowledge-graph-en/            # 知识图谱
@@ -419,7 +425,7 @@ alidadei.github.io/
 │   ├── layouts/                       # 布局
 │   │   ├── BaseLayout.astro           # HTML 骨架
 │   │   ├── PageLayout.astro           # Header+Main (无Footer)
-│   │   └── PostLayout.astro           # 文章布局+TOC (桌面端侧栏 / 移动端悬浮面板, header mb-4)
+│   │   └── PostLayout.astro           # 文章布局+TOC (桌面比例网格 / 移动端悬浮面板, header mb-4)
 │   │
 │   ├── components/                    # 组件
 │   │   ├── layout/
@@ -564,6 +570,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
 | 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端右侧悬浮按钮 + 滑出面板 + scroll spy |
+| 桌面博客布局 | 以1749px视口的245/1366/1645px边界为基准，使用vw定位与1121fr/279fr网格，字体通过clamp(px, px + vw, px)缩放 |
 | 触摸目标 | Header 汉堡按钮 `p-2.5`，导航链接 `py-3`，Footer 图标 `p-2`，AwardWall `p-3` |
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
 | Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |

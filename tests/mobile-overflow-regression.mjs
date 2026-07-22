@@ -14,15 +14,20 @@ const PROFILE_PREFIX = 'alidadei-mobile-overflow-';
 const WIDTHS = parseWidths(process.env.MOBILE_OVERFLOW_WIDTHS) ?? [320, 360, 390, 430];
 const ROUTE_FILTER = parseRoutes(process.env.MOBILE_OVERFLOW_ROUTES);
 const MAX_DISCOVERED_ROUTES = 250;
-const DESKTOP_BLOG_LAYOUT_LOCK = Object.freeze({
+const DESKTOP_BLOG_LAYOUT_SPEC = Object.freeze({
   route: '/zh/blog/llm-post-training-basics-and-jargon/',
-  viewport: { width: 1280, height: 900 },
-  group: { left: 80, right: 1200, width: 1120 },
-  articleHeader: { left: 80, right: 944, width: 864 },
-  prose: { left: 80, right: 944, width: 864 },
-  sidebar: { left: 976, right: 1200, width: 224 },
-  proseToSidebarGap: 32,
+  referenceViewport: { width: 1749, height: 900 },
+  guideLines: { articleLeft: 245, articleRight: 1366, tocRight: 1645 },
+  widths: [1024, 1280, 1440, 1749, 1920],
 });
+
+function normalizeError(value) {
+  if (value instanceof Error) return value;
+  const message = value && typeof value === 'object' && 'message' in value
+    ? String(value.message)
+    : String(value);
+  return new Error(message);
+}
 
 class CdpClient {
   constructor(socket) {
@@ -122,6 +127,13 @@ async function main() {
         '--disable-component-update',
         '--disable-default-apps',
         '--disable-gpu',
+        '--disable-gpu-compositing',
+        '--disable-gpu-early-init',
+        '--disable-gpu-rasterization',
+        '--disable-gpu-shader-disk-cache',
+        '--disable-software-rasterizer',
+        '--disable-features=SkiaGraphite',
+        '--disable-skia-graphite',
         '--no-first-run',
         '--no-default-browser-check',
         'about:blank',
@@ -129,7 +141,14 @@ async function main() {
       { cwd: PROJECT_ROOT, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
     );
     const readEdgeOutput = captureProcessOutput(state.edge);
-    await waitForHttp(state.cdpOrigin + '/json/version', 20_000, state.edge);
+    try {
+      await waitForHttp(state.cdpOrigin + '/json/version', 20_000, state.edge);
+    } catch (caught) {
+      const error = normalizeError(caught);
+      const edgeOutput = readEdgeOutput().trim();
+      if (edgeOutput) error.message += '\nBrowser output:\n' + edgeOutput;
+      throw error;
+    }
 
     const routes = ROUTE_FILTER ?? await discoverRoutes(baseUrl);
     let report;
@@ -140,7 +159,8 @@ async function main() {
         routes,
         widths: WIDTHS,
       });
-    } catch (error) {
+    } catch (caught) {
+      const error = normalizeError(caught);
       const edgeOutput = readEdgeOutput().trim();
       if (edgeOutput) error.message += '\nEdge output:\n' + edgeOutput;
       throw error;
@@ -159,6 +179,7 @@ async function main() {
       pageFailures: failures.length,
       fixtureChecks: report.fixtureResults.length,
       fixtureFailures: fixtureFailures.length,
+      desktopWidths: DESKTOP_BLOG_LAYOUT_SPEC.widths,
       desktopLayoutChecks: report.desktopLayoutResults.length,
       desktopLayoutFailures: desktopLayoutFailures.length,
     }));
@@ -175,7 +196,8 @@ async function main() {
     console.log(
       'PASS: 全站 ' + routes.length + ' 个路由及极端内容夹具在 '
       + WIDTHS.join(', ') + 'px 下均无页面溢出、正文裁切或失控宽元素；'
-      + '桌面博客布局范围保持锁定。',
+      + '桌面博客布局在 ' + DESKTOP_BLOG_LAYOUT_SPEC.widths.join(', ')
+      + 'px 下保持参考比例且字体按视口缩放。',
     );
     return 0;
   } finally {
@@ -227,28 +249,33 @@ async function runBrowserAudit({ cdpOrigin, baseUrl, routes, widths }) {
       fixtureResults.push({ width, route: '/zh/#overflow-fixture', ...fixture });
     }
 
-    auditStep = 'desktop-layout-lock';
-    await client.send('Emulation.setDeviceMetricsOverride', {
-      width: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
-      height: DESKTOP_BLOG_LAYOUT_LOCK.viewport.height,
-      deviceScaleFactor: 1,
-      mobile: false,
-      screenWidth: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
-      screenHeight: DESKTOP_BLOG_LAYOUT_LOCK.viewport.height,
-    });
-    await navigateAndWait(
-      client,
-      baseUrl + DESKTOP_BLOG_LAYOUT_LOCK.route,
-      DESKTOP_BLOG_LAYOUT_LOCK.route,
-    );
-    const desktopLayout = await evaluateByValue(client, measureDesktopBlogLayout);
-    desktopLayoutResults.push({
-      width: DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
-      route: DESKTOP_BLOG_LAYOUT_LOCK.route,
-      ...desktopLayout,
-      issues: compareDesktopBlogLayout(desktopLayout),
-    });
-  } catch (error) {
+    for (const width of DESKTOP_BLOG_LAYOUT_SPEC.widths) {
+      auditStep = 'desktop-responsive-layout ' + width + 'px';
+      await client.send('Emulation.setDeviceMetricsOverride', {
+        width,
+        height: DESKTOP_BLOG_LAYOUT_SPEC.referenceViewport.height,
+        deviceScaleFactor: 1,
+        mobile: false,
+        screenWidth: width,
+        screenHeight: DESKTOP_BLOG_LAYOUT_SPEC.referenceViewport.height,
+      });
+      await navigateAndWait(
+        client,
+        baseUrl + DESKTOP_BLOG_LAYOUT_SPEC.route,
+        DESKTOP_BLOG_LAYOUT_SPEC.route,
+      );
+      const desktopLayout = await evaluateByValue(client, measureDesktopBlogLayout);
+      const expected = getExpectedDesktopBlogLayout(width);
+      desktopLayoutResults.push({
+        width,
+        route: DESKTOP_BLOG_LAYOUT_SPEC.route,
+        ...desktopLayout,
+        expected,
+        issues: compareDesktopBlogLayout(desktopLayout, expected),
+      });
+    }
+  } catch (caught) {
+    const error = normalizeError(caught);
     error.message += '\nAudit step: ' + auditStep;
     throw error;
   } finally {
@@ -273,6 +300,12 @@ function measureDesktopBlogLayout() {
   const articleHeader = document.querySelector('.post-article-header');
   const prose = document.querySelector('.post-article-body');
   const sidebar = document.getElementById('toc-sidebar');
+  const title = articleHeader?.querySelector('h1');
+  const firstH2 = prose?.querySelector('h2');
+  const firstTocLevel2 = document.querySelector('#toc-nav .toc-link[data-level="2"]');
+  const toFontSize = (element) => element
+    ? Number.parseFloat(getComputedStyle(element).fontSize)
+    : null;
   const articleHeaderRect = toRect(articleHeader);
   const proseRect = toRect(prose);
   const sidebarRect = toRect(sidebar);
@@ -294,42 +327,88 @@ function measureDesktopBlogLayout() {
     sidebarDisplay: sidebar ? getComputedStyle(sidebar).display : null,
     group,
     proseToSidebarGap: proseRect && sidebarRect ? sidebarRect.left - proseRect.right : null,
+    fontSizes: {
+      body: toFontSize(prose),
+      title: toFontSize(title),
+      h2: toFontSize(firstH2),
+      tocLevel2: toFontSize(firstTocLevel2),
+    },
   };
 }
 
-function compareDesktopBlogLayout(actual) {
-  const tolerance = 0.75;
+function getExpectedDesktopBlogLayout(viewportWidth) {
+  const { referenceViewport, guideLines } = DESKTOP_BLOG_LAYOUT_SPEC;
+  const scale = viewportWidth / referenceViewport.width;
+  const articleLeft = guideLines.articleLeft * scale;
+  const articleRight = guideLines.articleRight * scale;
+  const tocRight = guideLines.tocRight * scale;
+  const clamp = (minimum, value, maximum) => Math.min(Math.max(value, minimum), maximum);
+
+  return {
+    viewportWidth,
+    group: {
+      left: articleLeft,
+      right: tocRight,
+      width: tocRight - articleLeft,
+    },
+    articleHeader: {
+      left: articleLeft,
+      right: articleRight,
+      width: articleRight - articleLeft,
+    },
+    prose: {
+      left: articleLeft,
+      right: articleRight,
+      width: articleRight - articleLeft,
+    },
+    sidebar: {
+      left: articleRight,
+      right: tocRight,
+      width: tocRight - articleRight,
+    },
+    proseToSidebarGap: 0,
+    fontSizes: {
+      body: clamp(15, 13.586 + viewportWidth * 0.00138, 18),
+      title: clamp(30, 21.524 + viewportWidth * 0.008276, 42),
+      h2: clamp(25, 17.938 + viewportWidth * 0.006897, 35),
+      tocLevel2: clamp(12.5, 11.086 + viewportWidth * 0.001379, 14.5),
+    },
+  };
+}
+
+function compareDesktopBlogLayout(actual, expected) {
+  const tolerance = 0.1;
   const issues = [];
-  const compareNumber = (label, value, expected) => {
-    if (!Number.isFinite(value) || Math.abs(value - expected) > tolerance) {
-      issues.push({ type: 'desktop-layout-drift', field: label, expected, actual: value });
+  const compareNumber = (label, value, expectedValue, allowedDrift = tolerance) => {
+    if (!Number.isFinite(value) || Math.abs(value - expectedValue) > allowedDrift) {
+      issues.push({
+        type: 'desktop-layout-drift',
+        field: label,
+        expected: expectedValue,
+        actual: value,
+      });
     }
   };
-  const compareRect = (name, expected) => {
+  const compareRect = (name, expectedRect) => {
     const rect = actual[name];
     if (!rect) {
       issues.push({ type: 'desktop-layout-element-missing', element: name });
       return;
     }
     for (const field of ['left', 'right', 'width']) {
-      compareNumber(name + '.' + field, rect[field], expected[field]);
+      compareNumber(name + '.' + field, rect[field], expectedRect[field]);
     }
   };
 
-  compareNumber(
-    'viewportWidth',
-    actual.viewportWidth,
-    DESKTOP_BLOG_LAYOUT_LOCK.viewport.width,
-  );
-  compareRect('group', DESKTOP_BLOG_LAYOUT_LOCK.group);
-  compareRect('articleHeader', DESKTOP_BLOG_LAYOUT_LOCK.articleHeader);
-  compareRect('prose', DESKTOP_BLOG_LAYOUT_LOCK.prose);
-  compareRect('sidebar', DESKTOP_BLOG_LAYOUT_LOCK.sidebar);
-  compareNumber(
-    'proseToSidebarGap',
-    actual.proseToSidebarGap,
-    DESKTOP_BLOG_LAYOUT_LOCK.proseToSidebarGap,
-  );
+  compareNumber('viewportWidth', actual.viewportWidth, expected.viewportWidth);
+  compareRect('group', expected.group);
+  compareRect('articleHeader', expected.articleHeader);
+  compareRect('prose', expected.prose);
+  compareRect('sidebar', expected.sidebar);
+  compareNumber('proseToSidebarGap', actual.proseToSidebarGap, expected.proseToSidebarGap);
+  for (const [name, expectedFontSize] of Object.entries(expected.fontSizes)) {
+    compareNumber('fontSizes.' + name, actual.fontSizes?.[name], expectedFontSize, 0.12);
+  }
   if (actual.sidebarDisplay === 'none' || actual.sidebarDisplay === null) {
     issues.push({
       type: 'desktop-layout-sidebar-hidden',

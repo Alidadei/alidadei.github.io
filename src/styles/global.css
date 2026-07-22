@@ -121,22 +121,62 @@ article,
   word-break: break-word;
 }
 
-/* Regression-locked desktop blog bounds. Do not move these columns while
-   debugging unrelated UI; tests/mobile-overflow-regression.mjs verifies the
-   rendered coordinates at the 1280px reference viewport. */
-@media (min-width: 1280px) {
-  /* The old layout translated the article 3rem to the right. Replacing that
-     transform with a 2.625rem left offset moves the rendered group left by
-     exactly 5.625rem (90px) without changing its internal geometry. */
+/* Desktop blog geometry is derived from the user's 1749px reference viewport:
+   article left 245px, article/TOC boundary 1366px, TOC right 1645px.
+   Viewport units include the scrollbar gutter, unlike containing-block
+   percentages, so the guide lines stay stable across browsers and zoom levels.
+   The 1121:279 grid preserves the reference column ratio without fixed offsets. */
+@media (min-width: 1024px) {
   .post-layout-article {
-    position: relative;
-    left: -2.625rem;
+    --blog-font-body: clamp(15px, calc(13.586px + 0.138vw), 18px);
+    --blog-font-title: clamp(30px, calc(21.524px + 0.8276vw), 42px);
+    --blog-font-h2: clamp(25px, calc(17.938px + 0.6897vw), 35px);
+    --blog-font-h3: clamp(19px, calc(14.762px + 0.4138vw), 25px);
+    --blog-font-h4: clamp(17px, calc(15.588px + 0.1379vw), 20px);
+    --blog-font-h5: clamp(15.5px, calc(14.794px + 0.069vw), 17.5px);
+    --blog-font-h6: clamp(14px, calc(12.87px + 0.1104vw), 16px);
+    --blog-font-meta: clamp(13px, calc(11.588px + 0.1379vw), 15px);
+    width: 80.045740423vw;
+    max-width: none;
+    margin-left: 14.008004574vw;
+    margin-right: 0;
+    padding-inline: 0;
+    font-size: var(--blog-font-body);
+  }
+
+  .post-header-row,
+  .post-content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1121fr) minmax(0, 279fr);
+    gap: 0;
   }
 
   .post-article-header,
   .post-article-body {
-    max-width: 54rem;
-    margin-left: auto;
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .post-toc-placeholder,
+  #toc-sidebar {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .post-article-header > h1 {
+    font-size: var(--blog-font-title);
+  }
+
+  .post-article-header > nav,
+  .post-article-header > div:last-child,
+  #toc-container > h3 {
+    font-size: var(--blog-font-meta);
+  }
+
+  .post-layout-article .tag-chip {
+    font-size: clamp(11px, calc(9.588px + 0.1379vw), 13px);
   }
 }
 
@@ -228,6 +268,14 @@ article,
   .prose h1 { font-size: 2.25rem; }
   .prose h2 { font-size: 1.875rem; }
   .prose h3 { font-size: 1.375rem; }
+}
+@media (min-width: 1024px) {
+  .post-layout-article .prose h1 { font-size: var(--blog-font-title); }
+  .post-layout-article .prose h2 { font-size: var(--blog-font-h2); }
+  .post-layout-article .prose h3 { font-size: var(--blog-font-h3); }
+  .post-layout-article .prose h4 { font-size: var(--blog-font-h4); }
+  .post-layout-article .prose h5 { font-size: var(--blog-font-h5); }
+  .post-layout-article .prose h6 { font-size: var(--blog-font-h6); }
 }
 .prose p {
   margin-bottom: 1.1em;
@@ -590,6 +638,23 @@ code {
   color: var(--color-accent);
   font-weight: 600;
   opacity: 1;
+}
+@media (min-width: 1024px) {
+  #toc-nav .toc-link[data-level="2"] {
+    font-size: clamp(12.5px, calc(11.086px + 0.1379vw), 14.5px);
+  }
+  #toc-nav .toc-link[data-level="3"] {
+    font-size: clamp(12px, calc(10.586px + 0.1379vw), 14px);
+  }
+  #toc-nav .toc-link[data-level="4"] {
+    font-size: clamp(11.5px, calc(10.086px + 0.1379vw), 13.5px);
+  }
+  #toc-nav .toc-link[data-level="5"] {
+    font-size: clamp(11px, calc(9.586px + 0.1379vw), 13px);
+  }
+  #toc-nav .toc-link[data-level="6"] {
+    font-size: clamp(10.5px, calc(9.086px + 0.1379vw), 12.5px);
+  }
 }
 #toc-active-indicator {
   position: absolute;
