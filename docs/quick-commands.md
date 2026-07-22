@@ -167,8 +167,9 @@ compress-posts 用法:
 
 | 命令            | 作用           | 说明                                                         |
 | --------------- | -------------- | ------------------------------------------------------------ |
-| npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景并自动选择可用端口 |
+| npm run dev     | 本地开发服务器 | 启动后访问终端提示的 URL(通常 http://localhost:4321/ ),改代码热更新。会先打包 3D 背景、自动选择可用端口，并清除本站遗留的生产 SW/CSS 缓存 |
 | npm run sky-preview | 桌面天空全天预览 | 一键启动开发服务器和独立 Microsoft Edge，把首页一整天的天空配色压缩成约 2 分钟循环播放 |
+| npm run check:dev-cache | 开发缓存回归 | 验证 dev 只清除本站生产 Service Worker/缓存，并防止自动刷新死循环 |
 | npm run check:mobile-overflow | 移动端横向溢出回归 | 自动启动开发服务器和无界面 Microsoft Edge，遍历全站路由并在 320、360、390、430 px 下验证页面、正文和极端宽内容 |
 | npm run build   | 完整构建       | 打包 3D + 同步每日一句 + 生成缩略图 + Astro 构建,产物在 dist/。提交/部署前用它验证 |
 | npm run preview | 预览构建产物   | 启动静态服务器预览 dist/ 的构建结果(和线上一致)。必须先跑过 npm run build。会自动选择可用端口 |
@@ -177,6 +178,7 @@ compress-posts 用法:
 dev 和 preview 的区别:
 
 - dev 是开发模式,改文件实时刷新,但缓存/压缩等行为和线上不同。
+- dev 页面会自动注销同源遗留的本站 Service Worker，并清理 `heavy-v*`、`runtime-v*` 缓存；若页面正被旧 SW 控制，会自动刷新一次后进入正常 HMR。
 - preview 跑的是 build 产物,和 GitHub Pages 线上完全一致。想确认线上效果用 preview。
 
 ### 桌面端天空全天预览

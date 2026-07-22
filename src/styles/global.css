@@ -122,10 +122,10 @@ article,
 }
 
 /* Desktop blog geometry is derived from the user's 1749px reference viewport:
-   article left 245px, article/TOC boundary 1366px, TOC right 1645px.
+   article 215–1336px, 30px gap, TOC 1366–1645px.
    Viewport units include the scrollbar gutter, unlike containing-block
    percentages, so the guide lines stay stable across browsers and zoom levels.
-   The 1121:279 grid preserves the reference column ratio without fixed offsets. */
+   The 1121:279 grid plus a viewport-scaled gap preserves those coordinates. */
 @media (min-width: 1024px) {
   .post-layout-article {
     --blog-font-body: clamp(15px, calc(13.586px + 0.138vw), 18px);
@@ -136,9 +136,9 @@ article,
     --blog-font-h5: clamp(15.5px, calc(14.794px + 0.069vw), 17.5px);
     --blog-font-h6: clamp(14px, calc(12.87px + 0.1104vw), 16px);
     --blog-font-meta: clamp(13px, calc(11.588px + 0.1379vw), 15px);
-    width: 80.045740423vw;
+    width: 81.761006289vw;
     max-width: none;
-    margin-left: 14.008004574vw;
+    margin-left: 12.292738708vw;
     margin-right: 0;
     padding-inline: 0;
     font-size: var(--blog-font-body);
@@ -148,7 +148,7 @@ article,
   .post-content-row {
     display: grid;
     grid-template-columns: minmax(0, 1121fr) minmax(0, 279fr);
-    gap: 0;
+    column-gap: 1.715265866vw;
   }
 
   .post-article-header,

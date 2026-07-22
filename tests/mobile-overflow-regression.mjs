@@ -17,7 +17,7 @@ const MAX_DISCOVERED_ROUTES = 250;
 const DESKTOP_BLOG_LAYOUT_SPEC = Object.freeze({
   route: '/zh/blog/llm-post-training-basics-and-jargon/',
   referenceViewport: { width: 1749, height: 900 },
-  guideLines: { articleLeft: 245, articleRight: 1366, tocRight: 1645 },
+  guideLines: { articleLeft: 215, articleRight: 1336, tocLeft: 1366, tocRight: 1645 },
   widths: [1024, 1280, 1440, 1749, 1920],
 });
 
@@ -264,6 +264,7 @@ async function runBrowserAudit({ cdpOrigin, baseUrl, routes, widths }) {
         baseUrl + DESKTOP_BLOG_LAYOUT_SPEC.route,
         DESKTOP_BLOG_LAYOUT_SPEC.route,
       );
+      await waitForSelector(client, '#toc-nav .toc-link[data-level="2"]', 3_000);
       const desktopLayout = await evaluateByValue(client, measureDesktopBlogLayout);
       const expected = getExpectedDesktopBlogLayout(width);
       desktopLayoutResults.push({
@@ -341,6 +342,7 @@ function getExpectedDesktopBlogLayout(viewportWidth) {
   const scale = viewportWidth / referenceViewport.width;
   const articleLeft = guideLines.articleLeft * scale;
   const articleRight = guideLines.articleRight * scale;
+  const tocLeft = guideLines.tocLeft * scale;
   const tocRight = guideLines.tocRight * scale;
   const clamp = (minimum, value, maximum) => Math.min(Math.max(value, minimum), maximum);
 
@@ -362,11 +364,11 @@ function getExpectedDesktopBlogLayout(viewportWidth) {
       width: articleRight - articleLeft,
     },
     sidebar: {
-      left: articleRight,
+      left: tocLeft,
       right: tocRight,
-      width: tocRight - articleRight,
+      width: tocRight - tocLeft,
     },
-    proseToSidebarGap: 0,
+    proseToSidebarGap: tocLeft - articleRight,
     fontSizes: {
       body: clamp(15, 13.586 + viewportWidth * 0.00138, 18),
       title: clamp(30, 21.524 + viewportWidth * 0.008276, 42),
@@ -445,6 +447,26 @@ async function navigateAndWait(client, url, expectedPath) {
   }
 
   throw new Error('页面加载超时: ' + url);
+}
+
+async function waitForSelector(client, selector, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  const expression = 'document.querySelector(' + JSON.stringify(selector) + ') !== null';
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await client.send('Runtime.evaluate', {
+        expression,
+        returnByValue: true,
+      });
+      if (response.result.value === true) return;
+    } catch {
+      // Navigation or HMR can briefly replace the execution context.
+    }
+    await delay(50);
+  }
+
+  throw new Error('等待页面元素超时: ' + selector);
 }
 
 async function evaluateByValue(client, callback) {

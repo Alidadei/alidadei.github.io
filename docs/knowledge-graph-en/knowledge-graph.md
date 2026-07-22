@@ -284,7 +284,7 @@ global.css
 ├── 文章排版 (.prose h1-h6 / blockquote / table / code)
 │   ├── img: max-width:100% + height:auto (防溢出)
 │   └── table: display:block + overflow-x:auto (横向滚动)
-├── 桌面博客响应式布局 (1749px 基准线 + 1121fr/279fr 双列网格)
+├── 桌面博客响应式布局 (1749px 基准线 + 1121fr/279fr 双列网格 + 30px 比例间距)
 │   └── 字体: clamp(px, px + vw, px)，覆盖正文/标题/H2-H6/TOC
 ├── 组件样式 (.post-card / .tag-chip / .toc-link)
 ├── 滚动条美化
@@ -370,6 +370,7 @@ alidadei.github.io/
 │   └── new-post.mjs                   # 给已有内容 md(无 frontmatter)补 frontmatter (npm run new-post <文件>)
 ├── tests/                             # 验证脚本
 │   ├── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
+│   ├── dev-service-worker-cleanup.test.mjs # 开发态 SW/缓存清理回归
 │   └── mobile-overflow-regression.mjs # 移动端溢出 + 多宽度桌面博客布局/字体回归
 │
 ├── record/                            # 实验与验证结果
@@ -419,6 +420,7 @@ alidadei.github.io/
 │   │   └── quotes.json               # 每日一句
 │   │
 │   ├── i18n/ui.ts                     # 翻译字典 (38 key × 2语言)
+│   ├── lib/dev-service-worker.mjs     # dev 中清除本站生产 SW/缓存，必要时单次刷新
 │   ├── lib/i18n.ts                    # i18n 路由工具
 │   └── lib/feed.ts                    # RSS 解析 (构建时抓友链 feed, 失败回退不破坏构建)
 │   │
@@ -570,7 +572,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 响应式 | AwardWall 移动端单列布局，博客时间线移动端保持左右交替布局 |
 | 移动端标题 | 所有页面 H1: `text-2xl md:text-3xl`，About H2: `text-xl md:text-2xl` |
 | 移动端TOC | PostLayout 桌面端侧栏 TOC，移动端右侧悬浮按钮 + 滑出面板 + scroll spy |
-| 桌面博客布局 | 以1749px视口的245/1366/1645px边界为基准，使用vw定位与1121fr/279fr网格，字体通过clamp(px, px + vw, px)缩放 |
+| 桌面博客布局 | 以1749px视口的正文215–1336px、目录1366–1645px为基准，使用vw定位、1121fr/279fr网格和30px比例间距，字体通过clamp(px, px + vw, px)缩放 |
 | 触摸目标 | Header 汉堡按钮 `p-2.5`，导航链接 `py-3`，Footer 图标 `p-2`，AwardWall `p-3` |
 | 布局防溢出 | prose 图片 `max-width:100%`，表格 `overflow-x:auto` 横向滚动 |
 | Timeline缩进 | 移动端 `ml-3 sm:ml-4` / `pl-6 sm:pl-8` 减少左缩进 |
@@ -583,6 +585,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 移动端干支容器 | commit aac2053: 干支容器移动端top改为 top-[66px] (紧贴Header下方) |
 | 移动端3D行星缩放 | commit aac2053: 3d-background.html 移动端ORBIT_RADIUS从350增至480，使行星在手机屏幕上更小 |
 | Service Worker 强制缓存 | commit 1d979da: public/sw.js 重资源(vendor/*, 3d-background.html)Cache First,连硬刷新也秒开;HTML Network First;其他静态 SWR。BaseLayout 注册(仅生产,dev 不注册)。pre-commit hook 在 vendor/three/ 改时自动 bump sw.js VERSION 清旧库缓存;3d-background.html 改时自动更新 iframe ?v= |
+| 开发态缓存隔离 | BaseLayout 在 `import.meta.env.DEV` 中自动注销同源 `/sw.js`，只删除本站 `heavy-v*` / `runtime-v*` 缓存；若当前页仍受旧 SW 控制，用 session 标记保证只自动刷新一次，避免干扰 HMR |
 | 代码块配色 | Shiki `github-light` 浅色主题(深色文字);`pre` 背景由 CSS `!important` 覆盖为浅灰 #e8e8e8(Shiki 默认注入 inline `#fff` 白底,须 !important 才能盖过);浅底配深字,与米色站点协调 |
 
 ---

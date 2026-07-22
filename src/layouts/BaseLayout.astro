@@ -71,12 +71,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     )}
     <slot />
 
-    <!-- Service Worker 注册:强制缓存 3D 重资源(仅生产环境,dev 不注册避免干扰 HMR) -->
+    <!-- 生产环境注册 SW；开发环境清除同源遗留 SW/缓存，避免旧 CSS 干扰 HMR。 -->
     <script>
-      if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
+      import { clearDevServiceWorkerState } from '../lib/dev-service-worker.mjs';
+
+      if ('serviceWorker' in navigator) {
+        if (import.meta.env.DEV) {
+          clearDevServiceWorkerState().catch((error) => {
+            console.warn('[dev] 清理旧 Service Worker 缓存失败:', error);
+          });
+        } else {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+          });
+        }
       }
     </script>
 
