@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-07-02 (最后更新: 2026-07-13 — 新增《Claude API 中转站调研报告》, posts/zh 文章数同步 15→16)
+> 生成时间：2026-07-02 (最后更新: 2026-08-19 — docs 文件清单同步: 新增 UI借鉴/agent反思修改/个人技术博客写作风格/知识架构分类/网站防复制与安全边界)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -384,6 +384,11 @@ alidadei.github.io/
 │   │   └── knowledge-graph.md         # ← 本文件
 │   ├── quick-commands.md               # 常用快捷命令 (dev/build/cms/手机调试)
 │   ├── 技术博客排版规范.md              # 博客排版规范 (适配本项目:单行categories/正文从##起)
+│   ├── 个人技术博客写作风格.md          # 博客写作风格
+│   ├── 知识架构分类.md                 # 知识三轴 (origin × subject × maturity) 设计文档
+│   ├── 网站防复制与安全边界.md          # 防复制/安全策略文档
+│   ├── UI借鉴.md                       # UI 参考站点收集 (含塔罗网站等)
+│   ├── agent反思修改.md                # agent 反思与修改记录
 │   ├── posts-writing-guide.md          # 博客写作规范 (原posts/README.md)
 │   ├── codex-review.md                 # codex 审阅提示
 │   ├── 余同学简历.md
