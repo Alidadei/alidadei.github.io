@@ -43,3 +43,4 @@ CLAUDE.local.md
 storybook-source.js
 *-source.txt
 .wrangler/
+/.agents

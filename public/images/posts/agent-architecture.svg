@@ -1,0 +1,135 @@
+<svg width="2480" height="1930" viewBox="0 0 1240 965" xmlns="http://www.w3.org/2000/svg" font-family="Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif">
+  <defs>
+    <linearGradient id="coreGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fefce8"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+    <marker id="mGray" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#64748b"/>
+    </marker>
+    <marker id="mAmber" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#d97706"/>
+    </marker>
+    <marker id="mBlue" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#0284c7"/>
+    </marker>
+    <marker id="mIndigo" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#6366f1"/>
+    </marker>
+    <marker id="mRose" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#f43f5e"/>
+    </marker>
+    <marker id="mPurple" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="mTeal" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#0d9488"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="965" fill="#fafaf9"/>
+
+  <!-- 标题 -->
+  <text x="620" y="58" text-anchor="middle" font-size="34" font-weight="bold" fill="#0f172a">Agent 架构图</text>
+  <text x="620" y="90" text-anchor="middle" font-size="17" fill="#64748b">Agent = Model + Harness（模型 + 脚手架）</text>
+
+  <!-- 会话管理：会话开始加载、轮末保存 -->
+  <rect x="490" y="126" width="260" height="54" rx="27" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="620" y="151" text-anchor="middle" font-size="20" font-weight="bold" fill="#075985">会话管理 Session</text>
+  <text x="620" y="172" text-anchor="middle" font-size="14" fill="#0369a1">多轮对话上下文</text>
+  <line x1="620" y1="182" x2="620" y2="248" stroke="#0284c7" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mBlue)" marker-end="url(#mBlue)"/>
+  <text x="632" y="224" font-size="14" fill="#0369a1">开始时加载 · 轮末保存</text>
+
+  <!-- 记忆：相关时召回、新经验写入 -->
+  <rect x="970" y="126" width="220" height="54" rx="12" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="1080" y="151" text-anchor="middle" font-size="20" font-weight="bold" fill="#3730a3">记忆 Memory</text>
+  <text x="1080" y="172" text-anchor="middle" font-size="14" fill="#4338ca">跨会话持久化 · 偏好 / 经验</text>
+  <polyline points="1020,182 1020,214 870,214 870,248" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mIndigo)" marker-end="url(#mIndigo)"/>
+  <text x="935" y="206" text-anchor="middle" font-size="14" fill="#4338ca">相关时召回 · 新经验写入</text>
+
+  <!-- 用户：提交任务时输入 -->
+  <rect x="80" y="252" width="140" height="54" rx="27" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <text x="150" y="277" text-anchor="middle" font-size="20" font-weight="bold" fill="#334155">用户</text>
+  <text x="150" y="297" text-anchor="middle" font-size="14" fill="#64748b">提出任务</text>
+  <line x1="222" y1="279" x2="296" y2="279" stroke="#64748b" stroke-width="2.2" marker-end="url(#mGray)"/>
+  <text x="258" y="265" text-anchor="middle" font-size="13" fill="#64748b">提交任务时</text>
+
+  <!-- Hook 系统：工具调用前后、会话事件时触发 -->
+  <rect x="50" y="430" width="170" height="76" rx="12" fill="#ffe4e6" stroke="#f43f5e" stroke-width="2"/>
+  <text x="135" y="459" text-anchor="middle" font-size="20" font-weight="bold" fill="#9f1239">Hook 系统</text>
+  <text x="135" y="479" text-anchor="middle" font-size="14" fill="#be123c">自定义守护规则</text>
+  <text x="135" y="497" text-anchor="middle" font-size="14" fill="#be123c">可阻断 / 改写调用</text>
+  <line x1="224" y1="468" x2="296" y2="468" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#mRose)"/>
+  <text x="260" y="451" text-anchor="middle" font-size="13" fill="#be123c">调用前后</text>
+  <text x="260" y="492" text-anchor="middle" font-size="13" fill="#be123c">事件触发</text>
+
+  <!-- 结果输出：停止条件达成时 -->
+  <rect x="970" y="252" width="220" height="54" rx="27" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <text x="1080" y="277" text-anchor="middle" font-size="20" font-weight="bold" fill="#334155">结果输出</text>
+  <text x="1080" y="297" text-anchor="middle" font-size="14" fill="#64748b">回答 / 代码 / 产物</text>
+  <line x1="884" y1="279" x2="964" y2="279" stroke="#64748b" stroke-width="2.2" marker-end="url(#mGray)"/>
+  <text x="924" y="265" text-anchor="middle" font-size="13" fill="#64748b">停止条件达成</text>
+
+  <!-- 核心引擎 -->
+  <rect x="300" y="252" width="580" height="340" rx="24" fill="url(#coreGrad)" stroke="#eab308" stroke-width="2.5"/>
+  <text x="590" y="296" text-anchor="middle" font-size="22" font-weight="bold" fill="#92400e">Agent 循环 · 核心引擎</text>
+
+  <rect x="490" y="314" width="200" height="42" rx="21" fill="#ffffff" stroke="#eab308" stroke-width="1.8"/>
+  <text x="590" y="342" text-anchor="middle" font-size="16" font-weight="bold" fill="#92400e">LLM 模型（可插拔）</text>
+
+  <rect x="330" y="430" width="140" height="62" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="400" y="459" text-anchor="middle" font-size="19" font-weight="bold" fill="#92400e">思考</text>
+  <text x="400" y="479" text-anchor="middle" font-size="14" fill="#b45309">LLM 推理决策</text>
+
+  <rect x="520" y="430" width="140" height="62" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="590" y="459" text-anchor="middle" font-size="19" font-weight="bold" fill="#92400e">行动</text>
+  <text x="590" y="479" text-anchor="middle" font-size="14" fill="#b45309">调用工具 / Skill</text>
+
+  <rect x="710" y="430" width="140" height="62" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="780" y="459" text-anchor="middle" font-size="19" font-weight="bold" fill="#92400e">观察</text>
+  <text x="780" y="479" text-anchor="middle" font-size="14" fill="#b45309">结果回填上下文</text>
+
+  <line x1="472" y1="461" x2="516" y2="461" stroke="#d97706" stroke-width="2.2" marker-end="url(#mAmber)"/>
+  <line x1="662" y1="461" x2="706" y2="461" stroke="#d97706" stroke-width="2.2" marker-end="url(#mAmber)"/>
+  <path d="M 780 496 C 780 548, 400 548, 400 498" fill="none" stroke="#d97706" stroke-width="2" marker-end="url(#mAmber)"/>
+  <text x="590" y="566" text-anchor="middle" font-size="14.5" fill="#b45309">循环往复，直到任务完成</text>
+
+  <!-- 能力扩展（底部一行），总线连接，箭头标触发方式 -->
+  <line x1="590" y1="598" x2="590" y2="726" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 5"/>
+  <line x1="206" y1="726" x2="1034" y2="726" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 5"/>
+
+  <line x1="206" y1="730" x2="206" y2="766" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mPurple)" marker-end="url(#mPurple)"/>
+  <text x="216" y="754" font-size="13.5" fill="#7c3aed">需要干活产出</text>
+
+  <line x1="482" y1="730" x2="482" y2="766" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mPurple)" marker-end="url(#mPurple)"/>
+  <text x="474" y="754" text-anchor="end" font-size="13.5" fill="#7c3aed">需要额外的经验</text>
+
+  <line x1="758" y1="730" x2="758" y2="766" stroke="#0d9488" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mTeal)" marker-end="url(#mTeal)"/>
+  <text x="768" y="754" font-size="13.5" fill="#0d9488">需要链接外部工具</text>
+
+  <line x1="1034" y1="730" x2="1034" y2="766" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#mPurple)" marker-end="url(#mPurple)"/>
+  <text x="1044" y="754" font-size="13.5" fill="#7c3aed">任务太大，拆出去</text>
+
+  <rect x="80" y="770" width="252" height="86" rx="12" fill="#f3e8ff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="206" y="806" text-anchor="middle" font-size="20" font-weight="bold" fill="#6b21a8">工具 Tools</text>
+  <text x="206" y="830" text-anchor="middle" font-size="14" fill="#7c3aed">读写文件 · 执行 shell</text>
+
+  <rect x="356" y="770" width="252" height="86" rx="12" fill="#f3e8ff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="482" y="806" text-anchor="middle" font-size="20" font-weight="bold" fill="#6b21a8">Skill 系统</text>
+  <text x="482" y="830" text-anchor="middle" font-size="14" fill="#7c3aed">按需加载的流程知识</text>
+
+  <rect x="632" y="770" width="252" height="86" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+  <text x="758" y="806" text-anchor="middle" font-size="20" font-weight="bold" fill="#0f766e">MCP 客户端</text>
+  <text x="758" y="830" text-anchor="middle" font-size="14" fill="#0d9488">标准化接入外部能力</text>
+
+  <rect x="908" y="770" width="252" height="86" rx="12" fill="#f3e8ff" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="1034" y="806" text-anchor="middle" font-size="20" font-weight="bold" fill="#6b21a8">子 Agent</text>
+  <text x="1034" y="830" text-anchor="middle" font-size="14" fill="#7c3aed">并行分工 · 专项侦查</text>
+
+  <!-- 外部 MCP 服务器：调用发生时经 stdio / HTTP -->
+  <rect x="632" y="886" width="252" height="58" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="758" y="912" text-anchor="middle" font-size="18" font-weight="bold" fill="#475569">外部 MCP 服务器</text>
+  <text x="758" y="933" text-anchor="middle" font-size="14" fill="#64748b">数据库 · 搜索 · 第三方 API</text>
+  <line x1="758" y1="860" x2="758" y2="882" stroke="#0d9488" stroke-width="2" marker-start="url(#mTeal)" marker-end="url(#mTeal)"/>
+  <text x="770" y="877" font-size="12.5" fill="#0d9488">调用发生时 · stdio / HTTP</text>
+</svg>

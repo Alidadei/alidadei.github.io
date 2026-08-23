@@ -29,6 +29,12 @@ tests文件夹：所有单独测试或问题验证代码都需要放到这个文
 
 假如本项目的博客排版规则有变化，必须更新"docs\技术博客排版规范.md"
 
+### Git 钩子维护
+
+钩子由 `git config core.hookspath .githooks` 启用（新克隆需执行一次）。
+
+`.githooks/` 下钩子的第一行（shebang，声明脚本用哪个解释器执行）必须写 `#!/bin/sh` 且只用 POSIX 语法，禁止 `#!/bin/bash` 及 bash 独有写法（`[[ ]]`、数组、`local`、`function`、`source`）。原因：GitHub Desktop 内嵌 Git 没有 bash.exe，会误用 Windows 自带的 WSL 别名 `bash.exe` 导致提交报错；`sh` 各环境通用。
+
 
 
 

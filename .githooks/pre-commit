@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Auto-update caches when 3D files change:
 #  - 3d-background.html 改 → 更新 iframe ?v= 版本号 (SW 自动刷新该 HTML)
 #  - vendor/three/ 改 (升级 Three.js) → 额外 bump sw.js VERSION (清旧库缓存)

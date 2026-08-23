@@ -16,10 +16,10 @@ news:
 education:
   - school: 复旦大学
     period: "2025.09 - 2030.06"
-    degree: AI4S 博士研究生
+    degree: AI4S 博士研究生（保研）
   - school: 中国海洋大学（985）
     period: "2021.08 - 2025.07"
-    degree: 电子信息工程 · 专业第4名保研
+    degree: 电子信息工程（前3%）
 
 # 实习经历
 internship:
