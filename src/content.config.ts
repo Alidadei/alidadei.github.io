@@ -48,7 +48,10 @@ const portfolio = defineCollection({
     excerpt: z.string().optional(),
     image: z.string().optional(),
     link: z.string().optional(),
+    repo: z.string().optional(), // 代码仓库地址,卡片 links 行显示 Code ↗
     categories: z.array(z.string()).optional(),
+    status: z.string().optional(), // 卡片状态标签,如 "Experiment"
+    year: z.string().optional(), // 卡片年份,如 "2026"
   }),
 });
 

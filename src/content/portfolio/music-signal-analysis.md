@@ -1,9 +1,12 @@
 ---
 title: "Music timbre Analysis & Visualization / 音色量化分析&可视化"
-excerpt: "本人爱好小提琴，一般小提琴音色的古法判断方法是依靠演奏者自己感受，受场地、演奏者水平和周围噪声影响较大，于是我便设计了一种音色分析系统，来实现客观量化的音色频率成分分析、乐器分类与旋律可视化等功能/The traditional method for judging the timbre of a violin relies on the combined experience of the performer , which is greatly influenced by the venue & performer's level. Therefore, I designed a timbre analysis system "
+excerpt: "输入一段音乐,输出音色分析、乐器分类与旋律可视化的一站式音频分析系统。/ Feed it a music file, get back timbre analysis, instrument classification and melody visualization."
 image: "/images/music-signal-analysis.png"
+repo: "https://github.com/Alidadei/Music_signal_analysis"
 link: "/portfolio/music-signal-analysis.html"
 categories: ["个人实践"]
+status: "个人爱好"
+year: "2025"
 ---
 
 [GitHub Repository](https://github.com/Alidadei/Music_signal_analysis) | [Live Demo (Hugging Face Spaces)](https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis)

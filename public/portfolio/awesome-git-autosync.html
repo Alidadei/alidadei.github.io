@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Awesome-Git-Autosync - Portfolio</title>
+<style>
+  :root { --accent: #c2410c; --accent2: #9a3412; --tint: #fdf3ec; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: #1f2937; background: #fff; line-height: 1.8; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-weight: 600; }
+  .lang-toggle button.active { background: var(--accent); color: #fff; }
+  .hero { background: linear-gradient(150deg, #ea580c 0%, #9a3412 90%); color: #fff; padding: 72px 24px 56px; text-align: center; }
+  .hero h1 { font-size: 2.4rem; letter-spacing: .5px; }
+  .hero .tag { font-size: 1.2rem; opacity: .92; max-width: 640px; margin: 14px auto 0; }
+  .hero .hero-art { max-width: 760px; margin: 30px auto 0; }
+  .hero .links { margin-top: 26px; font-size: 1rem; }
+  .hero .links a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 24px 72px; }
+  .q { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 60px 0 10px; }
+  .lead { font-size: 1.16rem; color: #374151; margin-bottom: 8px; }
+  .scene { background: var(--tint); border-radius: 20px; padding: 18px 18px 8px; margin: 22px 0; }
+  .scene svg { width: 100%; height: auto; display: block; }
+  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
+  .num { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 12px; text-align: center; }
+  .num b { font-size: 2rem; color: var(--accent); display: block; line-height: 1.2; }
+  .num span { font-size: .88rem; color: #6b7280; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px 22px; margin: 22px 0; }
+  .card h3 { color: var(--accent2); margin-bottom: 6px; }
+  .footer { text-align: center; padding: 28px 20px; color: #9ca3af; font-size: .88rem; border-top: 1px solid #f0f0f0; }
+  [data-lang] { display: none; }
+  [data-lang].visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="lang-toggle">
+  <button id="btnEn" class="active" onclick="setLang('en')">EN</button>
+  <button id="btnZh" onclick="setLang('zh')">中文</button>
+</div>
+
+<div class="hero">
+  <h1>Awesome-Git-Autosync</h1>
+  <p class="tag" data-lang="en">A ~4 KB script that keeps your project folders identical on every computer you own. No install, no dependencies, no remembering to commit.</p>
+  <p class="tag" data-lang="zh">一个约 4KB 的脚本,让你所有电脑上的项目文件夹永远保持一致。不装软件、没有依赖、再也不用记得「先提交一下」。</p>
+  <div class="hero-art">
+    <svg viewBox="0 0 760 170" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif">
+        <g transform="translate(40,20)">
+          <rect width="150" height="98" rx="10" fill="#fff"/><rect x="16" y="14" width="118" height="62" rx="6" fill="#ffedd5"/>
+          <rect x="58" y="76" width="34" height="8" rx="3" fill="#fdba74"/>
+          <text x="75" y="122" text-anchor="middle" font-size="13" fill="#fff" opacity=".85">书房台式机</text>
+        </g>
+        <g transform="translate(570,24)">
+          <rect width="140" height="92" rx="10" fill="#fff"/><rect x="34" y="0" width="72" height="14" rx="6" fill="#fdba74"/>
+          <rect x="16" y="22" width="108" height="52" rx="6" fill="#ffedd5"/>
+          <text x="70" y="122" text-anchor="middle" font-size="13" fill="#fff" opacity=".85">客厅笔记本</text>
+        </g>
+        <g transform="translate(330,8)">
+          <ellipse cx="50" cy="56" rx="56" ry="24" fill="#fff" opacity=".95"/>
+          <ellipse cx="28" cy="46" rx="20" ry="14" fill="#fff"/><ellipse cx="66" cy="44" rx="22" ry="15" fill="#fff"/>
+          <text x="50" y="64" text-anchor="middle" font-size="14" fill="#9a3412" font-weight="700">Git</text>
+        </g>
+        <path d="M235 66 C 290 30, 320 30, 362 50" stroke="#fdba74" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M398 50 C 440 30, 480 40, 545 66" stroke="#fdba74" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M258 92 l14 -8 M502 92 l-14 -8" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <text x="380" y="150" text-anchor="middle" font-size="13" fill="#fff" opacity=".75">每隔几分钟,自动双向同步一次</text>
+      </g>
+    </svg>
+  </div>
+  <p class="links"><a href="https://github.com/Alidadei/Awesome-Git-Autosync" target="_blank" rel="noopener" data-lang="en">📦 GitHub</a><a href="https://github.com/Alidadei/Awesome-Git-Autosync" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库</a></p>
+</div>
+
+<div class="wrap">
+
+  <h2 class="q" data-lang="en">The problem: two computers, one truth? 💻🖥</h2>
+  <h2 class="q" data-lang="zh">痛点:两台电脑,谁是最新版?💻🖥</h2>
+  <p class="lead" data-lang="en">You write notes on the desktop, continue on the laptop — and sooner or later you email yourself a zip, or lose an evening of work. Git solves this, but only if you remember to commit, pull and push. Every. Single. Time.</p>
+  <p class="lead" data-lang="zh">白天在台式机上写文档,晚上用笔记本接着干——总有一天你会给自己发一个压缩包,或者弄丢一晚上的工作。Git 本来能解决,但前提是你每次都记得 commit、pull、push。每次、都、记得。</p>
+  <p class="lead" data-lang="en">This script simply does the remembering for you.</p>
+  <p class="lead" data-lang="zh">这个脚本替你「记得」。</p>
+
+  <h2 class="q" data-lang="en">Setup: double-click, once ⚡</h2>
+  <h2 class="q" data-lang="zh">安装:双击一次,完事 ⚡</h2>
+  <p class="lead" data-lang="en">Clone the repo, double-click <code>setup</code>. It registers itself to start with your computer and begins syncing immediately. Then tell it which folders to watch — by writing paths into a plain text file.</p>
+  <p class="lead" data-lang="zh">克隆仓库,双击 <code>setup</code>。它会注册成开机自启并立刻开始同步。然后告诉它要看哪些文件夹——方式就是往一个纯文本文件里写路径。</p>
+  <div class="scene">
+    <svg viewBox="0 0 820 210" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="monospace" font-size="15">
+        <rect x="120" y="16" width="360" height="178" rx="10" fill="#fff" stroke="#e5e7eb" stroke-width="2"/>
+        <circle cx="140" cy="32" r="4" fill="#f87171"/><circle cx="156" cy="32" r="4" fill="#fbbf24"/><circle cx="172" cy="32" r="4" fill="#34d399"/>
+        <text x="140" y="66" fill="#6b7280">repos.txt</text>
+        <text x="140" y="96" fill="#374151">D:\Code\my-blog</text>
+        <text x="140" y="124" fill="#374151">D:\Notes\thesis</text>
+        <text x="140" y="152" fill="#9ca3af"># D:\old\paused  ← 暂停就加个#</text>
+        <text x="140" y="180" fill="#9ca3af">R:\Code\MY project\alidadei.github.io</text>
+      </g>
+      <g font-family="sans-serif">
+        <path d="M510 100 H580" stroke="#c2410c" stroke-width="5" stroke-linecap="round"/>
+        <path d="M580 100 L564 90 V110 Z" fill="#c2410c"/>
+        <g transform="translate(610,40)">
+          <rect width="170" height="120" rx="12" fill="#fff" stroke="#fdba74" stroke-width="2"/>
+          <text x="85" y="40" text-anchor="middle" font-size="30">🔁</text>
+          <text x="85" y="76" text-anchor="middle" font-size="14" fill="#9a3412" font-weight="700" font-family="sans-serif">自动循环开始</text>
+          <text x="85" y="100" text-anchor="middle" font-size="12.5" fill="#6b7280" font-family="sans-serif">开机自启 · 静默运行</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <h2 class="q" data-lang="en">What it does every few minutes 🔄</h2>
+  <h2 class="q" data-lang="zh">每隔几分钟它做的事 🔄</h2>
+  <div class="scene">
+    <svg viewBox="0 0 820 230" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif" font-size="14">
+        <circle cx="410" cy="115" r="78" fill="none" stroke="#fdba74" stroke-width="5" stroke-dasharray="6 10"/>
+        <g text-anchor="middle">
+          <g transform="translate(410,28)">
+            <rect x="-52" y="-22" width="104" height="36" rx="18" fill="#c2410c"/>
+            <text y="3" fill="#fff" font-size="14" font-weight="600">存档 commit</text>
+          </g>
+          <g transform="translate(530,100)">
+            <rect x="-56" y="-18" width="112" height="36" rx="18" fill="#9a3412"/>
+            <text y="5" fill="#fff" font-size="14" font-weight="600">取更新 pull</text>
+          </g>
+          <g transform="translate(410,186)">
+            <rect x="-56" y="-18" width="112" height="36" rx="18" fill="#c2410c"/>
+            <text y="5" fill="#fff" font-size="14" font-weight="600">上传 push</text>
+          </g>
+          <g transform="translate(285,100)">
+            <rect x="-52" y="-18" width="104" height="36" rx="18" fill="#9a3412"/>
+            <text y="5" fill="#fff" font-size="14" font-weight="600">收集 add</text>
+          </g>
+        </g>
+        <text x="410" y="112" text-anchor="middle" font-size="26">📁</text>
+        <text x="410" y="140" text-anchor="middle" font-size="12" fill="#6b7280">你的文件夹</text>
+        <path d="M470 52 A66 66 0 0 1 508 86" stroke="#9a3412" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M508 86 l2 -13 l-14 3 Z" fill="#9a3412"/>
+        <text x="700" y="60" text-anchor="middle" fill="#9ca3af" font-size="13.5">改了间隔?下一轮自动生效</text>
+        <text x="700" y="84" text-anchor="middle" fill="#9ca3af" font-size="13.5">两份日志:近况 + 全历史</text>
+        <text x="700" y="108" text-anchor="middle" fill="#9ca3af" font-size="13.5">多分支同步:取消注释即可</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2 class="q" data-lang="en">Why it can be this small 🪶</h2>
+  <h2 class="q" data-lang="zh">为什么能做得这么小 🪶</h2>
+  <p class="lead" data-lang="en">Because it refuses to install anything. Windows gets PowerShell, macOS/Linux get a shell script — the tools every computer already has. The real bottleneck is your network upload speed, not the script; its own CPU use is essentially zero.</p>
+  <p class="lead" data-lang="zh">因为它拒绝安装任何东西。Windows 用 PowerShell,macOS/Linux 用 shell 脚本——都是每台电脑本来就有的工具。真正的瓶颈是网络上传速度而不是脚本本身;它的 CPU 占用基本为零。</p>
+
+  <div class="card">
+    <h3 data-lang="en">Honest fit-check 🤝</h3>
+    <h3 data-lang="zh">诚实的适用边界 🤝</h3>
+    <p data-lang="en">✓ Great for: notes, documents, personal projects, "save my work periodically".<br>✗ Not for: teams editing at the same time, or curated commit histories.</p>
+    <p data-lang="zh">✓ 适合:笔记、文档、个人项目、「定时帮我保存工作进度」。<br>✗ 不适合:多人同时编辑,或需要精心雕琢 commit 历史的场合。</p>
+  </div>
+
+  <div class="nums">
+    <div class="num"><b>~4 KB</b><span data-lang="en">core script</span><span data-lang="zh">核心脚本体积</span></div>
+    <div class="num"><b>0</b><span data-lang="en">dependencies</span><span data-lang="zh">外部依赖</span></div>
+    <div class="num"><b>2,100+</b><span data-lang="en">commits it made for me</span><span data-lang="zh">它替我提交的次数</span></div>
+    <div class="num"><b>3</b><span data-lang="en">platforms (Win ✓ macOS ✓)</span><span data-lang="zh">平台(Win ✓ macOS ✓)</span></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span data-lang="en">Awesome-Git-Autosync &copy; 2026 · </span>
+  <span data-lang="zh">Awesome-Git-Autosync &copy; 2026 · </span>
+  <a href="https://github.com/Alidadei/Awesome-Git-Autosync" target="_blank">GitHub</a>
+</div>
+
+<script>
+function setLang(lang) {
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
+  });
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.documentElement.lang = lang;
+}
+setLang('en');
+</script>
+</body>
+</html>

@@ -8,14 +8,15 @@ interface Props {
   image?: string;
   fullWidth?: boolean;
   noindex?: boolean;
+  width?: string; // 覆盖内容最大宽度,如 max-w-[1040px]
 }
 
-const { title, description, image, fullWidth = false, noindex = false } = Astro.props;
+const { title, description, image, fullWidth = false, noindex = false, width } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} image={image} noindex={noindex} homeBg={Astro.props.homeBg}>
   <Header />
-  <main class={[fullWidth ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8', Astro.props.homeBg ? '' : 'fade-in'].filter(Boolean).join(' ')}>
+  <main class={[fullWidth ? '' : `${width || 'max-w-6xl'} mx-auto px-4 sm:px-6 lg:px-8 py-8`, Astro.props.homeBg ? '' : 'fade-in'].filter(Boolean).join(' ')}>
     <slot />
   </main>
 </BaseLayout>

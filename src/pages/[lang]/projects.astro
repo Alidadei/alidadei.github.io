@@ -64,19 +64,30 @@ function cleanExcerpt(s?: string) {
             <Tag
               {...linkProps}
               data-categories={JSON.stringify(cats)}
-              class="project-card p-4 rounded-lg border border-border hover:border-accent/50 transition-all bg-bg-secondary/30 overflow-hidden"
+              class="project-card flex flex-col rounded-xl border border-border bg-white overflow-hidden hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5 transition-all"
               style={idx >= INITIAL ? 'display:none' : undefined}
             >
               {t && (
-                <img src={t} alt={item.data.title} loading="lazy" decoding="async" class="w-full h-40 object-cover rounded-md mb-3" />
+                <img src={t} alt={item.data.title} loading="lazy" decoding="async" class="w-full h-44 object-cover" />
               )}
-              <h2 class="text-lg font-semibold text-primary mb-1">{item.data.title}</h2>
-              {excerpt && (
-                <p class="text-text-secondary text-sm line-clamp-3">{excerpt}</p>
-              )}
-              {item.data.link && (
-                <span class="inline-block text-sm text-accent mt-2">{lang === 'zh' ? '查看详情' : 'View Details'} →</span>
-              )}
+              <div class="flex flex-col flex-1 p-6">
+                {(item.data.status || item.data.year) && (
+                  <div class="flex items-center gap-2 mb-3 font-mono text-xs text-text-muted">
+                    {item.data.status && (
+                      <span class="inline-flex items-center gap-1.5 text-text-secondary">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_0_3px_rgba(176,125,79,0.12)]"></span>
+                        {item.data.status}
+                      </span>
+                    )}
+                    {item.data.status && item.data.year && <span aria-hidden="true">/</span>}
+                    {item.data.year && <time>{item.data.year}</time>}
+                  </div>
+                )}
+                <h2 class="text-lg font-semibold text-primary mb-1.5">{item.data.title}</h2>
+                {excerpt && (
+                  <p class="text-text-secondary text-sm leading-relaxed line-clamp-2">{excerpt}</p>
+                )}
+              </div>
             </Tag>
           );
         })}

@@ -312,7 +312,7 @@ npm run sky-preview
 
 ```
 src/content/portfolio/*.md
-  frontmatter: 标题·摘要·缩略图·分类·link
+  frontmatter: 标题·摘要·缩略图·分类·link·状态·年份
         │ getCollection(通道1)
         ↓
 projects.astro ──→ /zh/projects/ 列表卡片
@@ -324,7 +324,8 @@ public/portfolio/music-signal-analysis.html (通道2 原样投放)
 ```
 
 要点:
-- 列表卡片(src):projects.astro 只读 frontmatter(标题/摘要/图/分类/link),渲染成 /zh/projects/ 的卡片网格(分类 tab + 无限滚动)。
+- 列表卡片(src):projects.astro 只读 frontmatter(标题/摘要/图/分类/link/状态/年份),渲染成 /zh/projects/ 的卡片网格(分类 tab + 无限滚动)。
+- 状态/年份标签(卡片标题上方一行,形如 ● Experiment / 2026):frontmatter 写 `status` 和 `year` 即可。都是可选、任意字符串,没有预定义枚举,可中文(如 status: "实验中")、year 可写范围(如 "2024-2025");只写一个也行,都不写则整行隐藏。
 - 详情页(public/portfolio/*.html):独立静态 HTML,不是 astro 生成的(src/pages 无 portfolio 路由)。卡片 link 指向它,点击新标签打开。改详情直接改这个 html。
 - md 正文(body)目前没被任何页面渲染 —— 只有 frontmatter 进了列表,详情内容来自 public html(另一套)。写 body 不会显示。
 

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CausalResearch - Portfolio</title>
+<style>
+  :root { --accent: #475569; --accent2: #334155; --tint: #f1f5f9; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: #1f2937; background: #fff; line-height: 1.8; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-weight: 600; }
+  .lang-toggle button.active { background: var(--accent); color: #fff; }
+  .hero { background: linear-gradient(150deg, #64748b 0%, #334155 90%); color: #fff; padding: 72px 24px 56px; text-align: center; }
+  .hero h1 { font-size: 2.6rem; letter-spacing: .5px; }
+  .hero .tag { font-size: 1.2rem; opacity: .92; max-width: 680px; margin: 14px auto 0; }
+  .hero .hero-art { max-width: 760px; margin: 30px auto 0; }
+  .hero .links { margin-top: 26px; font-size: 1rem; }
+  .hero .links a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 24px 72px; }
+  .q { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 60px 0 10px; }
+  .lead { font-size: 1.16rem; color: #374151; margin-bottom: 8px; }
+  .scene { background: var(--tint); border-radius: 20px; padding: 18px 18px 8px; margin: 22px 0; }
+  .scene svg { width: 100%; height: auto; display: block; }
+  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
+  .num { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 12px; text-align: center; }
+  .num b { font-size: 2rem; color: var(--accent); display: block; line-height: 1.2; }
+  .num span { font-size: .88rem; color: #6b7280; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px 22px; margin: 22px 0; }
+  .card h3 { color: var(--accent2); margin-bottom: 6px; }
+  .footer { text-align: center; padding: 28px 20px; color: #9ca3af; font-size: .88rem; border-top: 1px solid #f0f0f0; }
+  [data-lang] { display: none; }
+  [data-lang].visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="lang-toggle">
+  <button id="btnEn" class="active" onclick="setLang('en')">EN</button>
+  <button id="btnZh" onclick="setLang('zh')">中文</button>
+</div>
+
+<div class="hero">
+  <h1>CausalResearch</h1>
+  <p class="tag" data-lang="en">Some heart patients have three surgical options — but each patient only ever gets one. This research builds an AI that asks: "what if we had chosen differently?"</p>
+  <p class="tag" data-lang="zh">一些心脏病患者面临三种手术方案——但每个病人永远只会经历其中一种。这项研究造了一个会问「当初如果选另一种会怎样?」的 AI。</p>
+  <div class="hero-art">
+    <svg viewBox="0 0 760 180" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif">
+        <path d="M60 140 C 60 60, 220 20, 380 60" stroke="#cbd5e1" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M700 140 C 700 60, 540 20, 380 60" stroke="#cbd5e1" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M380 60 V20" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+        <g transform="translate(380,60)">
+          <path d="M0 26 C -30 4, -30 -22, 0 -10 C 30 -22, 30 4, 0 26 Z" fill="#f87171"/>
+        </g>
+        <g transform="translate(60,140)"><circle r="11" fill="#334155"/><path d="M-10 30 Q0 13 10 30 L9 40 H-9 Z" fill="#475569"/></g>
+        <g transform="translate(700,140)"><circle r="11" fill="#334155"/><path d="M-10 30 Q0 13 10 30 L9 40 H-9 Z" fill="#475569"/></g>
+        <g transform="translate(380,96)"><circle r="11" fill="#334155"/><path d="M-10 30 Q0 13 10 30 L9 40 H-9 Z" fill="#475569"/></g>
+        <g font-size="14" fill="#e2e8f0" text-anchor="middle">
+          <text x="60" y="186">方案 A</text><text x="380" y="176" transform="translate(0,-36)">方案 B</text><text x="700" y="186">方案 C</text>
+        </g>
+        <text x="380" y="166" text-anchor="middle" fill="#94a3b8" font-size="13">三条路,只能走一条</text>
+      </g>
+    </svg>
+  </div>
+  <p class="links"><a href="https://github.com/Alidadei/CausalResearch" target="_blank" rel="noopener" data-lang="en">📦 GitHub (private)</a><a href="https://github.com/Alidadei/CausalResearch" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库(私有)</a></p>
+</div>
+
+<div class="wrap">
+
+  <h2 class="q" data-lang="en">The medical setting, in plain words 🫀</h2>
+  <h2 class="q" data-lang="zh">用大白话讲讲背景 🫀</h2>
+  <p class="lead" data-lang="en">For elderly heart patients there is a common minimally invasive surgery — in this cohort it comes in three variants. Doctors choose one — and that's the only outcome anyone ever observes.</p>
+  <p class="lead" data-lang="zh">一些老年心脏病患者需要接受一种常见的微创手术——在这个队列里,这种手术有三种做法,医生只能选一种——而世上能观察到的,也只有这一种的结果。</p>
+  <p class="lead" data-lang="en">The road not taken is invisible. Yet the whole point of a good recommendation is to know what the other roads would have done. That's the <strong>counterfactual</strong> problem — the heart of causal inference.</p>
+  <p class="lead" data-lang="zh">没选的那条路,永远看不见。但「推荐」的意义恰恰在于知道别的路会怎样——这就是<strong>反事实</strong>问题,因果推断的核心难题。</p>
+
+  <h2 class="q" data-lang="en">The trick: three clues about each patient 🕵️</h2>
+  <h2 class="q" data-lang="zh">破局思路:每位病人的三条线索 🕵️</h2>
+  <p class="lead" data-lang="en">Each patient leaves three kinds of traces: blood-vessel scans (images), the radiologist's written report (text), and lab-sheet numbers (tables). The model reads all three and compresses them into one "digital portrait" of the patient.</p>
+  <p class="lead" data-lang="zh">每位病人留下三类痕迹:血管影像(图像)、放射科医生写的报告(文字)、化验单(表格)。模型把三者一起读入,压缩成这位病人的一个「数字画像」。</p>
+  <div class="scene">
+    <svg viewBox="0 0 820 250" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif" font-size="13.5">
+        <g transform="translate(24,18)">
+          <rect width="170" height="110" rx="10" fill="#fff"/>
+          <rect x="18" y="14" width="70" height="70" rx="8" fill="#e2e8f0"/>
+          <path d="M28 74 C 40 40, 52 34, 60 50 C 66 34, 78 40, 80 62" stroke="#475569" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <rect x="98" y="22" width="54" height="10" rx="5" fill="#cbd5e1"/><rect x="98" y="40" width="40" height="10" rx="5" fill="#cbd5e1"/>
+          <text x="85" y="102" text-anchor="middle" fill="#475569" font-weight="600">MRA 血管影像</text>
+        </g>
+        <g transform="translate(24,150)">
+          <rect width="170" height="86" rx="10" fill="#fff"/>
+          <rect x="18" y="14" width="134" height="58" rx="6" fill="#f1f5f9"/>
+          <g stroke="#94a3b8" stroke-width="3" stroke-linecap="round">
+            <line x1="30" y1="30" x2="130" y2="30"/><line x1="30" y1="44" x2="110" y2="44"/><line x1="30" y1="58" x2="120" y2="58"/>
+          </g>
+          <text x="85" y="80" text-anchor="middle" fill="#475569" font-weight="600">放射报告(文字)</text>
+        </g>
+        <g transform="translate(224,40)">
+          <rect width="150" height="180" rx="10" fill="#fff"/>
+          <g stroke="#e2e8f0" stroke-width="2">
+            <line x1="14" y1="40" x2="136" y2="40"/><line x1="14" y1="72" x2="136" y2="72"/><line x1="14" y1="104" x2="136" y2="104"/><line x1="14" y1="136" x2="136" y2="136"/>
+          </g>
+          <rect x="14" y="14" width="40" height="16" rx="4" fill="#cbd5e1"/>
+          <g fill="#64748b" font-family="monospace" font-size="11">
+            <text x="18" y="62">年龄 79</text><text x="18" y="94">EF 55%</text><text x="18" y="126">肌酐 1.2</text><text x="18" y="158">…</text>
+          </g>
+          <text x="75" y="176" text-anchor="middle" fill="#475569" font-weight="600">化验表格</text>
+        </g>
+        <path d="M390 128 H440" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+        <path d="M440 128 L424 118 V138 Z" fill="#475569"/>
+        <g transform="translate(458,54)">
+          <path d="M40 20 L76 44 L40 68 L4 44 Z" fill="#475569"/>
+          <path d="M40 32 L58 44 L40 56 L22 44 Z" fill="#e2e8f0"/>
+        </g>
+        <path d="M540 128 H590" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+        <path d="M590 128 L574 118 V138 Z" fill="#475569"/>
+        <g transform="translate(610,38)">
+          <circle cx="70" cy="46" r="44" fill="#fff" stroke="#475569" stroke-width="3.5"/>
+          <circle cx="70" cy="30" r="12" fill="#94a3b8"/>
+          <path d="M46 82 Q70 52 94 82 L92 88 H48 Z" fill="#94a3b8"/>
+          <g stroke="#f87171" stroke-width="3.5" stroke-linecap="round">
+            <path d="M62 24 C 56 16, 66 10, 70 18 C 74 10, 84 16, 78 24"/>
+          </g>
+        </g>
+        <text x="680" y="196" text-anchor="middle" fill="#475569" font-weight="600">256 维「数字画像」</text>
+        <text x="680" y="220" text-anchor="middle" fill="#9ca3af" font-size="12.5">三类信息融合成一个向量</text>
+        <text x="205" y="245" text-anchor="middle" fill="#9ca3af" font-size="12.5">缺失某一类?用可学习的「缺失占位符」补上,并做标记</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2 class="q" data-lang="en">Then: predict all three "what ifs" 🔮</h2>
+  <h2 class="q" data-lang="zh">然后:预测三种「如果」 🔮</h2>
+  <p class="lead" data-lang="en">From the portrait, the model outputs a predicted outcome for <em>each</em> of the three options — including the two that never happened — and recommends the best. A special "ranking loss" trains it: when the real treatment worked, the model must rank it above the alternatives; when it failed, it must find something better.</p>
+  <p class="lead" data-lang="zh">模型从画像出发,对三种方案<strong>各自</strong>输出一个预测结果——包括从未发生的那两种——然后推荐最好的。一种特殊的「排序损失」负责训练:真实方案有效时,模型必须把它排在别的方案前面;真实方案无效时,模型必须找到更好的替代。</p>
+  <div class="scene">
+    <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif" font-size="14">
+        <g transform="translate(40,50)">
+          <circle r="40" fill="#475569"/>
+          <path d="M-24 30 C -10 -8, 10 -8, 24 30 L20 36 H-20 Z" fill="#64748b"/>
+          <circle cy="-12" r="12" fill="#94a3b8"/>
+        </g>
+        <text x="40" y="120" text-anchor="middle" fill="#475569" font-weight="600">数字画像</text>
+        <path d="M95 62 H150" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+        <path d="M150 62 L136 53 V71 Z" fill="#475569"/>
+        <g transform="translate(170,16)">
+          <rect width="120" height="90" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="60" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="#334155">DragonNet</text>
+          <text x="60" y="60" text-anchor="middle" font-size="12" fill="#6b7280">倾向性校正</text>
+          <text x="60" y="78" text-anchor="middle" font-size="12" fill="#6b7280">减少选择偏差</text>
+        </g>
+        <g transform="translate(170,116)">
+          <rect width="120" height="70" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="5 4"/>
+          <text x="60" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#334155">TransTEE</text>
+          <text x="60" y="54" text-anchor="middle" font-size="12" fill="#6b7280">Transformer 版对照</text>
+        </g>
+        <path d="M300 62 H360" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+        <path d="M360 62 L346 53 V71 Z" fill="#475569"/>
+        <g text-anchor="middle">
+          <g transform="translate(400,18)">
+            <rect x="-36" y="0" width="72" height="86" rx="10" fill="#f1f5f9"/>
+            <text y="26" font-size="15" fill="#475569" font-weight="700">A</text>
+            <text y="56" font-size="15" fill="#9ca3af">预后 62</text>
+          </g>
+          <g transform="translate(500,18)">
+            <rect x="-36" y="0" width="72" height="86" rx="10" fill="#334155"/>
+            <text y="26" font-size="15" fill="#fff" font-weight="700">B ★</text>
+            <text y="56" font-size="15" fill="#e2e8f0">预后 88</text>
+          </g>
+          <g transform="translate(600,18)">
+            <rect x="-36" y="0" width="72" height="86" rx="10" fill="#f1f5f9"/>
+            <text y="26" font-size="15" fill="#475569" font-weight="700">C</text>
+            <text y="56" font-size="15" fill="#9ca3af">预后 71</text>
+          </g>
+        </g>
+        <path d="M660 60 H710" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+        <path d="M710 60 L696 51 V69 Z" fill="#334155"/>
+        <text x="762" y="56" text-anchor="middle" fill="#334155" font-weight="700" font-size="15">推荐 B</text>
+        <text x="762" y="80" text-anchor="middle" fill="#9ca3af" font-size="12.5">给医生参考</text>
+        <text x="410" y="182" text-anchor="middle" fill="#9ca3af" font-size="13.5">对三种方案各估一个"假想结局",从未发生的两种也在内</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2 class="q" data-lang="en">Where it stands today 📍</h2>
+  <h2 class="q" data-lang="zh">目前的进展 📍</h2>
+  <div class="nums">
+    <div class="num"><b>1,044</b><span data-lang="en">patients in experiments</span><span data-lang="zh">实验病例数</span></div>
+    <div class="num"><b>3</b><span data-lang="en">treatment options scored</span><span data-lang="zh">评估的方案数</span></div>
+    <div class="num"><b>93%</b><span data-lang="en">agreement when treatment worked</span><span data-lang="zh">治疗有效时推荐一致率</span></div>
+    <div class="num"><b>🚧</b><span data-lang="en">spotting failed treatments: still weak</span><span data-lang="zh">识别无效治疗:仍是短板</span></div>
+  </div>
+  <p class="lead" data-lang="en">On a small cohort (835 training / 209 test), when the real treatment <em>did</em> help, the model agrees with doctors ~93% of the time. Recognizing that a treatment <em>failed</em> — and suggesting something better — remains the open challenge. Research continues.</p>
+  <p class="lead" data-lang="zh">在小队列上(835 训练 / 209 测试):当真实治疗确实有效时,模型与医生的选择约 93% 一致;而识别「治疗无效、应换方案」仍是待解难题。研究仍在继续。</p>
+
+</div>
+
+<div class="footer">
+  <span data-lang="en">CausalResearch &copy; 2026 · </span>
+  <span data-lang="zh">CausalResearch &copy; 2026 · </span>
+  <a href="https://github.com/Alidadei/CausalResearch" target="_blank">GitHub</a>
+</div>
+
+<script>
+function setLang(lang) {
+  document.querySelectorAll('[data-lang]').forEach(el => {
+    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
+  });
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.documentElement.lang = lang;
+}
+setLang('en');
+</script>
+</body>
+</html>
