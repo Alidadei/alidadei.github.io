@@ -20,10 +20,6 @@ dsh在github发布数小时便涨了三万多 stars，热度非常之高。在�
 
 以下内容信息是 ZCode（GLM5.3+最高思考强度） 辅助调研生成 ，信息截至 2026-08-23。
 
-## 调研范围与方法
-
-信息源包括官方发布页、GitHub 仓库与官方参考文档、Cordis 论文，以及五篇第三方分析（Medium、FloatBoat、MindStudio、The New Stack、Eigent）和 Reddit 社区讨论。本文主要总结了多家一致的观点，仅单一来源且无佐证的被标记为"单源"。star 数、模式命名这类随时变动或各家说法不一的信息，一律注明出处与时间点。
-
 ---
 
 ## 什么是Harness 
