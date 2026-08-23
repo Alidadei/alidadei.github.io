@@ -40,7 +40,7 @@
 <body>
 
 <div class="lang-toggle">
-  <button id="btnEn" class="active" onclick="setLang('en')">EN</button>
+  <button id="btnEn" class="active" onclick="setLang('zh')">EN</button>
   <button id="btnZh" onclick="setLang('zh')">中文</button>
 </div>
 
@@ -194,7 +194,7 @@ function setLang(lang) {
   document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
   document.documentElement.lang = lang;
 }
-setLang('en');
+setLang('zh');
 </script>
 </body>
 </html>
