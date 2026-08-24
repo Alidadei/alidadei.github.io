@@ -12,7 +12,7 @@ lang: zh
 
 ## Agent Skill 的发展历史
 
-### 2025 年 10 月，Anthropic 发布 Agent Skills
+### Anthropic 发布 Agent Skills
 
 2025 年 10 月 16 日，Anthropic 发表工程博客 [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)，正式推出 Agent Skills。Anthropic 给出的定义是：skill 是由指令（instructions）、脚本（scripts）和资源（resources）组成的文件夹，模型可以根据任务类型路由到对应的skill并用其来辅助工作。
 
