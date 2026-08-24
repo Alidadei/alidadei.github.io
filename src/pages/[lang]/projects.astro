@@ -9,8 +9,8 @@ export function getStaticPaths() {
 
 const { lang } = Astro.params as { lang: Lang };
 
-// 项目来自 portfolio 集合
-const portfolioItems = await getCollection('portfolio');
+// 项目来自 portfolio 集合(draft: true 的暂存项不渲染卡片)
+const portfolioItems = await getCollection('portfolio', ({ data }) => !data.draft);
 
 // 聚合所有 categories(去重)→ 分类 tabs(用户自定义标签)
 const categorySet = new Set<string>();

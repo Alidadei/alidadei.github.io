@@ -52,6 +52,7 @@ const portfolio = defineCollection({
     categories: z.array(z.string()).optional(),
     status: z.string().optional(), // 卡片状态标签,如 "Experiment"
     year: z.string().optional(), // 卡片年份,如 "2026"
+    draft: z.boolean().default(false), // 暂存:md 保留但网站上不显示卡片
   }),
 });
 
