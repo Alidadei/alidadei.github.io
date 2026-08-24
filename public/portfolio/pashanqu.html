@@ -1,52 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>i爬山 PaShanQu - Portfolio</title>
+<title>i爬山 PaShanQu · 徒步登山打卡应用</title>
+<link rel="stylesheet" href="assets/detail.css">
 <style>
-  :root { --accent: #2f855a; --accent2: #276749; --tint: #f0f7f2; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: #1f2937; background: #fff; line-height: 1.8; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-weight: 600; }
-  .lang-toggle button.active { background: var(--accent); color: #fff; }
-  .hero { background: linear-gradient(150deg, #2f855a 0%, #1b4332 90%); color: #fff; padding: 72px 24px 56px; text-align: center; }
-  .hero h1 { font-size: 2.6rem; letter-spacing: .5px; }
-  .hero .tag { font-size: 1.2rem; opacity: .92; max-width: 640px; margin: 14px auto 0; }
-  .hero .hero-art { max-width: 760px; margin: 30px auto 0; }
-  .hero .links { margin-top: 26px; font-size: 1rem; }
-  .hero .links a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 24px 72px; }
-  .q { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 60px 0 10px; }
-  .lead { font-size: 1.16rem; color: #374151; margin-bottom: 8px; }
-  .scene { background: var(--tint); border-radius: 20px; padding: 18px 18px 8px; margin: 22px 0; }
-  .scene svg { width: 100%; height: auto; display: block; }
-  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
-  .num { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 12px; text-align: center; }
-  .num b { font-size: 2rem; color: var(--accent); display: block; line-height: 1.2; }
-  .num span { font-size: .88rem; color: #6b7280; }
+  :root { --accent: #2f855a; --accent-dark: #276749; --tint: #f0f7f2; --hero-from: #2f855a; --hero-to: #1b4332; }
   .step-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 22px 0; }
   .chip { background: var(--accent); color: #fff; border-radius: 999px; padding: 8px 18px; font-size: .95rem; white-space: nowrap; }
   .chip.dim { background: #e5e7eb; color: #4b5563; }
   .arrow { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
-  .footer { text-align: center; padding: 28px 20px; color: #9ca3af; font-size: .88rem; border-top: 1px solid #f0f0f0; }
-  [data-lang] { display: none; }
-  [data-lang].visible { display: block; }
 </style>
 </head>
 <body>
 
-<div class="lang-toggle">
-  <button id="btnEn" class="active" onclick="setLang('zh')">EN</button>
-  <button id="btnZh" onclick="setLang('zh')">中文</button>
-</div>
+<header class="topbar">
+  <a id="backLink" class="back" href="/zh/projects">
+    <span data-lang="zh">← 返回项目</span><span data-lang="en">← All projects</span>
+  </a>
+  <div class="lang-toggle">
+    <button id="btnEn" onclick="setLang('en')">EN</button>
+    <button id="btnZh" class="active" onclick="setLang('zh')">中文</button>
+  </div>
+</header>
 
 <div class="hero">
   <h1 data-lang="en">i爬山 PaShanQu ⛰️</h1>
   <h1 data-lang="zh">i爬山 ⛰️</h1>
+  <p class="hero-sub" data-lang="zh">徒步登山打卡应用 · Available · 2026</p>
+  <p class="hero-sub" data-lang="en">A hiking check-in app · 2026</p>
   <p class="tag" data-lang="en">A hiking check-in app with a twist: the stairs you climb every day also count — as a virtual climb up real mountains.</p>
   <p class="tag" data-lang="zh">一个记录爬山的网页应用,还有一个小心思:你每天爬的楼梯,也能算数——化作一场沿着真实山径的虚拟登山。</p>
   <div class="hero-art">
@@ -67,115 +50,122 @@
   </div>
   <p class="links">
     <a href="https://alidadei.github.io/pashanqu/" target="_blank" rel="noopener" data-lang="en">🚀 Try it live</a>
-    <span data-lang="en" style="opacity:.5;margin:0 10px;">·</span>
+    <span data-lang="en" style="opacity:.5;">·</span>
     <a href="https://github.com/Alidadei/pashanqu" target="_blank" rel="noopener" data-lang="en">📦 GitHub</a>
     <a href="https://alidadei.github.io/pashanqu/" target="_blank" rel="noopener" data-lang="zh">🚀 在线体验</a>
-    <span data-lang="zh" style="opacity:.5;margin:0 10px;">·</span>
+    <span data-lang="zh" style="opacity:.5;">·</span>
     <a href="https://github.com/Alidadei/pashanqu" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库</a>
   </p>
 </div>
 
 <div class="wrap">
 
-  <h2 class="q" data-lang="en">Why stairs? 🧗</h2>
-  <h2 class="q" data-lang="zh">为什么是楼梯?🧗</h2>
-  <p class="lead" data-lang="en">Most of us can't climb a real mountain every week — but stairs are everywhere. One floor ≈ 3 meters of elevation. Save it up, and one day you "summit" a famous peak.</p>
-  <p class="lead" data-lang="zh">多数人没法每周去爬山,但楼梯到处都有。一层楼 ≈ 3 米爬升——把每天的爬楼攒起来,有一天你就「登顶」了一座名山。</p>
-  <div class="scene">
-    <svg viewBox="0 0 820 250" xmlns="http://www.w3.org/2000/svg">
-      <g font-family="sans-serif">
-        <rect x="30" y="30" width="240" height="190" rx="10" fill="#fff" stroke="#2f855a" stroke-width="3"/>
-        <g stroke="#8fc7a8" stroke-width="3" fill="none">
-          <path d="M60 200 h40 v-35 h40 v-35 h40 v-35 h40"/>
+  <section class="section">
+    <h2 data-lang="en">Why stairs? 🧗</h2>
+    <h2 data-lang="zh">为什么是楼梯?🧗</h2>
+    <p class="lead" data-lang="en">Most of us can't climb a real mountain every week — but stairs are everywhere. One floor ≈ 3 meters of elevation. Save it up, and one day you "summit" a famous peak.</p>
+    <p class="lead" data-lang="zh">多数人没法每周去爬山,但楼梯到处都有。一层楼 ≈ 3 米爬升——把每天的爬楼攒起来,有一天你就「登顶」了一座名山。</p>
+    <div class="scene">
+      <svg viewBox="0 0 820 250" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="sans-serif">
+          <rect x="30" y="30" width="240" height="190" rx="10" fill="#fff" stroke="#2f855a" stroke-width="3"/>
+          <g stroke="#8fc7a8" stroke-width="3" fill="none">
+            <path d="M60 200 h40 v-35 h40 v-35 h40 v-35 h40"/>
+          </g>
+          <g transform="translate(120,120)">
+            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <text x="150" y="245" font-size="14" fill="#6b7280" text-anchor="middle">📱 每天爬楼 3F +3m</text>
+          <path d="M310 125 H480" stroke="#2f855a" stroke-width="5" stroke-linecap="round"/>
+          <path d="M480 125 L462 114 V136 Z" fill="#2f855a"/>
+          <text x="395" y="108" font-size="14" fill="#2f855a" text-anchor="middle" font-weight="600">accumulate ⏳</text>
+          <path d="M510 220 L640 50 L780 220 Z" fill="#cfe6d8"/>
+          <path d="M620 220 L730 90 L820 220 Z" fill="#a9d3bc"/>
+          <path d="M612 178 L640 146 L664 178" stroke="#2f855a" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M640 146 L664 178 L690 150 L712 178" stroke="#e2b04a" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="1 8"/>
+          <g transform="translate(700,150)">
+            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <g transform="translate(730,42)">
+            <path d="M-22 2 L0 -18 L22 2 L22 8 L-22 8 Z" fill="#e2b04a"/>
+            <path d="M-22 8 L0 -10 L22 8" fill="none" stroke="#fff" stroke-width="2.5"/>
+            <rect x="-24" y="8" width="48" height="7" rx="2" fill="#c9973c"/>
+          </g>
+          <text x="680" y="245" font-size="14" fill="#6b7280" text-anchor="middle">🏔 攒够 1,545 m = 登顶泰山</text>
         </g>
-        <g transform="translate(120,120)">
-          <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-          <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
-        </g>
-        <text x="150" y="245" font-size="14" fill="#6b7280" text-anchor="middle">📱 每天爬楼 3F +3m</text>
-        <path d="M310 125 H480" stroke="#2f855a" stroke-width="5" stroke-linecap="round"/>
-        <path d="M480 125 L462 114 V136 Z" fill="#2f855a"/>
-        <text x="395" y="108" font-size="14" fill="#2f855a" text-anchor="middle" font-weight="600">accumulate ⏳</text>
-        <path d="M510 220 L640 50 L780 220 Z" fill="#cfe6d8"/>
-        <path d="M620 220 L730 90 L820 220 Z" fill="#a9d3bc"/>
-        <path d="M612 178 L640 146 L664 178" stroke="#2f855a" stroke-width="4" fill="none" stroke-linecap="round"/>
-        <path d="M640 146 L664 178 L690 150 L712 178" stroke="#e2b04a" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="1 8"/>
-        <g transform="translate(700,150)">
-          <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-          <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
-        </g>
-        <g transform="translate(730,42)">
-          <path d="M-22 2 L0 -18 L22 2 L22 8 L-22 8 Z" fill="#e2b04a"/>
-          <path d="M-22 8 L0 -10 L22 8" fill="none" stroke="#fff" stroke-width="2.5"/>
-          <rect x="-24" y="8" width="48" height="7" rx="2" fill="#c9973c"/>
-        </g>
-        <text x="680" y="245" font-size="14" fill="#6b7280" text-anchor="middle">🏔 攒够 1,545 m = 登顶泰山</text>
-      </g>
-    </svg>
-  </div>
+      </svg>
+    </div>
+  </section>
 
-  <h2 class="q" data-lang="en">The climb feels real 📍</h2>
-  <h2 class="q" data-lang="zh">过程像真的在爬山 📍</h2>
-  <p class="lead" data-lang="en">You advance along the actual trail of the mountain — real landmarks light up one by one, the app predicts your summit date, and at the top you get a certificate with a red seal.</p>
-  <p class="lead" data-lang="zh">你沿着这座山真实的登山路线前进——沿途真实地标逐一点亮,应用预测你的登顶日期,登顶后获得一张盖红章的中式证书。</p>
-  <div class="scene">
-    <svg viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
-      <g font-family="sans-serif" font-size="14">
-        <path d="M40 140 C 160 60, 300 180, 440 100 C 560 34, 680 120, 790 46" stroke="#2f855a" stroke-width="4" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
-        <g>
-          <circle cx="60" cy="132" r="13" fill="#2f855a"/><text x="60" y="137" text-anchor="middle" fill="#fff" font-size="13">门</text>
-          <text x="60" y="170" text-anchor="middle" fill="#374151">红门 ✓</text>
+  <section class="section">
+    <h2 data-lang="en">The climb feels real 📍</h2>
+    <h2 data-lang="zh">过程像真的在爬山 📍</h2>
+    <p class="lead" data-lang="en">You advance along the actual trail of the mountain — real landmarks light up one by one, the app predicts your summit date, and at the top you get a certificate with a red seal.</p>
+    <p class="lead" data-lang="zh">你沿着这座山真实的登山路线前进——沿途真实地标逐一点亮,应用预测你的登顶日期,登顶后获得一张盖红章的中式证书。</p>
+    <div class="scene">
+      <svg viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="sans-serif" font-size="14">
+          <path d="M40 140 C 160 60, 300 180, 440 100 C 560 34, 680 120, 790 46" stroke="#2f855a" stroke-width="4" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
+          <g>
+            <circle cx="60" cy="132" r="13" fill="#2f855a"/><text x="60" y="137" text-anchor="middle" fill="#fff" font-size="13">门</text>
+            <text x="60" y="170" text-anchor="middle" fill="#374151">红门 ✓</text>
+          </g>
+          <g>
+            <circle cx="230" cy="112" r="13" fill="#2f855a"/><text x="230" y="117" text-anchor="middle" fill="#fff" font-size="12">天</text>
+            <text x="230" y="170" text-anchor="middle" fill="#374151">中天门 ✓</text>
+          </g>
+          <g>
+            <circle cx="410" cy="122" r="13" fill="#2f855a"/><text x="410" y="127" text-anchor="middle" fill="#fff" font-size="12">盘</text>
+            <text x="410" y="170" text-anchor="middle" fill="#374151">十八盘 ✓</text>
+          </g>
+          <g>
+            <circle cx="580" cy="72" r="13" fill="#fff" stroke="#2f855a" stroke-width="3"/><text x="580" y="77" text-anchor="middle" fill="#2f855a" font-size="12">南</text>
+            <text x="580" y="170" text-anchor="middle" fill="#9ca3af">南天门</text>
+          </g>
+          <g>
+            <circle cx="740" cy="50" r="15" fill="#e2b04a"/><text x="740" y="56" text-anchor="middle" fill="#fff" font-size="14">顶</text>
+            <text x="740" y="170" text-anchor="middle" fill="#9ca3af">玉皇顶 🏁</text>
+          </g>
+          <g transform="translate(490,96)">
+            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <rect x="620" y="8" width="150" height="30" rx="15" fill="#fff" stroke="#2f855a" stroke-width="2"/>
+          <text x="695" y="28" text-anchor="middle" fill="#2f855a" font-size="13">预计 8 月 30 日登顶 ⏰</text>
         </g>
-        <g>
-          <circle cx="230" cy="112" r="13" fill="#2f855a"/><text x="230" y="117" text-anchor="middle" fill="#fff" font-size="12">天</text>
-          <text x="230" y="170" text-anchor="middle" fill="#374151">中天门 ✓</text>
-        </g>
-        <g>
-          <circle cx="410" cy="122" r="13" fill="#2f855a"/><text x="410" y="127" text-anchor="middle" fill="#fff" font-size="12">盘</text>
-          <text x="410" y="170" text-anchor="middle" fill="#374151">十八盘 ✓</text>
-        </g>
-        <g>
-          <circle cx="580" cy="72" r="13" fill="#fff" stroke="#2f855a" stroke-width="3"/><text x="580" y="77" text-anchor="middle" fill="#2f855a" font-size="12">南</text>
-          <text x="580" y="170" text-anchor="middle" fill="#9ca3af">南天门</text>
-        </g>
-        <g>
-          <circle cx="740" cy="50" r="15" fill="#e2b04a"/><text x="740" y="56" text-anchor="middle" fill="#fff" font-size="14">顶</text>
-          <text x="740" y="170" text-anchor="middle" fill="#9ca3af">玉皇顶 🏁</text>
-        </g>
-        <g transform="translate(490,96)">
-          <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-          <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
-        </g>
-        <rect x="620" y="8" width="150" height="30" rx="15" fill="#fff" stroke="#2f855a" stroke-width="2"/>
-        <text x="695" y="28" text-anchor="middle" fill="#2f855a" font-size="13">预计 8 月 30 日登顶 ⏰</text>
-      </g>
-    </svg>
-  </div>
+      </svg>
+    </div>
+  </section>
 
-  <h2 class="q" data-lang="en">Six peaks to conquer 🎯</h2>
-  <h2 class="q" data-lang="zh">六座挑战山峰 🎯</h2>
-  <div class="step-row">
-    <span class="chip">泰山 1,545m</span><span class="arrow">→</span>
-    <span class="chip dim">华山 2,154m</span><span class="arrow">→</span>
-    <span class="chip dim">峨眉山 3,099m</span><span class="arrow">→</span>
-    <span class="chip dim"> … </span><span class="arrow">→</span>
-    <span class="chip dim">贡嘎 7,556m</span><span class="arrow">→</span>
-    <span class="chip dim">珠峰 8,848m</span>
-  </div>
-  <p class="lead" data-lang="en">From a weekend hill to Everest — the ladder keeps going. Plus: a guidebook of 15 famous mountains, an AI buddy that recommends "a mountain for you this weekend", GPX track import, stamp collecting and 8 achievement badges.</p>
-  <p class="lead" data-lang="zh">从一座周末小山到珠穆朗玛——梯子一直向上。此外还有:15 座名山图鉴、会推荐「这周末适合爬哪座山」的 AI 搭子、GPX 轨迹一键导入、山峰护照集章和 8 枚成就徽章。</p>
+  <section class="section">
+    <h2 data-lang="en">Six peaks to conquer 🎯</h2>
+    <h2 data-lang="zh">六座挑战山峰 🎯</h2>
+    <div class="step-row">
+      <span class="chip">泰山 1,545m</span><span class="arrow">→</span>
+      <span class="chip dim">华山 2,154m</span><span class="arrow">→</span>
+      <span class="chip dim">峨眉山 3,099m</span><span class="arrow">→</span>
+      <span class="chip dim"> … </span><span class="arrow">→</span>
+      <span class="chip dim">贡嘎 7,556m</span><span class="arrow">→</span>
+      <span class="chip dim">珠峰 8,848m</span>
+    </div>
+    <p class="lead" data-lang="en">From a weekend hill to Everest — the ladder keeps going. Plus: a guidebook of 15 famous mountains, an AI buddy that recommends "a mountain for you this weekend", GPX track import, stamp collecting and 8 achievement badges.</p>
+    <p class="lead" data-lang="zh">从一座周末小山到珠穆朗玛——梯子一直向上。此外还有:15 座名山图鉴、会推荐「这周末适合爬哪座山」的 AI 搭子、GPX 轨迹一键导入、山峰护照集章和 8 枚成就徽章。</p>
+  </section>
 
-  <h2 class="q" data-lang="en">A quiet piece of engineering 🛠</h2>
-  <h2 class="q" data-lang="zh">一点安静的小工程 🛠</h2>
-  <p class="lead" data-lang="en">No install, no account, no server. It's one HTML file of vanilla JavaScript — every mountain landscape and elevation profile you see is drawn by code (seeded SVG), not a photo. Your data never leaves your phone's browser.</p>
-  <p class="lead" data-lang="zh">不用安装、不用注册、没有服务器——它就是一个纯 JavaScript 网页。你看到的所有山景和海拔剖面图都是代码画出来的(种子化 SVG),不是照片;你的数据也永远不离开手机浏览器。</p>
-
-  <div class="nums">
-    <div class="num"><b>0</b><span data-lang="en">dependencies / install</span><span data-lang="zh">依赖 · 免安装</span></div>
-    <div class="num"><b>15</b><span data-lang="en">famous mountains</span><span data-lang="zh">收录名山</span></div>
-    <div class="num"><b>6</b><span data-lang="en">challenge peaks</span><span data-lang="zh">挑战山峰</span></div>
-    <div class="num"><b>8</b><span data-lang="en">achievement badges</span><span data-lang="zh">成就徽章</span></div>
-  </div>
+  <section class="section">
+    <h2 data-lang="en">A quiet piece of engineering 🛠</h2>
+    <h2 data-lang="zh">一点安静的小工程 🛠</h2>
+    <p class="lead" data-lang="en">No install, no account, no server. It's one HTML file of vanilla JavaScript — every mountain landscape and elevation profile you see is drawn by code (seeded SVG), not a photo. Your data never leaves your phone's browser.</p>
+    <p class="lead" data-lang="zh">不用安装、不用注册、没有服务器——它就是一个纯 JavaScript 网页。你看到的所有山景和海拔剖面图都是代码画出来的(种子化 SVG),不是照片;你的数据也永远不离开手机浏览器。</p>
+    <div class="nums">
+      <div class="num"><b>0</b><span data-lang="en">dependencies / install</span><span data-lang="zh">依赖 · 免安装</span></div>
+      <div class="num"><b>15</b><span data-lang="en">famous mountains</span><span data-lang="zh">收录名山</span></div>
+      <div class="num"><b>6</b><span data-lang="en">challenge peaks</span><span data-lang="zh">挑战山峰</span></div>
+      <div class="num"><b>8</b><span data-lang="en">achievement badges</span><span data-lang="zh">成就徽章</span></div>
+    </div>
+  </section>
 
 </div>
 
@@ -185,16 +175,6 @@
   <a href="https://github.com/Alidadei/pashanqu" target="_blank">GitHub</a>
 </div>
 
-<script>
-function setLang(lang) {
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
-  });
-  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
-  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
-  document.documentElement.lang = lang;
-}
-setLang('zh');
-</script>
+<script src="assets/detail.js"></script>
 </body>
 </html>

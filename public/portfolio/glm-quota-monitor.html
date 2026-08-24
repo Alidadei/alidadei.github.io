@@ -1,47 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLM Quota Monitor - Portfolio</title>
+<title>GLM Quota Monitor · GLM 额度监控</title>
+<link rel="stylesheet" href="assets/detail.css">
 <style>
-  :root { --accent: #2563eb; --accent2: #1e40af; --tint: #eef4fe; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: #1f2937; background: #fff; line-height: 1.8; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-weight: 600; }
-  .lang-toggle button.active { background: var(--accent); color: #fff; }
-  .hero { background: linear-gradient(150deg, #3b82f6 0%, #1e40af 90%); color: #fff; padding: 72px 24px 56px; text-align: center; }
-  .hero h1 { font-size: 2.6rem; letter-spacing: .5px; }
-  .hero .tag { font-size: 1.2rem; opacity: .92; max-width: 660px; margin: 14px auto 0; }
-  .hero .hero-art { max-width: 760px; margin: 30px auto 0; }
-  .hero .links { margin-top: 26px; font-size: 1rem; }
-  .hero .links a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 24px 72px; }
-  .q { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 60px 0 10px; }
-  .lead { font-size: 1.16rem; color: #374151; margin-bottom: 8px; }
-  .scene { background: var(--tint); border-radius: 20px; padding: 18px 18px 8px; margin: 22px 0; }
-  .scene svg { width: 100%; height: auto; display: block; }
-  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
-  .num { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 12px; text-align: center; }
-  .num b { font-size: 2rem; color: var(--accent); display: block; line-height: 1.2; }
-  .num span { font-size: .88rem; color: #6b7280; }
-  .footer { text-align: center; padding: 28px 20px; color: #9ca3af; font-size: .88rem; border-top: 1px solid #f0f0f0; }
-  [data-lang] { display: none; }
-  [data-lang].visible { display: block; }
+  :root { --accent: #2563eb; --accent-dark: #1e40af; --tint: #eef4fe; --hero-from: #3b82f6; --hero-to: #1e40af; }
 </style>
 </head>
 <body>
 
-<div class="lang-toggle">
-  <button id="btnEn" class="active" onclick="setLang('zh')">EN</button>
-  <button id="btnZh" onclick="setLang('zh')">中文</button>
-</div>
+<header class="topbar">
+  <a id="backLink" class="back" href="/zh/projects">
+    <span data-lang="zh">← 返回项目</span><span data-lang="en">← All projects</span>
+  </a>
+  <div class="lang-toggle">
+    <button id="btnEn" onclick="setLang('en')">EN</button>
+    <button id="btnZh" class="active" onclick="setLang('zh')">中文</button>
+  </div>
+</header>
 
 <div class="hero">
   <h1>GLM Quota Monitor</h1>
+  <p class="hero-sub" data-lang="zh">GLM 额度监控 · Available · 2026</p>
+  <p class="hero-sub" data-lang="en">A desktop quota companion · 2026</p>
   <p class="tag" data-lang="en">A little desktop companion that always knows how much AI quota you have left, when it resets, and warns you before it runs dry.</p>
   <p class="tag" data-lang="zh">一个桌面小管家:随时知道你的 AI 额度还剩多少、几点重置,并在快用完之前提醒你。</p>
   <div class="hero-art">
@@ -74,93 +57,88 @@
       </g>
     </svg>
   </div>
-  <p class="links"><a href="https://github.com/Ngaizean/glm-quota-monitor" target="_blank" rel="noopener" data-lang="en">📦 GitHub</a><a href="https://github.com/Ngaizean/glm-quota-monitor" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库</a></p>
+  <p class="links"><a href="https://github.com/Ngaizean/glm-quota-monitor" target="_blank" rel="noopener"><span data-lang="zh">📦 GitHub 仓库</span><span data-lang="en">📦 GitHub</span></a></p>
 </div>
 
 <div class="wrap">
 
-  <h2 class="q" data-lang="en">The annoyance it kills 📱💸</h2>
-  <h2 class="q" data-lang="zh">它消灭的那个烦恼 📱💸</h2>
-  <p class="lead" data-lang="en">AI coding plans (like phone data plans) have rolling limits: a 5-hour window, a weekly cap, a monthly tool allowance. The only place to check them is a web page — so people discover they're out of quota <em>in the middle of work</em>.</p>
-  <p class="lead" data-lang="zh">AI 编程套餐和手机流量一样,是滚动限额:5 小时窗口、每周上限、每月工具额度。而查额度的唯一入口是一个网页——于是人们总在<strong>干着活的时候</strong>才发现额度没了。</p>
-  <p class="lead" data-lang="en">This app puts a fuel gauge for your quota right on the desktop, refreshing itself every few minutes.</p>
-  <p class="lead" data-lang="zh">这个应用把「额度油表」直接放到桌面上,每隔几分钟自动刷新。</p>
+  <section class="section">
+    <h2 data-lang="en">The annoyance it kills 📱💸</h2>
+    <h2 data-lang="zh">它消灭的那个烦恼 📱💸</h2>
+    <p class="lead" data-lang="en">AI coding plans (like phone data plans) have rolling limits: a 5-hour window, a weekly cap, a monthly tool allowance. The only place to check them is a web page — so people discover they're out of quota <em>in the middle of work</em>.</p>
+    <p class="lead" data-lang="zh">AI 编程套餐和手机流量一样,是滚动限额:5 小时窗口、每周上限、每月工具额度。而查额度的唯一入口是一个网页——于是人们总在<strong>干着活的时候</strong>才发现额度没了。</p>
+    <p class="lead" data-lang="en">This app puts a fuel gauge for your quota right on the desktop, refreshing itself every few minutes.</p>
+    <p class="lead" data-lang="zh">这个应用把「额度油表」直接放到桌面上,每隔几分钟自动刷新。</p>
+  </section>
 
-  <h2 class="q" data-lang="en">Four things it watches 👀</h2>
-  <h2 class="q" data-lang="zh">它盯着的四件事 👀</h2>
-  <div class="scene">
-    <svg viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg">
-      <g font-family="sans-serif">
-        <g transform="translate(30,16)">
-          <rect width="175" height="180" rx="14" fill="#fff"/>
-          <circle cx="87" cy="62" r="36" fill="none" stroke="#dbeafe" stroke-width="9"/>
-          <path d="M87 26 a36 36 0 0 1 30 56" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round"/>
-          <text x="87" y="68" text-anchor="middle" font-size="17" font-weight="700" fill="#1e40af">78%</text>
-          <text x="87" y="122" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">⏳ 实时额度</text>
-          <text x="87" y="146" text-anchor="middle" font-size="12" fill="#6b7280">5 小时窗口</text>
-          <text x="87" y="164" text-anchor="middle" font-size="12" fill="#6b7280">重置倒计时</text>
-        </g>
-        <g transform="translate(232,16)">
-          <rect width="175" height="180" rx="14" fill="#fff"/>
-          <g stroke="#93c5fd" stroke-width="3" fill="none" stroke-linecap="round">
-            <path d="M25 120 L50 96 L72 108 L96 74 L118 86 L142 52"/>
+  <section class="section">
+    <h2 data-lang="en">Four things it watches 👀</h2>
+    <h2 data-lang="zh">它盯着的四件事 👀</h2>
+    <div class="scene">
+      <svg viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="sans-serif">
+          <g transform="translate(30,16)">
+            <rect width="175" height="180" rx="14" fill="#fff"/>
+            <circle cx="87" cy="62" r="36" fill="none" stroke="#dbeafe" stroke-width="9"/>
+            <path d="M87 26 a36 36 0 0 1 30 56" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round"/>
+            <text x="87" y="68" text-anchor="middle" font-size="17" font-weight="700" fill="#1e40af">78%</text>
+            <text x="87" y="122" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">⏳ 实时额度</text>
+            <text x="87" y="146" text-anchor="middle" font-size="12" fill="#6b7280">5 小时窗口</text>
+            <text x="87" y="164" text-anchor="middle" font-size="12" fill="#6b7280">重置倒计时</text>
           </g>
-          <g fill="#2563eb"><circle cx="50" cy="96" r="3.5"/><circle cx="96" cy="74" r="3.5"/><circle cx="142" cy="52" r="4.5"/></g>
-          <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">📈 历史趋势</text>
-          <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">7/30/90 天 · 可导出</text>
-        </g>
-        <g transform="translate(434,16)">
-          <rect width="175" height="180" rx="14" fill="#fff"/>
-          <g transform="translate(38,30)">
-            <rect width="56" height="38" rx="8" fill="#dbeafe"/><text x="28" y="25" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="700">主号</text>
-            <rect x="70" y="10" width="56" height="38" rx="8" fill="#eff6ff"/><text x="98" y="35" text-anchor="middle" font-size="13" fill="#60a5fa" font-weight="600">小号</text>
-            <rect x="26" y="56" width="56" height="38" rx="8" fill="#eff6ff"/><text x="54" y="81" text-anchor="middle" font-size="13" fill="#60a5fa" font-weight="600">+2</text>
+          <g transform="translate(232,16)">
+            <rect width="175" height="180" rx="14" fill="#fff"/>
+            <g stroke="#93c5fd" stroke-width="3" fill="none" stroke-linecap="round">
+              <path d="M25 120 L50 96 L72 108 L96 74 L118 86 L142 52"/>
+            </g>
+            <g fill="#2563eb"><circle cx="50" cy="96" r="3.5"/><circle cx="96" cy="74" r="3.5"/><circle cx="142" cy="52" r="4.5"/></g>
+            <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">📈 历史趋势</text>
+            <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">7/30/90 天 · 可导出</text>
           </g>
-          <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">👥 多账号</text>
-          <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">一把钥匙全看住</text>
+          <g transform="translate(434,16)">
+            <rect width="175" height="180" rx="14" fill="#fff"/>
+            <g transform="translate(38,30)">
+              <rect width="56" height="38" rx="8" fill="#dbeafe"/><text x="28" y="25" text-anchor="middle" font-size="13" fill="#1e40af" font-weight="700">主号</text>
+              <rect x="70" y="10" width="56" height="38" rx="8" fill="#eff6ff"/><text x="98" y="35" text-anchor="middle" font-size="13" fill="#60a5fa" font-weight="600">小号</text>
+              <rect x="26" y="56" width="56" height="38" rx="8" fill="#eff6ff"/><text x="54" y="81" text-anchor="middle" font-size="13" fill="#60a5fa" font-weight="600">+2</text>
+            </g>
+            <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">👥 多账号</text>
+            <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">一把钥匙全看住</text>
+          </g>
+          <g transform="translate(636,16)">
+            <rect width="175" height="180" rx="14" fill="#fff"/>
+            <path d="M87 46 a26 26 0 0 1 26 30 l-6 18 h-40 l-6 -18 a26 26 0 0 1 26 -30 Z" fill="#fbbf24"/>
+            <circle cx="87" cy="68" r="5" fill="#fff"/><path d="M87 76 v10" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+            <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">🔔 智能预警</text>
+            <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">阈值自己定</text>
+          </g>
         </g>
-        <g transform="translate(636,16)">
-          <rect width="175" height="180" rx="14" fill="#fff"/>
-          <path d="M87 46 a26 26 0 0 1 26 30 l-6 18 h-40 l-6 -18 a26 26 0 0 1 26 -30 Z" fill="#fbbf24"/>
-          <circle cx="87" cy="68" r="5" fill="#fff"/><path d="M87 76 v10" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-          <text x="87" y="146" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">🔔 智能预警</text>
-          <text x="87" y="168" text-anchor="middle" font-size="12" fill="#6b7280">阈值自己定</text>
-        </g>
-      </g>
-    </svg>
-  </div>
+      </svg>
+    </div>
+  </section>
 
-  <h2 class="q" data-lang="en">How it stays honest &amp; private 🔑</h2>
-  <h2 class="q" data-lang="zh">它如何做到可信又私密 🔑</h2>
-  <p class="lead" data-lang="en">You paste your API key once. The app uses it to query the official quota APIs at an interval you choose (1–30 min), saves snapshots into a local database on your own machine — no third-party server in the middle, and history survives restarts.</p>
-  <p class="lead" data-lang="zh">把 API 钥匙粘贴一次。应用按你设定的间隔(1~30 分钟)去官方接口查询,把快照存进你自己电脑的本地数据库——中间没有第三方服务器,重启也不丢历史。</p>
-  <div class="nums">
-    <div class="num"><b>2</b><span data-lang="en">platforms: macOS &amp; Windows</span><span data-lang="zh">平台:macOS + Windows</span></div>
-    <div class="num"><b>3</b><span data-lang="en">quota windows tracked</span><span data-lang="zh">盯守的额度窗口</span></div>
-    <div class="num"><b>0</b><span data-lang="en">cloud servers involved</span><span data-lang="zh">经手的云服务器</span></div>
-    <div class="num"><b>CSV</b><span data-lang="en">one-click history export</span><span data-lang="zh">一键导出历史</span></div>
-  </div>
-  <p class="lead" data-lang="en">Built the tidy way — React + TypeScript on Tauri, with a PRD written before the first line of code, unit tests beside it, and a small "preview mode" for developing popups in isolation.</p>
-  <p class="lead" data-lang="zh">按规矩造的车——Tauri 上的 React + TypeScript,动手写第一行代码前先写了产品需求文档,配套单元测试,还做了隔离开发弹窗的「预览模式」。</p>
+  <section class="section">
+    <h2 data-lang="en">How it stays honest &amp; private 🔑</h2>
+    <h2 data-lang="zh">它如何做到可信又私密 🔑</h2>
+    <p class="lead" data-lang="en">You paste your API key once. The app uses it to query the official quota APIs at an interval you choose (1–30 min), saves snapshots into a local database on your own machine — no third-party server in the middle, and history survives restarts.</p>
+    <p class="lead" data-lang="zh">把 API 钥匙粘贴一次。应用按你设定的间隔(1~30 分钟)去官方接口查询,把快照存进你自己电脑的本地数据库——中间没有第三方服务器,重启也不丢历史。</p>
+    <div class="nums">
+      <div class="num"><b>2</b><span data-lang="en">platforms: macOS &amp; Windows</span><span data-lang="zh">平台:macOS + Windows</span></div>
+      <div class="num"><b>3</b><span data-lang="en">quota windows tracked</span><span data-lang="zh">盯守的额度窗口</span></div>
+      <div class="num"><b>0</b><span data-lang="en">cloud servers involved</span><span data-lang="zh">经手的云服务器</span></div>
+      <div class="num"><b>CSV</b><span data-lang="en">one-click history export</span><span data-lang="zh">一键导出历史</span></div>
+    </div>
+    <p class="lead" data-lang="en">Built the tidy way — React + TypeScript on Tauri, with a PRD written before the first line of code, unit tests beside it, and a small "preview mode" for developing popups in isolation.</p>
+    <p class="lead" data-lang="zh">按规矩造的车——Tauri 上的 React + TypeScript,动手写第一行代码前先写了产品需求文档,配套单元测试,还做了隔离开发弹窗的「预览模式」。</p>
+  </section>
 
 </div>
 
 <div class="footer">
-  <span data-lang="en">GLM Quota Monitor &copy; 2026 · </span>
-  <span data-lang="zh">GLM Quota Monitor &copy; 2026 · </span>
+  <span>GLM Quota Monitor © 2026 · </span>
   <a href="https://github.com/Ngaizean/glm-quota-monitor" target="_blank">GitHub</a>
 </div>
 
-<script>
-function setLang(lang) {
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
-  });
-  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
-  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
-  document.documentElement.lang = lang;
-}
-setLang('zh');
-</script>
+<script src="assets/detail.js"></script>
 </body>
 </html>

@@ -1,0 +1,36 @@
+<svg width="1200" height="400" viewBox="0 130 1200 400" xmlns="http://www.w3.org/2000/svg">
+  
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#e9e7e2" stroke-width="1"/>
+    </pattern>
+    <marker id="arr7c3aed" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arr7c3aedg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a8a29e"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="600" fill="#fbfbf9"/>
+  <rect width="1200" height="600" fill="url(#grid)" opacity="0.55"/>
+  
+  <rect x="40" y="150" width="1120" height="286" rx="16" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.8" stroke-dasharray="8 6"/>
+  <text x="66" y="182" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" font-weight="700" letter-spacing="2.5" fill="#7c3aed">1 × CONSUMER GPU · 单卡消费级显卡</text>
+  <g><rect x="76" y="214" width="186" height="96" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="169" y="255" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="25" font-weight="600" fill="#1c1917">Policy</text>
+    <text x="169" y="287" text-anchor="middle" font-family="Consolas,'Courier New',monospace" font-size="18" fill="#78716c">Qwen-3B + LoRA</text></g>
+  <line x1="262" y1="262" x2="288" y2="262" stroke="#7c3aed" stroke-width="2.6" marker-end="url(#arr7c3aed)"/>
+  <g><rect x="292" y="214" width="186" height="96" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="385" y="255" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="19" font-weight="600" fill="#1c1917">Rollouts ×G</text>
+    <text x="385" y="287" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" fill="#78716c">Countdown 采样</text></g>
+  <line x1="478" y1="262" x2="504" y2="262" stroke="#7c3aed" stroke-width="2.6" marker-end="url(#arr7c3aed)"/>
+  <g><rect x="508" y="214" width="186" height="96" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="601" y="255" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="19" font-weight="600" fill="#1c1917">Rule Reward</text>
+    <text x="601" y="287" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" fill="#78716c">规则判定奖励</text></g>
+  <line x1="694" y1="262" x2="720" y2="262" stroke="#7c3aed" stroke-width="2.6" marker-end="url(#arr7c3aed)"/>
+  <g><rect x="724" y="214" width="200" height="96" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="824" y="255" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="25" font-weight="600" fill="#1c1917">Advantage</text>
+    <text x="824" y="287" text-anchor="middle" font-family="Consolas,'Courier New',monospace" font-size="18" fill="#78716c">(r−μ)/σ 组内归一</text></g>
+  <line x1="924" y1="262" x2="950" y2="262" stroke="#7c3aed" stroke-width="2.6" marker-end="url(#arr7c3aed)"/>
+  <g><rect x="954" y="214" width="186" height="96" rx="10" fill="#7c3aed" stroke="#7c3aed" stroke-width="1.8"/><text x="1047" y="255" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="25" font-weight="600" fill="#ffffff">PG Update</text>
+    <text x="1047" y="287" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" fill="rgba(255,255,255,.78)">策略梯度更新</text></g>
+  <path d="M1047 310 V356 H169 V318" fill="none" stroke="#7c3aed" stroke-width="2.6" marker-end="url(#arr7c3aed)" />
+  <text x="608" y="384" text-anchor="middle" font-family="Consolas,'Courier New',monospace" font-size="21" fill="#78716c">θ ← θ + α∇J(θ) · 更新策略参数</text>
+  <text x="600" y="486" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="22" fill="#78716c">无价值网络 · 组内相对基线 · 低显存可复现实验配置</text>
+</svg>

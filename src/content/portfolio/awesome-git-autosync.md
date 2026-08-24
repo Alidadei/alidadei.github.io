@@ -1,12 +1,12 @@
 ---
 title: "Awesome-Git-Autosync / Git 仓库自动同步"
-excerpt: "约 4KB 的零依赖脚本,让多台电脑上的文件夹每隔几分钟自动存档并保持同步。/ A ~4KB zero-dependency script that archives and syncs folders across your machines every few minutes."
+excerpt: "一个资源占用极低且仅依赖TXT和PS的Git仓库自动同步脚本，一键点击运行，开机自启，支持仓库的多分支管理。"
 image: "/images/awesome-git-autosync.webp"
 repo: "https://github.com/Alidadei/Awesome-Git-Autosync"
 link: "/portfolio/awesome-git-autosync.html"
 categories: ["个人实践"]
-status: "Open source"
-year: "2026"
+status: "自动化小工具"
+year: "2026.02"
 ---
 
 [GitHub Repository](https://github.com/Alidadei/Awesome-Git-Autosync)

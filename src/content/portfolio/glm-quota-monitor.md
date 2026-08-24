@@ -1,12 +1,12 @@
 ---
-title: "GLM Quota Monitor / GLM 额度监控"
-excerpt: "一个桌面小管家:实时显示 AI 套餐额度、重置倒计时与历史趋势,快用完时提醒你。/ A desktop companion that tracks AI plan quotas, reset countdowns and usage trends, and warns you before they run dry."
+title: "GLM Quota Monitor"
+excerpt: "实时遥测套餐用量额度,快用完和空闲时都发送提醒，有计划地实施拼好模！"
 image: "/images/glm-quota-monitor.webp"
 repo: "https://github.com/Ngaizean/glm-quota-monitor"
 link: "/portfolio/glm-quota-monitor.html"
 categories: ["个人实践"]
-status: "Available"
-year: "2026"
+status: "token工具"
+year: "2026.4"
 ---
 
 [GitHub Repository](https://github.com/Ngaizean/glm-quota-monitor)

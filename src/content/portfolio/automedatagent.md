@@ -1,12 +1,12 @@
 ---
 title: "AutoMedatAGENT / 医学数据静默智能体"
-excerpt: "一个静默值守的智能体,自动把成堆的医院影像整理成科研可用的干净数据。/ A silent resident agent that turns mountains of raw hospital scans into clean, research-ready data."
+excerpt: "一个静默长期运行的数据预处理agent系统,自动把成堆杂乱的医学数据整理成科研可用的干净数据。"
 image: "/images/automedatagent.webp"
 repo: "https://github.com/Alidadei/AutoMedatAGENT"
 link: "/portfolio/automedatagent.html"
 categories: ["研究"]
 status: "Experiment"
-year: "2026"
+year: "2026.5"
 ---
 
 [GitHub Repository](https://github.com/Alidadei/AutoMedatAGENT)

@@ -1,0 +1,28 @@
+<svg width="1200" height="400" viewBox="0 130 1200 400" xmlns="http://www.w3.org/2000/svg">
+  
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" fill="none" stroke="#e9e7e2" stroke-width="1"/>
+    </pattern>
+    <marker id="arrbe123c" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#be123c"/>
+    </marker>
+    <marker id="arrbe123cg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a8a29e"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="600" fill="#fbfbf9"/>
+  <rect width="1200" height="600" fill="url(#grid)" opacity="0.55"/>
+  
+  <g><rect x="120" y="230" width="250" height="130" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="245" y="288" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="19" font-weight="600" fill="#1c1917">Reasoning Agent</text>
+    <text x="245" y="320" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" fill="#78716c">推理智能体 (LLM)</text></g>
+  <g><rect x="830" y="230" width="250" height="130" rx="10" fill="#ffffff" stroke="#d6d3d1" stroke-width="1.8"/><text x="955" y="288" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="21" font-weight="600" fill="#1c1917">Search Env</text>
+    <text x="955" y="320" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" fill="#78716c">检索环境 (Tools)</text></g>
+  <path d="M330 244 C 500 170, 700 170, 868 234" fill="none" stroke="#be123c" stroke-width="2.6" marker-end="url(#arrbe123c)" />
+  <text x="600" y="158" text-anchor="middle" font-family="Consolas,'Courier New',monospace" font-size="21" fill="#78716c">query a&#8348; · 检索请求</text>
+  <path d="M872 356 C 720 424, 480 424, 336 364" fill="none" stroke="#be123c" stroke-width="2.6" marker-end="url(#arrbe123c)" />
+  <text x="600" y="466" text-anchor="middle" font-family="Consolas,'Courier New',monospace" font-size="21" fill="#78716c">documents o&#8348; · 检索观测</text>
+  <rect x="490" y="381" width="220" height="54" rx="27" fill="#fff1f2" stroke="#be123c" stroke-width="1.8"/>
+  <text x="600" y="415" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="20" font-weight="600" fill="#be123c">reward r&#8348; · 奖励优化</text>
+  <text x="600" y="500" text-anchor="middle" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif" font-size="22" fill="#78716c">复现基线 → 改进奖励设计 · 实验整理中</text>
+</svg>

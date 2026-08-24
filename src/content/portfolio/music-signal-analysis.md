@@ -1,12 +1,12 @@
 ---
 title: "Music timbre Analysis & Visualization / 音色量化分析&可视化"
-excerpt: "输入一段音乐,输出音色分析、乐器分类与旋律可视化的一站式音频分析系统。/ Feed it a music file, get back timbre analysis, instrument classification and melody visualization."
+excerpt: "输入一段音乐,输出音色分析、乐器分类与旋律可视化的一站式音频分析系统。"
 image: "/images/music-signal-analysis.png"
 repo: "https://github.com/Alidadei/Music_signal_analysis"
 link: "/portfolio/music-signal-analysis.html"
 categories: ["个人实践"]
 status: "个人爱好"
-year: "2025"
+year: "2025.12"
 ---
 
 [GitHub Repository](https://github.com/Alidadei/Music_signal_analysis) | [Live Demo (Hugging Face Spaces)](https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis)

@@ -1,49 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LearnPostTrain - Portfolio</title>
+<title>LearnPostTrain · GRPO 后训练实验</title>
+<link rel="stylesheet" href="assets/detail.css">
 <style>
-  :root { --accent: #4361ee; --accent2: #7209b7; --tint: #eef1fd; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: #1f2937; background: #fff; line-height: 1.8; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-weight: 600; }
-  .lang-toggle button.active { background: var(--accent); color: #fff; }
-  .hero { background: linear-gradient(150deg, #4361ee 0%, #7209b7 90%); color: #fff; padding: 72px 24px 56px; text-align: center; }
-  .hero h1 { font-size: 2.6rem; letter-spacing: .5px; }
-  .hero .tag { font-size: 1.2rem; opacity: .92; max-width: 660px; margin: 14px auto 0; }
-  .hero .hero-art { max-width: 760px; margin: 30px auto 0; }
-  .hero .links { margin-top: 26px; font-size: 1rem; }
-  .hero .links a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 24px 72px; }
-  .q { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin: 60px 0 10px; }
-  .lead { font-size: 1.16rem; color: #374151; margin-bottom: 8px; }
-  .scene { background: var(--tint); border-radius: 20px; padding: 18px 18px 8px; margin: 22px 0; }
-  .scene svg { width: 100%; height: auto; display: block; }
-  .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 30px 0; }
-  .num { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 12px; text-align: center; }
-  .num b { font-size: 2rem; color: var(--accent); display: block; line-height: 1.2; }
-  .num span { font-size: .88rem; color: #6b7280; }
-  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px 22px; margin: 22px 0; }
-  .card h3 { color: var(--accent2); margin-bottom: 6px; }
-  .footer { text-align: center; padding: 28px 20px; color: #9ca3af; font-size: .88rem; border-top: 1px solid #f0f0f0; }
-  [data-lang] { display: none; }
-  [data-lang].visible { display: block; }
+  :root { --accent: #7c3aed; --accent-dark: #6d28d9; --tint: #f5f3ff; --hero-from: #6d28d9; --hero-to: #4c1d95; }
 </style>
 </head>
-<body>
+<body class="paper">
 
-<div class="lang-toggle">
-  <button id="btnEn" class="active" onclick="setLang('zh')">EN</button>
-  <button id="btnZh" onclick="setLang('zh')">中文</button>
-</div>
+<header class="topbar">
+  <a id="backLink" class="back" href="/zh/projects">
+    <span data-lang="zh">← 返回项目</span><span data-lang="en">← All projects</span>
+  </a>
+  <div class="lang-toggle">
+    <button id="btnEn" onclick="setLang('en')">EN</button>
+    <button id="btnZh" class="active" onclick="setLang('zh')">中文</button>
+  </div>
+</header>
 
 <div class="hero">
   <h1>LearnPostTrain</h1>
+  <p class="hero-sub" data-lang="zh">GRPO + LoRA 后训练实验 · 单卡可复现 · Apache-2.0</p>
+  <p class="hero-sub" data-lang="en">GRPO + LoRA post-training experiments · one GPU, reproducible · Apache-2.0</p>
   <p class="tag" data-lang="en">A home lab for teaching a small AI to get smarter at a numbers game — on a single gaming GPU, with every result reproducible and honestly reported.</p>
   <p class="tag" data-lang="zh">一间「家庭实验室」:在一块游戏显卡上,教一个小 AI 越来越会玩数字游戏——每个结果都可复现、都被如实报告。</p>
   <div class="hero-art">
@@ -51,124 +32,142 @@
       <g font-family="sans-serif">
         <g transform="translate(60,30)">
           <rect width="300" height="120" rx="12" fill="#fff" opacity=".95"/>
-          <rect x="14" y="16" width="120" height="46" rx="8" fill="#4361ee"/>
-          <circle cx="36" cy="39" r="9" fill="#67e8f9"/><rect x="54" y="32" width="66" height="14" rx="4" fill="#a5b4fc"/>
-          <rect x="14" y="72" width="270" height="12" rx="6" fill="#e0e7ff"/>
-          <rect x="14" y="92" width="200" height="12" rx="6" fill="#e0e7ff"/>
-          <rect x="250" y="20" width="36" height="90" rx="6" fill="#c7d2fe"/>
+          <rect x="14" y="16" width="120" height="46" rx="8" fill="#7c3aed"/>
+          <circle cx="36" cy="39" r="9" fill="#ddd6fe"/><rect x="54" y="32" width="66" height="14" rx="4" fill="#c4b5fd"/>
+          <rect x="14" y="72" width="270" height="12" rx="6" fill="#ede9fe"/>
+          <rect x="14" y="92" width="200" height="12" rx="6" fill="#ede9fe"/>
+          <rect x="250" y="20" width="36" height="90" rx="6" fill="#d8b4fe"/>
         </g>
         <text x="210" y="180" text-anchor="middle" fill="#fff" opacity=".75" font-size="14">一块消费级显卡 · 一份耐心</text>
-        <path d="M400 95 C 450 90, 480 62, 530 48 C 580 34, 630 26, 690 20" stroke="#c4b5fd" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <g fill="#ddd6fe"><circle cx="530" cy="48" r="6"/><circle cx="610" cy="30" r="6"/><circle cx="690" cy="20" r="8"/></g>
-        <text x="560" y="86" text-anchor="middle" fill="#ddd6fe" font-size="14" font-weight="600">accuracy ↗</text>
+        <path d="M400 95 C 450 90, 480 62, 530 48 C 580 34, 630 26, 690 20" stroke="#d8b4fe" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <g fill="#e9d5ff"><circle cx="530" cy="48" r="6"/><circle cx="610" cy="30" r="6"/><circle cx="690" cy="20" r="8"/></g>
+        <text x="560" y="86" text-anchor="middle" fill="#e9d5ff" font-size="14" font-weight="600">accuracy ↗</text>
       </g>
     </svg>
   </div>
-  <p class="links"><a href="https://github.com/Alidadei/LearnPostTrain" target="_blank" rel="noopener" data-lang="en">📦 GitHub</a><a href="https://github.com/Alidadei/LearnPostTrain" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库</a></p>
+  <p class="links"><a href="https://github.com/Alidadei/LearnPostTrain" target="_blank" rel="noopener"><span data-lang="zh">📦 GitHub 仓库</span><span data-lang="en">📦 GitHub</span></a></p>
 </div>
 
 <div class="wrap">
 
-  <h2 class="q" data-lang="en">First, some jargon, translated 📖</h2>
-  <h2 class="q" data-lang="zh">先翻译一下黑话 📖</h2>
-  <p class="lead" data-lang="en">Big AI models go to "school" (pre-training: reading the whole internet) and then get "on-the-job training" (post-training: practicing with feedback). This project studies post-training — specifically <strong>RL (reinforcement learning)</strong>: letting the model practice a game, and rewarding good answers.</p>
-  <p class="lead" data-lang="zh">大模型要先「上学」(预训练:读遍互联网),再「上岗培训」(后训练:带着反馈做练习)。这个项目研究后训练中的<strong>强化学习(RL)</strong>:让模型反复练习一个游戏,答得好就奖励。</p>
+  <div class="abstract">
+    <span class="label" data-lang="zh">摘要 / ABSTRACT</span>
+    <span class="label" data-lang="en">ABSTRACT</span>
+    <span data-lang="zh">在一块消费级显卡上,用 GRPO(组内相对策略优化)+ LoRA 对 3B 模型做后训练:以数字凑数游戏(Countdown)为环境,组内归一化优势替代价值网络,约 16GB 显存即可训练。同等实验预算下,低显存 LoRA 配方测试准确率 0.624,高于全量微调基线 0.478;训练循环以可插拔挂钩组织,防泄漏数据划分保证分数考的是真本事。</span>
+    <span data-lang="en">On a single consumer GPU, a 3B model is post-trained with GRPO (group-relative policy optimization) + LoRA on the Countdown numbers game: group-normalized advantages replace the value network, fitting in ~16&nbsp;GB VRAM. Under equal experiment budget, the low-VRAM LoRA recipe reaches 0.624 test accuracy versus 0.478 for full fine-tuning. The training loop is organized as pluggable hooks, and a leak-proof data split ensures scores reflect real skill.</span>
+  </div>
 
-  <h2 class="q" data-lang="en">The game: Countdown 🔢</h2>
-  <h2 class="q" data-lang="zh">游戏:数字凑目标 🔢</h2>
-  <p class="lead" data-lang="en">Given a few numbers, combine them with + − × ÷ to hit a target. Simple for humans, a great gym for a small model — answers are either right or wrong, so rewards are automatic.</p>
-  <p class="lead" data-lang="zh">给定几个数字,用加减乘除凑出目标数。对人很简单,对小模型却是绝佳的健身房——答案非对即错,奖励自动就能打分。</p>
-  <div class="scene">
-    <svg viewBox="0 0 820 230" xmlns="http://www.w3.org/2000/svg">
-      <g font-family="sans-serif">
-        <g transform="translate(30,30)">
-          <rect width="220" height="120" rx="12" fill="#fff"/>
-          <text x="20" y="34" font-size="15" fill="#6b7280">数字</text>
-          <g font-size="26" font-weight="700" fill="#4361ee" text-anchor="middle">
-            <rect x="18" y="48" width="52" height="52" rx="10" fill="#eef1fd"/><text x="44" y="84">3</text>
-            <rect x="82" y="48" width="52" height="52" rx="10" fill="#eef1fd"/><text x="108" y="84">7</text>
-            <rect x="146" y="48" width="52" height="52" rx="10" fill="#eef1fd"/><text x="172" y="84">8</text>
+  <section class="section">
+    <h2 data-lang="en">First, some jargon, translated</h2>
+    <h2 data-lang="zh">先翻译一下黑话</h2>
+    <p class="lead" data-lang="en">Big AI models go to "school" (pre-training: reading the whole internet) and then get "on-the-job training" (post-training: practicing with feedback). This project studies post-training — specifically <strong>RL (reinforcement learning)</strong>: letting the model practice a game, and rewarding good answers.</p>
+    <p class="lead" data-lang="zh">大模型要先「上学」(预训练:读遍互联网),再「上岗培训」(后训练:带着反馈做练习)。这个项目研究后训练中的<strong>强化学习(RL)</strong>:让模型反复练习一个游戏,答得好就奖励。</p>
+  </section>
+
+  <section class="section">
+    <h2 data-lang="en">The game: Countdown</h2>
+    <h2 data-lang="zh">游戏:数字凑目标</h2>
+    <p class="lead" data-lang="en">Given a few numbers, combine them with + − × ÷ to hit a target. Simple for humans, a great gym for a small model — answers are either right or wrong, so rewards are automatic.</p>
+    <p class="lead" data-lang="zh">给定几个数字,用加减乘除凑出目标数。对人很简单,对小模型却是绝佳的健身房——答案非对即错,奖励自动就能打分。</p>
+    <div class="scene">
+      <svg viewBox="0 0 820 230" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="sans-serif">
+          <g transform="translate(30,30)">
+            <rect width="220" height="120" rx="12" fill="#fff"/>
+            <text x="20" y="34" font-size="15" fill="#6b7280">数字</text>
+            <g font-size="26" font-weight="700" fill="#7c3aed" text-anchor="middle">
+              <rect x="18" y="48" width="52" height="52" rx="10" fill="#f5f3ff"/><text x="44" y="84">3</text>
+              <rect x="82" y="48" width="52" height="52" rx="10" fill="#f5f3ff"/><text x="108" y="84">7</text>
+              <rect x="146" y="48" width="52" height="52" rx="10" fill="#f5f3ff"/><text x="172" y="84">8</text>
+            </g>
+            <text x="110" y="112" font-size="13" fill="#9ca3af" text-anchor="middle">→ 凑出 24?</text>
           </g>
-          <text x="110" y="112" font-size="13" fill="#9ca3af" text-anchor="middle">→ 凑出 24?</text>
+          <path d="M270 90 H320" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+          <path d="M320 90 L304 80 V100 Z" fill="#7c3aed"/>
+          <g transform="translate(345,22)">
+            <rect width="200" height="136" rx="12" fill="#fff"/>
+            <circle cx="100" cy="34" r="14" fill="#6d28d9"/>
+            <text x="100" y="40" text-anchor="middle" font-size="16" fill="#fff">🤖</text>
+            <rect x="26" y="58" width="148" height="26" rx="13" fill="#f3e8ff"/>
+            <text x="100" y="76" text-anchor="middle" font-size="14" fill="#6d28d9">(7 − 3) × 8 = 32?</text>
+            <rect x="26" y="94" width="148" height="26" rx="13" fill="#f5f3ff"/>
+            <text x="100" y="112" text-anchor="middle" font-size="14" fill="#7c3aed">8 × 3 = 24 ✓</text>
+          </g>
+          <path d="M565 90 H615" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+          <path d="M615 90 L599 80 V100 Z" fill="#7c3aed"/>
+          <g transform="translate(640,36)" text-anchor="middle">
+            <text x="40" y="26" font-size="34">❌</text>
+            <text x="40" y="56" font-size="13" fill="#9ca3af">答案错了</text>
+            <text x="120" y="26" font-size="34">🌟</text>
+            <text x="120" y="56" font-size="13" fill="#9ca3af">答案对了 +1</text>
+            <text x="80" y="96" font-size="14" fill="#7c3aed" font-weight="600">反复练习 · 越来越准</text>
+          </g>
+          <text x="410" y="210" text-anchor="middle" fill="#9ca3af" font-size="14">这就是 GRPO:同一道题生成多个答案,好的整组加分,差的整组减分</text>
         </g>
-        <path d="M270 90 H320" stroke="#4361ee" stroke-width="5" stroke-linecap="round"/>
-        <path d="M320 90 L304 80 V100 Z" fill="#4361ee"/>
-        <g transform="translate(345,22)">
-          <rect width="200" height="136" rx="12" fill="#fff"/>
-          <circle cx="100" cy="34" r="14" fill="#7209b7"/>
-          <text x="100" y="40" text-anchor="middle" font-size="16" fill="#fff">🤖</text>
-          <rect x="26" y="58" width="148" height="26" rx="13" fill="#f3e8ff"/>
-          <text x="100" y="76" text-anchor="middle" font-size="14" fill="#7209b7">(7 − 3) × 8 = 32?</text>
-          <rect x="26" y="94" width="148" height="26" rx="13" fill="#eef1fd"/>
-          <text x="100" y="112" text-anchor="middle" font-size="14" fill="#4361ee">8 × 3 = 24 ✓</text>
-        </g>
-        <path d="M565 90 H615" stroke="#4361ee" stroke-width="5" stroke-linecap="round"/>
-        <path d="M615 90 L599 80 V100 Z" fill="#4361ee"/>
-        <g transform="translate(640,36)" text-anchor="middle">
-          <text x="40" y="26" font-size="34">❌</text>
-          <text x="40" y="56" font-size="13" fill="#9ca3af">答案错了</text>
-          <text x="120" y="26" font-size="34">🌟</text>
-          <text x="120" y="56" font-size="13" fill="#9ca3af">答案对了 +1</text>
-          <text x="80" y="96" font-size="14" fill="#4361ee" font-weight="600">反复练习 · 越来越准</text>
-        </g>
-        <text x="410" y="210" text-anchor="middle" fill="#9ca3af" font-size="14">这就是 GRPO:同一道题生成多个答案,好的整组加分,差的整组减分</text>
-      </g>
-    </svg>
-  </div>
+      </svg>
+    </div>
+  </section>
 
-  <h2 class="q" data-lang="en">Three ideas that make it a lab, not a demo 🧪</h2>
-  <h2 class="q" data-lang="zh">三个让它成为实验室、而非演示品的想法 🧪</h2>
+  <section class="section">
+    <h2 data-lang="en">The GRPO training loop</h2>
+    <h2 data-lang="zh">GRPO 训练环</h2>
+    <p class="lead" data-lang="en">One prompt is sampled into a group of rollouts; rewards are scored by rules, centered and scaled within the group, and the policy gradient update flows back into the LoRA adapter — no value network needed.</p>
+    <p class="lead" data-lang="zh">同一道提示采样出一组答案;规则打分后,奖励在组内做归一化,策略梯度更新回流进 LoRA 适配器——全程不需要价值网络。</p>
+    <figure class="figure">
+      <img src="assets/learnposttrain-arch.svg" alt="LearnPostTrain GRPO training loop">
+      <figcaption class="figcaption">
+        <span data-lang="zh"><b>Fig. 1</b> GRPO 训练环:组内相对优势替代价值网络,3B 模型单卡可训。</span>
+        <span data-lang="en"><b>Fig. 1</b> The GRPO loop: group-relative advantages replace the value network; a 3B policy trains on one consumer GPU.</span>
+      </figcaption>
+    </figure>
+  </section>
 
-  <div class="card">
-    <h3 data-lang="en">1 · Training loop built like Lego 🧱</h3>
-    <h3 data-lang="zh">1 · 像乐高一样拼装的训练循环 🧱</h3>
-    <p data-lang="en">The core loop stays tiny. Alarms, stopwatches, safety valves and diagnostic meters all plug into it as hooks — snap in what you need for an experiment, snap out when done.</p>
-    <p data-lang="zh">核心循环保持极小。闹钟(学习率调度)、秒表(计时)、安全阀(异常告警)、诊断仪表(互信息)全部做成可插拔的挂钩——做实验时插上,做完拔掉。</p>
-  </div>
+  <section class="section">
+    <h2 data-lang="en">Three ideas that make it a lab, not a demo</h2>
+    <h2 data-lang="zh">三个让它成为实验室、而非演示品的想法</h2>
 
-  <div class="card">
-    <h3 data-lang="en">2 · Anti-cheat exam papers 🕵️</h3>
-    <h3 data-lang="zh">2 · 防作弊的考卷 🕵️</h3>
-    <p data-lang="en">"3 7 8 → 24" and "8 3 7 → 24" are the same puzzle rearranged. The splitter guarantees such twins never land in both the practice set and the test set — so the score measures real skill, not memory.</p>
-    <p data-lang="zh">「3 7 8→24」和「8 3 7→24」是同一道题的换装。数据划分保证这类双胞胎绝不会同时出现在练习卷和考试卷里——这样分数考的是真本事,不是背题。</p>
-  </div>
+    <div class="card">
+      <h3 data-lang="en">1 · Training loop built like Lego 🧱</h3>
+      <h3 data-lang="zh">1 · 像乐高一样拼装的训练循环 🧱</h3>
+      <p data-lang="en">The core loop stays tiny. Alarms, stopwatches, safety valves and diagnostic meters all plug into it as hooks — snap in what you need for an experiment, snap out when done.</p>
+      <p data-lang="zh">核心循环保持极小。闹钟(学习率调度)、秒表(计时)、安全阀(异常告警)、诊断仪表(互信息)全部做成可插拔的挂钩——做实验时插上,做完拔掉。</p>
+    </div>
 
-  <div class="card">
-    <h3 data-lang="en">3 · Train the plug, not the whole brain 🔌</h3>
-    <h3 data-lang="zh">3 · 只训练「插头」,不动整个大脑 🔌</h3>
-    <p data-lang="en">LoRA freezes the model and trains only a small adapter — like rewiring an adapter plug instead of rebuilding the house. That's how a 3-billion-parameter model fits on one consumer GPU.</p>
-    <p data-lang="zh">LoRA 把大模型冻住,只训练外挂的小适配器——相当于换一个转接头,而不是重新装修整栋房子。30 亿参数的模型因此能塞进一块消费级显卡。</p>
-  </div>
+    <div class="card">
+      <h3 data-lang="en">2 · Anti-cheat exam papers 🕵️</h3>
+      <h3 data-lang="zh">2 · 防作弊的考卷 🕵️</h3>
+      <p data-lang="en">"3 7 8 → 24" and "8 3 7 → 24" are the same puzzle rearranged. The splitter guarantees such twins never land in both the practice set and the test set — so the score measures real skill, not memory.</p>
+      <p data-lang="zh">「3 7 8→24」和「8 3 7→24」是同一道题的换装。数据划分保证这类双胞胎绝不会同时出现在练习卷和考试卷里——这样分数考的是真本事,不是背题。</p>
+    </div>
 
-  <h2 class="q" data-lang="en">Results — with the fine print 📊</h2>
-  <h2 class="q" data-lang="zh">结果——连同小字说明 📊</h2>
-  <div class="nums">
-    <div class="num"><b>0.624</b><span data-lang="en">test accuracy (LoRA recipe)</span><span data-lang="zh">测试准确率(LoRA 配方)</span></div>
-    <div class="num"><b>0.478</b><span data-lang="en">full fine-tune baseline</span><span data-lang="zh">全量微调基线</span></div>
-    <div class="num"><b>~16 GB</b><span data-lang="en">VRAM at work</span><span data-lang="zh">实际显存占用</span></div>
-    <div class="num"><b>1 GPU</b><span data-lang="en">the entire cluster 😄</span><span data-lang="zh">全部算力 😄</span></div>
-  </div>
-  <p class="lead" data-lang="en">The fine print: the LoRA runs used twice the practice budget, so the honest claim is "the low-memory recipe scores higher under equal experiment budget" — not "LoRA is magic". The README says so itself.</p>
-  <p class="lead" data-lang="zh">小字说明:LoRA 组用了两倍的练习预算,所以诚实的结论是「同等实验预算下,低显存配方得分更高」——而不是「LoRA 有魔力」。README 里自己就是这么写的。</p>
+    <div class="card">
+      <h3 data-lang="en">3 · Train the plug, not the whole brain 🔌</h3>
+      <h3 data-lang="zh">3 · 只训练「插头」,不动整个大脑 🔌</h3>
+      <p data-lang="en">LoRA freezes the model and trains only a small adapter — like rewiring an adapter plug instead of rebuilding the house. That's how a 3-billion-parameter model fits on one consumer GPU.</p>
+      <p data-lang="zh">LoRA 把大模型冻住,只训练外挂的小适配器——相当于换一个转接头,而不是重新装修整栋房子。30 亿参数的模型因此能塞进一块消费级显卡。</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-lang="en">Results — with the fine print</h2>
+    <h2 data-lang="zh">结果——连同小字说明</h2>
+    <div class="nums">
+      <div class="num"><b>0.624</b><span data-lang="en">test accuracy (LoRA recipe)</span><span data-lang="zh">测试准确率(LoRA 配方)</span></div>
+      <div class="num"><b>0.478</b><span data-lang="en">full fine-tune baseline</span><span data-lang="zh">全量微调基线</span></div>
+      <div class="num"><b>~16 GB</b><span data-lang="en">VRAM at work</span><span data-lang="zh">实际显存占用</span></div>
+      <div class="num"><b>1 GPU</b><span data-lang="en">the entire cluster 😄</span><span data-lang="zh">全部算力 😄</span></div>
+    </div>
+    <p class="lead" data-lang="en">The fine print: the LoRA runs used twice the practice budget, so the honest claim is "the low-memory recipe scores higher under equal experiment budget" — not "LoRA is magic". The README says so itself.</p>
+    <p class="lead" data-lang="zh">小字说明:LoRA 组用了两倍的练习预算,所以诚实的结论是「同等实验预算下,低显存配方得分更高」——而不是「LoRA 有魔力」。README 里自己就是这么写的。</p>
+  </section>
 
 </div>
 
 <div class="footer">
-  <span data-lang="en">LearnPostTrain &copy; 2026 · Apache-2.0 · </span>
-  <span data-lang="zh">LearnPostTrain &copy; 2026 · Apache-2.0 · </span>
+  <span>LearnPostTrain © 2026 · Apache-2.0 · </span>
   <a href="https://github.com/Alidadei/LearnPostTrain" target="_blank">GitHub</a>
 </div>
 
-<script>
-function setLang(lang) {
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
-  });
-  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
-  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
-  document.documentElement.lang = lang;
-}
-setLang('zh');
-</script>
+<script src="assets/detail.js"></script>
 </body>
 </html>

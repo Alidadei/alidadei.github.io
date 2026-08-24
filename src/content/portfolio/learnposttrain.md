@@ -1,12 +1,12 @@
 ---
-title: "LearnPostTrain / GRPO 后训练实验"
-excerpt: "在一块游戏显卡上教 3B 小模型玩数字凑数游戏,探索可复现的低显存强化学习配方。/ Teaching a 3B model to play a numbers game on one gaming GPU — reproducible, low-VRAM RL recipes."
+title: "LearnPostTrain / GRPO 后训练学习实验台"
+excerpt: "能运行在一块游戏显卡上教 qwen-3B 模型玩数字拼凑游戏的可复现探索实验台。"
 image: "/images/learnposttrain.webp"
 repo: "https://github.com/Alidadei/LearnPostTrain"
 link: "/portfolio/learnposttrain.html"
 categories: ["研究"]
-status: "Open source"
-year: "2026"
+status: "算法实验"
+year: "2026.6"
 ---
 
 [GitHub Repository](https://github.com/Alidadei/LearnPostTrain)

@@ -51,6 +51,21 @@ src\content\portfolio
 
 暂存项目:frontmatter 写 `draft: true`
 
+### 项目详情页(点卡片打开的 HTML)
+
+```
+public\portfolio
+```
+
+7 个项目各一个独立 `.html`(如 `automedatagent.html`),项目页卡片点击后新标签打开的就是它。用文本编辑器(如 VS Code)直接改:
+
+- **文字都是中英双份**:改 `data-lang="zh"` 的那段 = 中文,改 `data-lang="en"` 的那段 = 英文。只改文字,别动 HTML 标签。
+- 常见位置:大标题 `<h1>`、章节标题 `<h2>`、正文 `<p class="lead">`、数字块 `<div class="num">`、表格 `<table>`。
+- 每页顶部 `<style>` 里的 `:root { --accent: ... }` 是该页主题色,想换色改这里。
+- 排版样式统一在 `public\portfolio\assets\detail.css`,双语切换逻辑在 `assets\detail.js`(一般不用动)。
+- 研究型页面内嵌的架构图(Figure 1)是 `assets\<slug>-arch.svg`,由脚本生成,想改图内文字/配色 → 改 `scripts\gen-portfolio-covers.mjs` 里对应的 `diag` 部分,再重跑(见下方「缩略图&3D」)。
+- 改完保存,`npm run dev` 后刷新 `http://localhost:4321/portfolio/xxx.html` 即可看效果(与线上不一致时再 `npm run build` + `npm run preview`)。
+
 ### 关于页
 
 (中/英,含新闻、教育、实习、研究、获奖、技能)
@@ -153,6 +168,7 @@ avatar 用法:
 ## 缩略图&3D
 
 | npm run thumbs   | 重新生成作品集缩略图(public/images/thumbs/*.webp,基于 src/content/portfolio/*.md 的 image 字段,sharp 压缩)。增量执行,源图没变会跳过 |
+| node scripts/gen-portfolio-covers.mjs | 重新生成项目封面大图(public/images/*.webp,研究型=论文风架构图、实践型=彩色插画)和研究型架构图(public/portfolio/assets/*-arch.svg)。想改封面文字/配色或架构图内容,改脚本里对应的 `covers`/`diag` 部分后重跑;改完再跑 npm run thumbs 刷新卡片小图 |
 | ---------------- | ------------------------------------------------------------ |
 | npm run build:3d | 只重新打包 3D 背景脚本(public/three-bg.js),不跑完整 build。改了 src/3d/background.ts 后用 |
 | **npm run compress-posts** | 批量压缩 public/images 图:原地压缩(默认)或转 webp(--webp) |
@@ -222,6 +238,8 @@ npm run sky-preview
 | 改分类的网址(slug) | npm run cms,选「重命名 slug」 |
 | 新增或删除分类/标签 | npm run cms |
 | 改了作品集图,刷新缩略图 | npm run thumbs |
+| 改项目详情页(卡片点开的 HTML)文字 | 直接编辑 public\portfolio\<项目名>.html(中英双份 data-lang) |
+| 改项目封面/论文风架构图 | 改 scripts\gen-portfolio-covers.mjs → node scripts/gen-portfolio-covers.mjs → npm run thumbs |
 | 换网站 favicon | npm run favicon -- <源图> |
 | 换关于页头像 | npm run avatar -- <源图> |
 | 改了 3D 背景代码 | npm run build:3d(或直接 npm run build) |

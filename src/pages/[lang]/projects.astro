@@ -68,7 +68,7 @@ function cleanExcerpt(s?: string) {
               style={idx >= INITIAL ? 'display:none' : undefined}
             >
               {t && (
-                <img src={t} alt={item.data.title} loading="lazy" decoding="async" class="w-full h-44 object-cover" />
+                <img src={t} alt={item.data.title} loading="lazy" decoding="async" class="w-full aspect-[2/1] object-cover" />
               )}
               <div class="flex flex-col flex-1 p-6">
                 {(item.data.status || item.data.year) && (

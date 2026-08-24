@@ -1,120 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Music Signal Analysis System - Portfolio</title>
+<title>音乐信号分析系统 · Music Signal Analysis</title>
+<link rel="stylesheet" href="assets/detail.css">
 <style>
-  :root { --bg: #fff; --card: #f8f9fa; --border: #e0e0e0; --text: #1a1a2e; --accent: #4361ee; --accent2: #7209b7; --code-bg: #f1f3f5; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-
-  /* Header */
-  .header { background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%); color: #fff; padding: 48px 24px 36px; text-align: center; }
-  .header h1 { font-size: 2rem; margin-bottom: 8px; }
-  .header p { font-size: 1.05rem; opacity: 0.9; max-width: 720px; margin: 0 auto; }
-
-  /* Lang Toggle */
-  .lang-toggle { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  .lang-toggle button { border: none; padding: 8px 18px; font-size: .9rem; cursor: pointer; background: rgba(255,255,255,.2); color: #fff; font-weight: 600; transition: .2s; }
-  .lang-toggle button.active { background: #fff; color: var(--accent); }
-  .lang-toggle button:hover:not(.active) { background: rgba(255,255,255,.35); }
-
-  /* Container */
-  .container { max-width: 900px; margin: 0 auto; padding: 32px 24px 64px; }
-  [data-lang] { display: none; }
-  [data-lang].visible { display: block; }
-
-  /* Sections */
-  .section { margin-bottom: 40px; }
-  .section h2 { font-size: 1.45rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--accent); }
-  .section h3 { font-size: 1.15rem; margin: 20px 0 10px; color: var(--accent2); }
-  .section p { margin-bottom: 12px; }
-
-  /* Stats Grid */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
-  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
-  .stat .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-  .stat .lbl { font-size: .82rem; color: #666; margin-top: 4px; }
-
-  /* Tables */
-  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: .92rem; }
-  th { background: var(--accent); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
-  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
-  tr:nth-child(even) td { background: var(--card); }
-  tr:hover td { background: #eef0ff; }
-
-  /* Code */
-  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: .88rem; }
-  pre { background: var(--code-bg); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0 20px; font-size: .88rem; line-height: 1.5; }
-
-  /* Pipeline */
-  .pipeline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 16px 0; }
-  .pipeline span { background: var(--accent); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: .85rem; font-weight: 500; white-space: nowrap; }
-  .pipeline .arrow { background: none; color: var(--accent); font-size: 1.2rem; padding: 0; font-weight: 700; }
-
-  /* Lists */
-  ul, ol { margin: 8px 0 16px 20px; }
-  li { margin-bottom: 6px; }
-
-  /* Tech Badges */
+  :root { --accent: #4361ee; --accent-dark: #3730a3; --tint: #eef1fd; --hero-from: #4361ee; --hero-to: #5b21b6; }
+  /* 本页独有组件:技术徽章 / 时间线 / 画廊 / 灯箱 */
   .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
   .badge { background: linear-gradient(135deg, #4361ee22, #7209b722); border: 1px solid #4361ee44; padding: 4px 12px; border-radius: 16px; font-size: .82rem; font-weight: 500; }
-
-  /* History timeline */
   .timeline { border-left: 3px solid var(--accent); padding-left: 20px; margin: 12px 0; }
   .timeline li { list-style: none; position: relative; margin-bottom: 14px; }
   .timeline li::before { content: ""; position: absolute; left: -26px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-
-  /* Gallery */
   .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
-  .gallery-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: transform .2s, box-shadow .2s; }
-  .gallery-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(67,97,238,.15); }
+  .gallery-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: transform .2s, box-shadow .2s; cursor: zoom-in; }
+  .gallery-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(67, 97, 238, .15); }
   .gallery-card.full-width { grid-column: 1 / -1; }
   .gallery-card img { width: 100%; display: block; }
-  .gallery-card .caption { padding: 10px 14px; font-size: .85rem; color: #555; text-align: center; }
-  .gallery-card .caption strong { color: var(--text); }
-
-  /* Lightbox */
-  .lightbox { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.85); justify-content: center; align-items: center; cursor: zoom-out; }
+  .gallery-card .caption { padding: 10px 14px; font-size: .85rem; color: var(--muted); text-align: center; }
+  .gallery-card .caption strong { color: var(--ink); }
+  .lightbox { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0, 0, 0, .85); justify-content: center; align-items: center; cursor: zoom-out; }
   .lightbox.open { display: flex; }
-  .lightbox img { max-width: 95vw; max-height: 92vh; border-radius: 6px; box-shadow: 0 0 40px rgba(0,0,0,.5); }
-
-  /* Footer */
-  .footer { text-align: center; padding: 24px; color: #999; font-size: .85rem; border-top: 1px solid var(--border); }
+  .lightbox img { max-width: 95vw; max-height: 92vh; border-radius: 6px; box-shadow: 0 0 40px rgba(0, 0, 0, .5); }
+  @media (max-width: 640px) { .gallery-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
-<!-- Language Toggle -->
-<div class="lang-toggle">
-  <button id="btnEn" class="active" onclick="setLang('zh')">EN</button>
-  <button id="btnZh" onclick="setLang('zh')">中文</button>
-</div>
+<header class="topbar">
+  <a id="backLink" class="back" href="/zh/projects">
+    <span data-lang="zh">← 返回项目</span><span data-lang="en">← All projects</span>
+  </a>
+  <div class="lang-toggle">
+    <button id="btnEn" onclick="setLang('en')">EN</button>
+    <button id="btnZh" class="active" onclick="setLang('zh')">中文</button>
+  </div>
+</header>
 
-<div class="header">
+<div class="hero">
   <h1 data-lang="en">Music Signal Analysis System</h1>
   <h1 data-lang="zh">音乐信号分析系统</h1>
-  <p data-lang="en">A Python-based music signal processing system for timbre analysis, instrument classification, and melody visualization — with CLI, one-click launcher, and Gradio web deployment.</p>
-  <p data-lang="zh">基于 Python 的音乐信号处理系统，实现音色分析、乐器分类与旋律可视化，支持命令行、一键启动器和 Gradio Web 部署。</p>
-  <p data-lang="en" style="margin-top:18px;"><a href="https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis" target="_blank" rel="noopener" style="color:#fff;font-weight:600;text-decoration:underline;">🤗 Live Demo on Hugging Face Spaces →</a></p>
-  <p data-lang="zh" style="margin-top:18px;"><a href="https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis" target="_blank" rel="noopener" style="color:#fff;font-weight:600;text-decoration:underline;">🤗 Hugging Face Spaces 在线体验 →</a></p>
+  <p class="hero-sub" data-lang="zh">音色量化分析 &amp; 可视化 · 个人爱好 · 2025</p>
+  <p class="hero-sub" data-lang="en">Timbre Analysis &amp; Visualization · 2025</p>
+  <p class="tag" data-lang="en">A Python-based music signal processing system for timbre analysis, instrument classification, and melody visualization — with CLI, one-click launcher, and Gradio web deployment.</p>
+  <p class="tag" data-lang="zh">基于 Python 的音乐信号处理系统,实现音色分析、乐器分类与旋律可视化,支持命令行、一键启动器和 Gradio Web 部署。</p>
+  <p class="links">
+    <a href="https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis" target="_blank" rel="noopener" data-lang="en">🤗 Live Demo on Hugging Face Spaces →</a>
+    <a href="https://github.com/Alidadei/Music_signal_analysis" target="_blank" rel="noopener" data-lang="en">📦 GitHub</a>
+    <a href="https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis" target="_blank" rel="noopener" data-lang="zh">🤗 Hugging Face Spaces 在线体验 →</a>
+    <a href="https://github.com/Alidadei/Music_signal_analysis" target="_blank" rel="noopener" data-lang="zh">📦 GitHub 仓库</a>
+  </p>
 </div>
 
-<div class="container">
+<div class="wrap">
 
 <!-- ==================== PROJECT OVERVIEW ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Project Overview</h2>
   <h2 data-lang="zh">项目概览</h2>
 
-  <p data-lang="en">This project implements a complete audio analysis pipeline that takes a music file as input and produces comprehensive analytical reports with rich visualizations. It covers the full workflow from audio loading and preprocessing to feature extraction, machine learning-based classification, and publication-quality chart generation.</p>
-  <p data-lang="zh">本项目实现了一套完整的音频分析管道，以音乐文件为输入，输出包含丰富可视化的综合分析报告。覆盖从音频加载、预处理到特征提取、机器学习分类和出版级图表生成的全流程。</p>
+  <p class="lead" data-lang="en">This project implements a complete audio analysis pipeline that takes a music file as input and produces comprehensive analytical reports with rich visualizations. It covers the full workflow from audio loading and preprocessing to feature extraction, machine learning-based classification, and publication-quality chart generation.</p>
+  <p class="lead" data-lang="zh">本项目实现了一套完整的音频分析管道,以音乐文件为输入,输出包含丰富可视化的综合分析报告。覆盖从音频加载、预处理到特征提取、机器学习分类和出版级图表生成的全流程。</p>
 
-  <p data-lang="en">The system supports three execution modes — direct CLI, interactive file picker, and a Gradio-based web application deployed on Hugging Face Spaces.</p>
-  <p data-lang="zh">系统支持三种运行模式：命令行直调、交互式文件选择器，以及部署在 Hugging Face Spaces 上的 Gradio Web 应用。</p>
+  <p class="lead" data-lang="en">The system supports three execution modes — direct CLI, interactive file picker, and a Gradio-based web application deployed on Hugging Face Spaces.</p>
+  <p class="lead" data-lang="zh">系统支持三种运行模式:命令行直调、交互式文件选择器,以及部署在 Hugging Face Spaces 上的 Gradio Web 应用。</p>
 
   <div class="stats">
     <div class="stat"><div class="val">Python</div><div class="lbl" data-lang="en">Language</div><div class="lbl" data-lang="zh">编程语言</div></div>
@@ -124,21 +74,21 @@
     <div class="stat"><div class="val">5</div><div class="lbl" data-lang="en">Audio Formats</div><div class="lbl" data-lang="zh">音频格式</div></div>
     <div class="stat"><div class="val">14</div><div class="lbl" data-lang="en">Audio Features</div><div class="lbl" data-lang="zh">音频特征</div></div>
   </div>
-</div>
+</section>
 
 <!-- ==================== TECHNICAL HIGHLIGHTS ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Technical Highlights</h2>
   <h2 data-lang="zh">技术亮点</h2>
 
   <h3 data-lang="en">Full-Stack Audio Analysis Pipeline</h3>
   <h3 data-lang="zh">全链路音频分析管道</h3>
 
-  <p data-lang="en">The system implements a 6-step pipeline orchestrated by <code>MusicSignalAnalyzer</code>. Each step is encapsulated in a dedicated class with clean interfaces, making the architecture modular and extensible.</p>
-  <p data-lang="zh">系统通过 <code>MusicSignalAnalyzer</code> 类编排 6 步分析管道。每个步骤封装在独立的类中，接口清晰，架构模块化且易于扩展。</p>
+  <p class="lead" data-lang="en">The system implements a 6-step pipeline orchestrated by <code>MusicSignalAnalyzer</code>. Each step is encapsulated in a dedicated class with clean interfaces, making the architecture modular and extensible.</p>
+  <p class="lead" data-lang="zh">系统通过 <code>MusicSignalAnalyzer</code> 类编排 6 步分析管道。每个步骤封装在独立的类中,接口清晰,架构模块化且易于扩展。</p>
 
   <div class="pipeline" data-lang="en">
-    <span>Audio File</span><span class="arrow">→</span><span>Load</span><span class="arrow">→</span><span>Preprocess</span><span class="arrow">→</span><span>Timbre Analysis</span><span class="arrow">→</span><span>Instrument Classification</span><span class="arrow">→</span><span>Melody Analysis</span><span class="arrow">→</span><span>Report & Visualization</span>
+    <span>Audio File</span><span class="arrow">→</span><span>Load</span><span class="arrow">→</span><span>Preprocess</span><span class="arrow">→</span><span>Timbre Analysis</span><span class="arrow">→</span><span>Instrument Classification</span><span class="arrow">→</span><span>Melody Analysis</span><span class="arrow">→</span><span>Report &amp; Visualization</span>
   </div>
   <div class="pipeline" data-lang="zh">
     <span>音频文件</span><span class="arrow">→</span><span>加载</span><span class="arrow">→</span><span>预处理</span><span class="arrow">→</span><span>音色分析</span><span class="arrow">→</span><span>乐器分类</span><span class="arrow">→</span><span>旋律分析</span><span class="arrow">→</span><span>报告与可视化</span>
@@ -157,20 +107,20 @@
     <p>Supports 7 instrument categories: Strings, Bass, Percussion, Wind, Keyboard, Vocal, and Unknown.</p>
   </div>
   <div data-lang="zh">
-    <p>实现了双路径乐器分类器，结合两种方式：</p>
+    <p>实现了双路径乐器分类器,结合两种方式:</p>
     <ul>
-      <li><strong>基于规则的分类</strong>：基于频域启发式规则（频谱质心、带宽、过零率阈值）的零依赖推理。</li>
-      <li><strong>机器学习分类</strong>：使用 scikit-learn 随机森林 + StandardScaler 标准化，运行时加载预训练模型。</li>
-      <li><strong>自动回退机制</strong>：当 ML 模型不可用时自动回退到规则分类，确保系统始终产出结果。</li>
+      <li><strong>基于规则的分类</strong>:基于频域启发式规则(频谱质心、带宽、过零率阈值)的零依赖推理。</li>
+      <li><strong>机器学习分类</strong>:使用 scikit-learn 随机森林 + StandardScaler 标准化,运行时加载预训练模型。</li>
+      <li><strong>自动回退机制</strong>:当 ML 模型不可用时自动回退到规则分类,确保系统始终产出结果。</li>
     </ul>
-    <p>支持 7 种乐器类别：弦乐、低音、打击乐、管乐、键盘、人声、未知。</p>
+    <p>支持 7 种乐器类别:弦乐、低音、打击乐、管乐、键盘、人声、未知。</p>
   </div>
 
   <h3 data-lang="en">Comprehensive Feature Extraction</h3>
   <h3 data-lang="zh">全面的特征提取</h3>
 
-  <p data-lang="en"><strong>14 distinct audio features</strong> extracted across three domains, all with descriptive statistics (mean, std, min, max, median):</p>
-  <p data-lang="zh">跨三个域提取 <strong>14 种音频特征</strong>，所有特征均计算描述性统计量（均值、标准差、最小值、最大值、中位数）：</p>
+  <p class="lead" data-lang="en"><strong>14 distinct audio features</strong> extracted across three domains, all with descriptive statistics (mean, std, min, max, median):</p>
+  <p class="lead" data-lang="zh">跨三个域提取 <strong>14 种音频特征</strong>,所有特征均计算描述性统计量(均值、标准差、最小值、最大值、中位数):</p>
 
   <table>
     <thead>
@@ -197,11 +147,11 @@
     </ul>
   </div>
   <div data-lang="zh">
-    <p>使用 PYIN 算法进行鲁棒的单音高追踪：</p>
+    <p>使用 PYIN 算法进行鲁棒的单音高追踪:</p>
     <ul>
-      <li>音高轨迹提取（Hz → MIDI 转换）</li>
-      <li>通过色度能量分析检测调性（全部 12 个调，大调/小调）</li>
-      <li>音程统计（均值、最大值、最小值，单位半音）</li>
+      <li>音高轨迹提取(Hz → MIDI 转换)</li>
+      <li>通过色度能量分析检测调性(全部 12 个调,大调/小调)</li>
+      <li>音程统计(均值、最大值、最小值,单位半音)</li>
       <li>通过滑窗众数检测提取主导音符</li>
       <li>通过色度相关性比较旋律相似度</li>
     </ul>
@@ -220,18 +170,18 @@
     <p>Backend priority is automatically reordered based on file extension. Includes robust error handling with platform-specific FFmpeg installation guidance.</p>
   </div>
   <div data-lang="zh">
-    <p>三层后端回退架构：</p>
+    <p>三层后端回退架构:</p>
     <ol>
       <li><strong>soundfile</strong> — WAV/FLAC 首选后端</li>
-      <li><strong>audioread</strong> — MP3/M4A/OGG 首选后端（需 FFmpeg）</li>
+      <li><strong>audioread</strong> — MP3/M4A/OGG 首选后端(需 FFmpeg)</li>
       <li><strong>librosa</strong> — 通用兜底</li>
     </ol>
     <p>后端优先级根据文件扩展名自动调整。包含健壮的错误处理和平台特定的 FFmpeg 安装指引。</p>
   </div>
-</div>
+</section>
 
 <!-- ==================== ARCHITECTURE ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Architecture</h2>
   <h2 data-lang="zh">系统架构</h2>
 
@@ -254,8 +204,8 @@
 
   <pre data-lang="zh">Music_signal_analysis/
 ├── main.py                      # CLI 入口 & 分析调度器
-├── run.py                       # 一键启动器（含环境与依赖检查）
-├── app.py                       # Gradio Web 界面（HF Spaces 部署）
+├── run.py                       # 一键启动器(含环境与依赖检查)
+├── app.py                       # Gradio Web 界面(HF Spaces 部署)
 ├── src/
 │   ├── analysis/
 │   │   ├── timbre_analysis.py   # 音色分析器 — 频谱/倒谱/时域特征
@@ -265,7 +215,7 @@
 │   │   └── audio_loader.py      # 音频加载器 — 多后端音频读写
 │   └── visualization/
 │       └── visualizer.py        # 可视化器 — 图表生成 + 字体管理
-├── models/                      # 预训练模型（可选）
+├── models/                      # 预训练模型(可选)
 ├── tests/                       # 5 个文件 82 个测试用例
 └── docs/                        # 文档</pre>
 
@@ -278,22 +228,22 @@
     </ul>
   </div>
   <div data-lang="zh">
-    <p><strong>设计原则：</strong></p>
+    <p><strong>设计原则:</strong></p>
     <ul>
-      <li><strong>模块化</strong>：每个分析域都是独立可测试的模块。</li>
-      <li><strong>健壮性</strong>：每一层都有多后端回退机制。</li>
-      <li><strong>可扩展</strong>：新的特征提取器或分类器无需修改管道即可加入。</li>
+      <li><strong>模块化</strong>:每个分析域都是独立可测试的模块。</li>
+      <li><strong>健壮性</strong>:每一层都有多后端回退机制。</li>
+      <li><strong>可扩展</strong>:新的特征提取器或分类器无需修改管道即可加入。</li>
     </ul>
   </div>
-</div>
+</section>
 
 <!-- ==================== VISUALIZATION ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Visualization</h2>
   <h2 data-lang="zh">可视化</h2>
 
-  <p data-lang="en">The system generates <strong>5 publication-quality charts</strong> per analysis run. All charts support Chinese labels with cross-platform font auto-detection and matplotlib cache management.</p>
-  <p data-lang="zh">每次分析生成 <strong>5 张出版级图表</strong>。所有图表支持中文标签，具备跨平台字体自动检测和 matplotlib 缓存管理。</p>
+  <p class="lead" data-lang="en">The system generates <strong>5 publication-quality charts</strong> per analysis run. All charts support Chinese labels with cross-platform font auto-detection and matplotlib cache management.</p>
+  <p class="lead" data-lang="zh">每次分析生成 <strong>5 张出版级图表</strong>。所有图表支持中文标签,具备跨平台字体自动检测和 matplotlib 缓存管理。</p>
 
   <table>
     <thead>
@@ -320,7 +270,7 @@
         <td data-lang="en">Spectrogram</td><td data-lang="zh">语谱图</td>
         <td data-lang="en">Single</td><td data-lang="zh">单图</td>
         <td data-lang="en">STFT magnitude in dB (viridis)</td>
-        <td data-lang="zh">STFT 幅度（分贝）</td>
+        <td data-lang="zh">STFT 幅度(分贝)</td>
       </tr>
       <tr>
         <td data-lang="en">Chroma Features</td><td data-lang="zh">色度特征</td>
@@ -336,28 +286,28 @@
       </tr>
     </tbody>
   </table>
-</div>
+</section>
 
 <!-- ==================== OUTPUT EXAMPLES ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Output Examples</h2>
   <h2 data-lang="zh">输出示例</h2>
 
-  <p data-lang="en">Real analysis results from a WAV music sample. Click any image to view full size.</p>
-  <p data-lang="zh">WAV 音乐样本的真实分析结果。点击任意图片查看大图。</p>
+  <p class="lead" data-lang="en">Real analysis results from a WAV music sample. Click any image to view full size.</p>
+  <p class="lead" data-lang="zh">WAV 音乐样本的真实分析结果。点击任意图片查看大图。</p>
 
   <div class="gallery-grid">
     <div class="gallery-card full-width">
       <img src="assets/timbre_analysis.png" alt="Timbre Analysis" onclick="openLightbox(this)">
-      <div class="caption"><strong data-lang="en">Timbre Analysis (3×2)</strong><strong data-lang="zh">音色分析（3×2 综合图）</strong> — <span data-lang="en">Spectrogram, MFCC, Spectral Centroid, Bandwidth, Chroma, Zero-Crossing Rate</span><span data-lang="zh">语谱图、MFCC、频谱质心、带宽、色度、过零率</span></div>
+      <div class="caption"><strong data-lang="en">Timbre Analysis (3×2)</strong><strong data-lang="zh">音色分析(3×2 综合图)</strong> — <span data-lang="en">Spectrogram, MFCC, Spectral Centroid, Bandwidth, Chroma, Zero-Crossing Rate</span><span data-lang="zh">语谱图、MFCC、频谱质心、带宽、色度、过零率</span></div>
     </div>
     <div class="gallery-card full-width">
       <img src="assets/melody_analysis.png" alt="Melody Analysis" onclick="openLightbox(this)">
-      <div class="caption"><strong data-lang="en">Melody Analysis (2×2)</strong><strong data-lang="zh">旋律分析（2×2 综合图）</strong> — <span data-lang="en">Pitch trajectory, Normalized contour, Chroma, Amplitude</span><span data-lang="zh">音高轨迹、归一化轮廓、色度、振幅</span></div>
+      <div class="caption"><strong data-lang="en">Melody Analysis (2×2)</strong><strong data-lang="zh">旋律分析(2×2 综合图)</strong> — <span data-lang="en">Pitch trajectory, Normalized contour, Chroma, Amplitude</span><span data-lang="zh">音高轨迹、归一化轮廓、色度、振幅</span></div>
     </div>
     <div class="gallery-card">
       <img src="assets/spectrogram.png" alt="Spectrogram" onclick="openLightbox(this)">
-      <div class="caption"><strong data-lang="en">Spectrogram</strong><strong data-lang="zh">语谱图</strong> — <span data-lang="en">STFT magnitude in dB</span><span data-lang="zh">STFT 幅度（分贝）</span></div>
+      <div class="caption"><strong data-lang="en">Spectrogram</strong><strong data-lang="zh">语谱图</strong> — <span data-lang="en">STFT magnitude in dB</span><span data-lang="zh">STFT 幅度(分贝)</span></div>
     </div>
     <div class="gallery-card">
       <img src="assets/chroma.png" alt="Chroma" onclick="openLightbox(this)">
@@ -368,7 +318,7 @@
       <div class="caption"><strong data-lang="en">Melody Contour</strong><strong data-lang="zh">旋律轮廓</strong> — <span data-lang="en">Pitch trajectory + Amplitude over time</span><span data-lang="zh">音高轨迹 + 振幅随时间变化</span></div>
     </div>
   </div>
-</div>
+</section>
 
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -376,12 +326,12 @@
 </div>
 
 <!-- ==================== WEB DEPLOYMENT ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Web Deployment</h2>
   <h2 data-lang="zh">Web 部署</h2>
 
-  <p data-lang="en">Deployed as a Gradio application on <strong>Hugging Face Spaces</strong> (free tier):</p>
-  <p data-lang="zh">以 Gradio 应用形式部署在 <strong>Hugging Face Spaces</strong>（免费层）：</p>
+  <p class="lead" data-lang="en">Deployed as a Gradio application on <strong>Hugging Face Spaces</strong> (free tier):</p>
+  <p class="lead" data-lang="zh">以 Gradio 应用形式部署在 <strong>Hugging Face Spaces</strong>(免费层):</p>
 
   <table>
     <tbody>
@@ -391,15 +341,15 @@
       <tr><td data-lang="en"><strong>System Deps</strong></td><td data-lang="zh"><strong>系统依赖</strong></td><td colspan="2">FFmpeg + CJK fonts via <code>packages.txt</code></td></tr>
     </tbody>
   </table>
-</div>
+</section>
 
 <!-- ==================== TESTING ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Testing</h2>
   <h2 data-lang="zh">测试</h2>
 
-  <p data-lang="en">82 test cases covering all core modules with pytest. Shared fixtures generate synthetic audio (440 Hz sine wave) for reproducible, isolated testing.</p>
-  <p data-lang="zh">使用 pytest 编写 82 个测试用例，覆盖所有核心模块。共享测试夹具生成合成音频（440 Hz 正弦波），确保测试可复现且相互隔离。</p>
+  <p class="lead" data-lang="en">82 test cases covering all core modules with pytest. Shared fixtures generate synthetic audio (440 Hz sine wave) for reproducible, isolated testing.</p>
+  <p class="lead" data-lang="zh">使用 pytest 编写 82 个测试用例,覆盖所有核心模块。共享测试夹具生成合成音频(440 Hz 正弦波),确保测试可复现且相互隔离。</p>
 
   <table>
     <thead>
@@ -438,10 +388,10 @@
       </tr>
     </tbody>
   </table>
-</div>
+</section>
 
 <!-- ==================== KEY TECHNOLOGIES ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Key Technologies</h2>
   <h2 data-lang="zh">核心技术栈</h2>
 
@@ -457,10 +407,10 @@
       <tr><td data-lang="en">Numerics</td><td data-lang="zh">数值计算</td><td colspan="2"><div class="badges"><span class="badge">NumPy</span></div></td></tr>
     </tbody>
   </table>
-</div>
+</section>
 
 <!-- ==================== USAGE EXAMPLES ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Usage Examples</h2>
   <h2 data-lang="zh">使用示例</h2>
 
@@ -474,7 +424,7 @@ python main.py input/music.wav --classify-mode rule -d 60</pre>
   <pre data-lang="en">python run.py
 # Scans input/ directory, presents numbered file picker</pre>
   <pre data-lang="zh">python run.py
-# 扫描 input/ 目录，展示编号文件选择菜单</pre>
+# 扫描 input/ 目录,展示编号文件选择菜单</pre>
 
   <h3 data-lang="en">Web Interface</h3>
   <h3 data-lang="zh">Web 界面</h3>
@@ -482,15 +432,15 @@ python main.py input/music.wav --classify-mode rule -d 60</pre>
 Upload audio → Set parameters → Click "Start Analysis"</pre>
   <pre data-lang="zh">打开 https://huggingface.co/spaces/LunarStar6564168/music-signal-analysis
 上传音频 → 设置参数 → 点击"开始分析"</pre>
-</div>
+</section>
 
 <!-- ==================== DEVELOPMENT HISTORY ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">Development History</h2>
   <h2 data-lang="zh">开发历程</h2>
 
-  <p data-lang="en">14 commits over a focused 2-week development cycle, demonstrating iterative refinement from core functionality to production deployment:</p>
-  <p data-lang="zh">14 次提交，历时 2 周的集中开发，展示了从核心功能到生产部署的迭代演进：</p>
+  <p class="lead" data-lang="en">14 commits over a focused 2-week development cycle, demonstrating iterative refinement from core functionality to production deployment:</p>
+  <p class="lead" data-lang="zh">14 次提交,历时 2 周的集中开发,展示了从核心功能到生产部署的迭代演进:</p>
 
   <ul class="timeline" data-lang="en">
     <li>Core analysis pipeline (timbre + melody extraction)</li>
@@ -502,18 +452,18 @@ Upload audio → Set parameters → Click "Start Analysis"</pre>
     <li>Cross-platform Chinese font rendering for containers</li>
   </ul>
   <ul class="timeline" data-lang="zh">
-    <li>核心分析管道（音色 + 旋律提取）</li>
-    <li>完善的测试套件（82 个用例）</li>
+    <li>核心分析管道(音色 + 旋律提取)</li>
+    <li>完善的测试套件(82 个用例)</li>
     <li>交互式命令行 + 一键启动器</li>
-    <li>跨平台音频加载（MP3/M4A/OGG 支持）</li>
-    <li>混合乐器分类器（规则 + ML）</li>
+    <li>跨平台音频加载(MP3/M4A/OGG 支持)</li>
+    <li>混合乐器分类器(规则 + ML)</li>
     <li>Gradio Web 界面 + Hugging Face Spaces 部署</li>
     <li>容器化环境跨平台中文字体渲染</li>
   </ul>
-</div>
+</section>
 
 <!-- ==================== WHAT I LEARNED ==================== -->
-<div class="section">
+<section class="section">
   <h2 data-lang="en">What I Learned</h2>
   <h2 data-lang="zh">收获与成长</h2>
 
@@ -528,31 +478,24 @@ Upload audio → Set parameters → Click "Start Analysis"</pre>
   </div>
   <div data-lang="zh">
     <ul>
-      <li><strong>音频信号处理</strong>：通过动手实现深入理解 MFCC、STFT、频谱特征和 PYIN 音高估计算法。</li>
-      <li><strong>机器学习工程化</strong>：设计具有优雅回退、特征归一化和模型序列化的混合分类器。</li>
-      <li><strong>健壮性工程</strong>：构建多层后端回退系统，优雅降级而非直接报错。</li>
-      <li><strong>测试驱动开发</strong>：使用合成音频夹具编写 82 个测试，确保信号处理代码的确定性和可复现性。</li>
-      <li><strong>Web 部署</strong>：将科学计算 Python 应用打包为免费云端部署，在容器化环境中管理系统依赖。</li>
+      <li><strong>音频信号处理</strong>:通过动手实现深入理解 MFCC、STFT、频谱特征和 PYIN 音高估计算法。</li>
+      <li><strong>机器学习工程化</strong>:设计具有优雅回退、特征归一化和模型序列化的混合分类器。</li>
+      <li><strong>健壮性工程</strong>:构建多层后端回退系统,优雅降级而非直接报错。</li>
+      <li><strong>测试驱动开发</strong>:使用合成音频夹具编写 82 个测试,确保信号处理代码的确定性和可复现性。</li>
+      <li><strong>Web 部署</strong>:将科学计算 Python 应用打包为免费云端部署,在容器化环境中管理系统依赖。</li>
     </ul>
   </div>
-</div>
+</section>
 
-</div><!-- container -->
+</div><!-- wrap -->
 
 <div class="footer">
   <span data-lang="en">Music Signal Analysis System &copy; 2026</span>
   <span data-lang="zh">音乐信号分析系统 &copy; 2026</span>
 </div>
 
+<script src="assets/detail.js"></script>
 <script>
-function setLang(lang) {
-  document.querySelectorAll('[data-lang]').forEach(el => {
-    el.classList.toggle('visible', el.getAttribute('data-lang') === lang);
-  });
-  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
-  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
-  document.documentElement.lang = lang;
-}
 function openLightbox(imgEl) {
   document.getElementById('lightbox-img').src = imgEl.src;
   document.getElementById('lightbox').classList.add('open');
@@ -561,7 +504,6 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
-setLang('zh');
 </script>
 </body>
 </html>
