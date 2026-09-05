@@ -1,4 +1,5 @@
 import { Env, jsonResponse, getSession } from './utils';
+import { decodeUtf8Base64, encodeUtf8Base64, base64FromBytes } from './base64';
 
 const GITHUB_API = 'https://api.github.com';
 const GITHUB_GRAPHQL = 'https://api.github.com/graphql';
@@ -69,7 +70,7 @@ export async function handleGetPost(request: Request, env: Env, filePath: string
   }
 
   const data = await response.json() as { content: string; sha: string; name: string; path: string };
-  const content = atob(data.content.replace(/\n/g, ''));
+  const content = decodeUtf8Base64(data.content);
 
   return jsonResponse({
     name: data.name,
@@ -89,7 +90,7 @@ export async function handleSavePost(request: Request, env: Env, filePath: strin
     return jsonResponse({ error: 'Content is required' }, 400);
   }
 
-  const contentBase64 = btoa(unescape(encodeURIComponent(body.content)));
+  const contentBase64 = encodeUtf8Base64(body.content);
 
   const response = await fetch(
     `${GITHUB_API}/repos/${env.REPO_OWNER}/${env.REPO_NAME}/contents/${filePath}`,
@@ -158,7 +159,7 @@ export async function handleGetFile(request: Request, env: Env, filePath: string
   }
 
   const data = await response.json() as { content: string; sha: string };
-  const content = atob(data.content.replace(/\n/g, ''));
+  const content = decodeUtf8Base64(data.content);
 
   return jsonResponse({ content, sha: data.sha });
 }
@@ -169,7 +170,7 @@ export async function handleSaveFile(request: Request, env: Env, filePath: strin
 
   const body = await request.json() as { content: string; sha?: string; message?: string };
 
-  const contentBase64 = btoa(unescape(encodeURIComponent(body.content)));
+  const contentBase64 = encodeUtf8Base64(body.content ?? '');
 
   const response = await fetch(
     `${GITHUB_API}/repos/${env.REPO_OWNER}/${env.REPO_NAME}/contents/${filePath}`,
@@ -222,7 +223,8 @@ export async function handleImageUpload(request: Request, env: Env): Promise<Res
   const filePath = `public/images/posts/${timestamp}-${safeName}`;
 
   const arrayBuffer = await file.arrayBuffer();
-  const contentBase64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  // 直接 String.fromCharCode(...bytes) 在大文件上会因参数个数上限抛 RangeError
+  const contentBase64 = base64FromBytes(new Uint8Array(arrayBuffer));
 
   const response = await fetch(
     `${GITHUB_API}/repos/${env.REPO_OWNER}/${env.REPO_NAME}/contents/${filePath}`,

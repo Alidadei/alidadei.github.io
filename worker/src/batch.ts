@@ -1,4 +1,6 @@
 import { Env, jsonResponse, getSession } from './utils';
+import { encodeUtf8Base64 } from './base64';
+import { isAllowedFilePath } from './paths';
 
 const GITHUB_GRAPHQL = 'https://api.github.com/graphql';
 
@@ -17,9 +19,16 @@ export async function handleBatchOperation(request: Request, env: Env): Promise<
     return jsonResponse({ error: 'Operation is required' }, 400);
   }
 
+  // 批量提交同样只能落在白名单目录里
+  const allPaths = [...(body.files || []).map(f => f.path), ...(body.deleteFiles || []).map(f => f.path)];
+  const badPath = allPaths.find(p => !isAllowedFilePath(p));
+  if (badPath) {
+    return jsonResponse({ error: `Path not allowed: ${badPath}` }, 403);
+  }
+
   const additions = (body.files || []).map(f => ({
     path: f.path,
-    contents: btoa(unescape(encodeURIComponent(f.content))),
+    contents: encodeUtf8Base64(f.content ?? ''),
   }));
 
   const deletions = (body.deleteFiles || []).map(f => ({
