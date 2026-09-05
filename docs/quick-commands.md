@@ -145,6 +145,38 @@ cms 菜单结构:
 
 ---
 
+## 在线管理后台(网页上直接管理文章)
+
+入口:`https://alidadei.github.io/zh/admin/`(noindex,搜索引擎不收录)
+
+用 GitHub 账号登录,只有白名单里的用户 ID 能进(Worker 的 `ALLOWED_USER_IDS` secret 控制)。
+
+| 功能 | 说明 |
+|------|------|
+| 文章列表 | 显示标题/文件名/日期,带「已隐藏」徽标;支持按标题或文件名搜索 |
+| 富文本编辑 | Vditor 即时渲染模式,支持公式/代码块/表格/图片粘贴上传;frontmatter 折叠在编辑器上方 |
+| 隐藏/恢复显示 | 行级改写 frontmatter 的 `draft` 字段:隐藏后列表、RSS、详情页 URL 全部下线(访问 404),文件保留在仓库 |
+| 删除 | 直接删仓库里的 md 文件(不可恢复,慎用;只想下线用「隐藏」) |
+| 图片管理 | 上传/删除 `public/images/posts/`,复制 Typora 兼容的相对路径 markdown |
+| 标签/分类 | 标签重命名(批量同步文章)、categories.json 直编 |
+| 部署状态 | 显示最近一次 GitHub Actions 构建状态 |
+
+注意事项:
+
+- 保存后**线上生效要等 2-3 分钟**(Actions 全量构建),「部署」页可看进度
+- 在线编辑是直接 commit 到 master:本地继续写作前先 `git pull`
+- 编辑器图片上传走 Worker `/api/images/upload`,插进正文的是 Typora 兼容相对路径
+- Worker 代码在 `worker/`,改完需重新部署:`cd worker && npx wrangler deploy`
+- Worker 只允许写 `src/content/`、`src/data/`、`public/images/` 三类路径(防止误改 CI 配置)
+
+相关测试:
+
+| 命令 | 作用 |
+|------|------|
+| npm run check:cms | 在线后台相关测试(base64 编解码、路径白名单、frontmatter 行级改写、CORS) |
+
+---
+
 ## 头像&icon
 
 | 命令 | 作用 |

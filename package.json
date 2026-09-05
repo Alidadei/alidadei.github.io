@@ -6,12 +6,13 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && node scripts/run-astro.mjs dev",
+    "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && node scripts/copy-vditor.mjs && node scripts/run-astro.mjs dev",
     "sky-preview": "node scripts/sky-preview.mjs",
-    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && astro build && node tests/check-rendered-markdown.mjs && node scripts/bump-sw-version.mjs",
+    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && node scripts/copy-vditor.mjs && astro build && node tests/check-rendered-markdown.mjs && node scripts/bump-sw-version.mjs",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",
+    "check:cms": "node --experimental-strip-types --test tests/worker-base64.test.mjs tests/worker-path-guard.test.mjs tests/admin-post-meta.test.mjs && node --experimental-strip-types --test tests/worker-cors.test.mjs",
     "new-post": "node scripts/new-post.mjs",
     "favicon": "node scripts/set-favicon.mjs",
     "avatar": "node scripts/set-avatar.mjs",
@@ -39,7 +40,8 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "tailwindcss": "^4.2.2",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "vditor": "^4.0.0"
   },
   "devDependencies": {
     "@fontsource/inter": "^5.2.8",

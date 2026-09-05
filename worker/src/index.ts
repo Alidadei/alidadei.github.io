@@ -1,4 +1,5 @@
 import { Env, corsHeaders, isAllowedCorsOrigin, jsonResponse } from './utils';
+import { isAllowedFilePath, isAllowedImagePath, isAllowedPostPath } from './paths';
 import { handleLogin, handleCallback, handleLogout, handleGetUser } from './auth';
 import {
   handleListPosts,
@@ -21,6 +22,11 @@ function wrapCors(handler: () => Promise<Response>, request: Request, env: Env):
     for (const [k, v] of Object.entries(cors)) headers.set(k, v);
     return new Response(res.body, { status: res.status, headers });
   });
+}
+
+// 路径白名单外的仓库路径一律 403(如 .github/workflows/,写入即等于 CI 任意代码执行)
+function pathForbidden(): Response {
+  return jsonResponse({ error: 'Path not allowed' }, 403);
 }
 
 export default {
@@ -67,8 +73,9 @@ export default {
         return wrapCors(() => handleImageUpload(request, env), request, env);
       }
 
-      if (path.startsWith('/api/posts/')) {
+      if (path.startsWith('/api/posts/') && path !== '/api/posts/upload') {
         const filePath = decodeURIComponent(path.slice('/api/posts/'.length));
+        if (!isAllowedPostPath(filePath)) return pathForbidden();
         if (request.method === 'GET') return wrapCors(() => handleGetPost(request, env, filePath), request, env);
         if (request.method === 'PUT') return wrapCors(() => handleSavePost(request, env, filePath), request, env);
         if (request.method === 'DELETE') return wrapCors(() => handleDeletePost(request, env, filePath), request, env);
@@ -76,12 +83,14 @@ export default {
 
       if (path.startsWith('/api/file/')) {
         const filePath = decodeURIComponent(path.slice('/api/file/'.length));
+        if (!isAllowedFilePath(filePath)) return pathForbidden();
         if (request.method === 'GET') return wrapCors(() => handleGetFile(request, env, filePath), request, env);
         if (request.method === 'PUT') return wrapCors(() => handleSaveFile(request, env, filePath), request, env);
       }
 
       if (path.startsWith('/api/images/') && request.method === 'DELETE') {
         const filePath = decodeURIComponent(path.slice('/api/images/'.length));
+        if (!isAllowedImagePath(filePath)) return pathForbidden();
         return wrapCors(() => handleDeleteImage(request, env, filePath), request, env);
       }
 
