@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import VditorEditor from './VditorEditor';
+import { joinFrontmatter, parsePostMeta, setDraftFlag, splitFrontmatter, type PostMeta } from './post-meta';
 
 const API_BASE = typeof window !== 'undefined'
   ? (window as any).__WORKER_URL__ || 'https://yhl-blog-cms.yuhl.workers.dev'
@@ -33,6 +35,14 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
 
 type View = 'posts' | 'editor' | 'tags' | 'categories' | 'images' | 'deploy';
 
+const NAV: Array<{ view: View; icon: string; label: string }> = [
+  { view: 'posts', icon: '📝', label: '文章' },
+  { view: 'tags', icon: '🏷️', label: '标签' },
+  { view: 'categories', icon: '📁', label: '分类' },
+  { view: 'images', icon: '🖼️', label: '图片' },
+  { view: 'deploy', icon: '🚀', label: '部署' },
+];
+
 interface User {
   id: number;
   login: string;
@@ -55,6 +65,7 @@ export default function AdminApp() {
     editingPath: null,
     error: null,
   });
+  const [navOpen, setNavOpen] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -85,7 +96,13 @@ export default function AdminApp() {
 
   const navigate = (view: View, editingPath?: string | null) => {
     setState(s => ({ ...s, view, editingPath: editingPath || null }));
+    setNavOpen(false);
   };
+
+  const isActive = (view: View) =>
+    view === 'posts'
+      ? state.view === 'posts' || state.view === 'editor'
+      : state.view === view;
 
   if (state.authenticated === null) {
     return (
@@ -100,35 +117,82 @@ export default function AdminApp() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">CMS</h1>
-        </div>
-        <nav className="flex-1 p-2 space-y-1">
-          <NavItem icon="📝" label="文章" active={state.view === 'posts' || state.view === 'editor'} onClick={() => navigate('posts')} />
-          <NavItem icon="🏷️" label="标签" active={state.view === 'tags'} onClick={() => navigate('tags')} />
-          <NavItem icon="📁" label="分类" active={state.view === 'categories'} onClick={() => navigate('categories')} />
-          <NavItem icon="🖼️" label="图片" active={state.view === 'images'} onClick={() => navigate('images')} />
-          <NavItem icon="🚀" label="部署" active={state.view === 'deploy'} onClick={() => navigate('deploy')} />
-        </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            {state.user?.avatar_url && <img src={state.user.avatar_url} alt="" className="w-6 h-6 rounded-full" />}
-            <span className="text-sm text-gray-600 dark:text-gray-300">{state.user?.login}</span>
-          </div>
-          <button onClick={logout} className="text-xs text-red-500 hover:text-red-700">退出登录</button>
-        </div>
-      </aside>
+    <div className="min-h-screen">
+      {/* 移动端顶栏:桌面端隐藏 */}
+      <header className="lg:hidden sticky top-0 z-40 flex h-12 items-center justify-between border-b border-gray-200 bg-white px-3 dark:border-gray-700 dark:bg-gray-800">
+        <button
+          onClick={() => setNavOpen(true)}
+          aria-label="打开菜单"
+          className="rounded p-2 -ml-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4.5h16v1.6H2V4.5zm0 4.7h16v1.6H2V9.2zm0 4.7h16v1.6H2v-1.6z" /></svg>
+        </button>
+        <span className="text-base font-bold text-gray-900 dark:text-white">CMS</span>
+        {state.user?.avatar_url
+          ? <img src={state.user.avatar_url} alt="" className="h-6 w-6 rounded-full" />
+          : <span className="w-6" />}
+      </header>
 
-      <main className="flex-1 p-6 overflow-auto">
-        {state.view === 'posts' && <PostList onEdit={(path) => navigate('editor', path)} />}
-        {state.view === 'editor' && <PostEditor filePath={state.editingPath} onBack={() => navigate('posts')} />}
-        {state.view === 'tags' && <TagManager />}
-        {state.view === 'categories' && <CategoryManager />}
-        {state.view === 'images' && <ImageManager />}
-        {state.view === 'deploy' && <DeployStatus />}
-      </main>
+      <div className="flex">
+        {/* 桌面侧栏 */}
+        <aside className="hidden w-56 flex-col border-r border-gray-200 bg-white lg:flex dark:border-gray-700 dark:bg-gray-800">
+          <div className="border-b border-gray-200 p-4 dark:border-gray-700">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">CMS</h1>
+          </div>
+          <nav className="flex-1 space-y-1 p-2">
+            {NAV.map(item => (
+              <NavItem key={item.view} icon={item.icon} label={item.label} active={isActive(item.view)} onClick={() => navigate(item.view)} />
+            ))}
+          </nav>
+          <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+            <div className="mb-2 flex items-center gap-2">
+              {state.user?.avatar_url && <img src={state.user.avatar_url} alt="" className="h-6 w-6 rounded-full" />}
+              <span className="text-sm text-gray-600 dark:text-gray-300">{state.user?.login}</span>
+            </div>
+            <button onClick={logout} className="text-xs text-red-500 hover:text-red-700">退出登录</button>
+          </div>
+        </aside>
+
+        {/* 移动端抽屉导航 */}
+        {navOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setNavOpen(false)} />
+            <nav className="absolute left-0 top-0 flex h-full w-64 max-w-[80vw] flex-col bg-white shadow-xl dark:bg-gray-800">
+              <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
+                <span className="text-lg font-bold text-gray-900 dark:text-white">CMS</span>
+                <button
+                  onClick={() => setNavOpen(false)}
+                  aria-label="关闭菜单"
+                  className="rounded p-1 text-xl leading-none text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 space-y-1 p-2">
+                {NAV.map(item => (
+                  <NavItem key={item.view} icon={item.icon} label={item.label} active={isActive(item.view)} onClick={() => navigate(item.view)} />
+                ))}
+              </div>
+              <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+                <div className="mb-2 flex items-center gap-2">
+                  {state.user?.avatar_url && <img src={state.user.avatar_url} alt="" className="h-6 w-6 rounded-full" />}
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{state.user?.login}</span>
+                </div>
+                <button onClick={logout} className="text-xs text-red-500 hover:text-red-700">退出登录</button>
+              </div>
+            </nav>
+          </div>
+        )}
+
+        <main className="w-full min-w-0 flex-1 overflow-auto p-4 pb-10 sm:p-6">
+          {state.view === 'posts' && <PostList onEdit={(path) => navigate('editor', path)} />}
+          {state.view === 'editor' && <PostEditor filePath={state.editingPath} onBack={() => navigate('posts')} />}
+          {state.view === 'tags' && <TagManager />}
+          {state.view === 'categories' && <CategoryManager />}
+          {state.view === 'images' && <ImageManager />}
+          {state.view === 'deploy' && <DeployStatus />}
+        </main>
+      </div>
     </div>
   );
 }
@@ -154,7 +218,7 @@ function LoginScreen({ onLogin, error }: { onLogin: () => void; error: string | 
   const urlError = typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('error') : null;
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex min-h-screen items-center justify-center px-4">
       <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-sm w-full text-center">
         <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">博客管理后台</h1>
         {(urlError === 'unauthorized') && (
@@ -187,17 +251,50 @@ interface PostFile {
   sha: string;
 }
 
+// 小并发限流,避免一次性打满 GitHub Contents API
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 function PostList({ onEdit }: { onEdit: (path: string) => void }) {
   const [posts, setPosts] = useState<PostFile[]>([]);
+  const [metas, setMetas] = useState<Record<string, PostMeta>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
   const loadPosts = useCallback(() => {
     setLoading(true);
     apiFetch('/api/posts')
       .then(r => r.json())
-      .then(data => { setPosts(Array.isArray(data) ? data : []); setLoading(false); })
+      .then(async (data) => {
+        const list: PostFile[] = Array.isArray(data) ? data : [];
+        setPosts(list);
+        // 列表接口只有文件名,标题/日期/草稿状态需逐篇读 frontmatter
+        const pairs = await mapLimit(list, 8, async (p: PostFile) => {
+          try {
+            const res = await apiFetch(`/api/posts/${encodeURIComponent(p.path)}`);
+            const d = await res.json();
+            return [p.path, parsePostMeta(d.content || '')] as const;
+          } catch {
+            return [p.path, null] as const;
+          }
+        });
+        const map: Record<string, PostMeta> = {};
+        for (const [p, meta] of pairs) if (meta) map[p] = meta;
+        setMetas(map);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
@@ -205,7 +302,8 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
 
   const handleDelete = async (post: PostFile) => {
     if (!confirm(`确定删除 ${post.name}？此操作不可恢复。`)) return;
-    setDeleting(post.path);
+    setBusy(post.path);
+    setMessage('');
     try {
       const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`, {
         method: 'DELETE',
@@ -214,32 +312,58 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
       });
       const data = await res.json();
       if (res.ok) {
+        setMessage('已删除,构建约 2-3 分钟后生效');
         loadPosts();
       } else {
-        alert(`删除失败: ${data.error} ${data.details?.message || ''}`);
+        setMessage(`删除失败: ${data.error} ${data.details?.message || ''}`);
       }
     } catch {
-      alert('网络错误');
+      setMessage('网络错误');
     }
-    setDeleting(null);
+    setBusy(null);
   };
 
-  useEffect(() => {
-    apiFetch('/api/posts')
-      .then(r => r.json())
-      .then(data => { setPosts(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+  // 隐藏/恢复 = 行级改写 frontmatter 的 draft 字段,文章文件保留在仓库里
+  const handleToggleHide = async (post: PostFile, currentDraft: boolean) => {
+    setBusy(post.path);
+    setMessage('');
+    try {
+      const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '读取失败');
+      const newContent = setDraftFlag(data.content, !currentDraft);
+      const put = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: newContent,
+          sha: data.sha,
+          message: `${currentDraft ? 'cms: unhide' : 'cms: hide'} ${post.name}`,
+        }),
+      });
+      const putData = await put.json();
+      if (!put.ok) throw new Error(putData.details?.message || putData.error || '保存失败');
+      setMetas(m => ({ ...m, [post.path]: { ...m[post.path], draft: !currentDraft } }));
+      setMessage(currentDraft ? '已恢复显示,构建约 2-3 分钟后生效' : '已隐藏(文章保留为草稿),构建约 2-3 分钟后生效');
+    } catch (e) {
+      setMessage(`操作失败: ${e instanceof Error ? e.message : '网络错误'}`);
+    }
+    setBusy(null);
+  };
 
-  const filtered = posts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = posts.filter(p => {
+    const q = search.toLowerCase();
+    const title = metas[p.path]?.title || '';
+    return p.name.toLowerCase().includes(q) || title.toLowerCase().includes(q);
+  });
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">文章列表</h2>
         <button
           onClick={() => onEdit(null)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
         >
           新建文章
         </button>
@@ -247,11 +371,17 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
 
       <input
         type="text"
-        placeholder="搜索文章..."
+        placeholder="搜索文件名或标题..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        className="w-full max-w-md mb-4 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        className="mb-4 w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
       />
+
+      {message && (
+        <div className="mb-4 rounded p-3 text-sm text-blue-700 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300">
+          {message}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-gray-500">加载中...</div>
@@ -259,29 +389,50 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
         <div className="text-gray-500">暂无文章</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(post => (
-            <div
-              key={post.path}
-              className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-            >
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">{post.name}</div>
-                <div className="text-sm text-gray-500">{post.path}</div>
+          {filtered.map(post => {
+            const meta = metas[post.path];
+            return (
+              <div
+                key={post.path}
+                className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium break-words text-gray-900 dark:text-white">
+                    {meta?.title || post.name}
+                    {meta?.draft && (
+                      <span className="ml-2 rounded px-2 py-0.5 text-xs text-yellow-700 bg-yellow-100 dark:bg-yellow-900/40 dark:text-yellow-300">
+                        已隐藏
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm break-all text-gray-500">
+                    {post.name}{meta?.date ? ` · ${meta.date}` : ''}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 sm:gap-3">
+                  <button onClick={() => onEdit(post.path)} className="text-sm text-blue-600 hover:text-blue-800">
+                    编辑
+                  </button>
+                  {meta && (
+                    <button
+                      onClick={() => handleToggleHide(post, meta.draft)}
+                      disabled={busy === post.path}
+                      className="text-sm text-yellow-600 hover:text-yellow-800 disabled:opacity-50"
+                    >
+                      {busy === post.path ? '处理中...' : meta.draft ? '恢复显示' : '隐藏'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(post)}
+                    disabled={busy === post.path}
+                    className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                  >
+                    {busy === post.path ? '删除中...' : '删除'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => onEdit(post.path)} className="text-blue-600 hover:text-blue-800 text-sm">
-                  编辑
-                </button>
-                <button
-                  onClick={() => handleDelete(post)}
-                  disabled={deleting === post.path}
-                  className="text-red-600 hover:text-red-800 text-sm"
-                >
-                  {deleting === post.path ? '删除中...' : '删除'}
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -289,59 +440,80 @@ function PostList({ onEdit }: { onEdit: (path: string) => void }) {
 }
 
 // ============= PostEditor =============
-interface PostData {
-  path: string;
-  sha: string;
-  content: string;
-}
-
 function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () => void }) {
-  const [post, setPost] = useState<PostData | null>(null);
+  const [path, setPath] = useState('');
+  const [sha, setSha] = useState('');
+  const [fm, setFm] = useState('');
+  const [initialBody, setInitialBody] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const fmRef = useRef('');
+  fmRef.current = fm;
+  const bodyRef = useRef('');
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (filePath) {
       apiFetch(`/api/posts/${encodeURIComponent(filePath)}`)
         .then(r => r.json())
-        .then(data => { setPost(data); setLoading(false); })
+        .then(data => {
+          const { fm: f, body } = splitFrontmatter(data.content || '');
+          setPath(data.path);
+          setSha(data.sha);
+          setFm(f ?? '');
+          setInitialBody(body);
+          setLoading(false);
+        })
         .catch(() => setLoading(false));
     } else {
       const now = new Date().toISOString().slice(0, 10);
-      setPost({
-        path: `src/content/posts/zh/new-post-${Date.now()}.md`,
-        sha: '',
-        content: `---\ntitle: 新文章\ndate: ${now}\nlang: zh\ncategories: []\ntags: []\ndraft: true\n---\n\n在这里写内容...\n`,
-      });
+      setPath(`src/content/posts/zh/new-post-${Date.now()}.md`);
+      setFm(`title: 新文章\ndate: ${now}\nlang: zh\ncategories: []\ntags:\ndraft: true`);
+      setInitialBody('在这里写正文...');
       setLoading(false);
     }
   }, [filePath]);
 
+  const buildContent = () => joinFrontmatter(fmRef.current || null, bodyRef.current);
+
+  const scheduleAutosave = useCallback(() => {
+    if (!path) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      localStorage.setItem(`cms-draft-${path}`, joinFrontmatter(fmRef.current || null, bodyRef.current));
+    }, 2000);
+  }, [path]);
+
+  const handleBodyChange = (md: string) => {
+    bodyRef.current = md;
+    scheduleAutosave();
+  };
+
   const handleSave = async (publish: boolean) => {
-    if (!post) return;
+    if (!path) return;
     setSaving(true);
     setMessage('');
 
-    const content = publish
-      ? post.content.replace(/^draft:\s*true/m, 'draft: false')
-      : post.content;
+    let content = buildContent();
+    if (publish) content = setDraftFlag(content, false);
 
     try {
-      const res = await apiFetch(`/api/posts/${encodeURIComponent(post.path)}`, {
+      const res = await apiFetch(`/api/posts/${encodeURIComponent(path)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
-          sha: post.sha || undefined,
-          message: publish ? `cms: publish ${post.path}` : `cms: save draft ${post.path}`,
+          sha: sha || undefined,
+          message: publish ? `cms: publish ${path}` : `cms: save ${path}`,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setPost(p => p ? { ...p, sha: data.sha, content } : p);
-        setMessage(publish ? '已发布' : '已保存');
+        setSha(data.sha);
+        setFm(splitFrontmatter(content).fm ?? '');
+        setMessage(publish ? '已发布,构建约 2-3 分钟后生效' : '已保存,构建约 2-3 分钟后生效');
       } else {
         setMessage(`保存失败: ${data.error || 'Unknown error'} ${data.details?.message || JSON.stringify(data.details) || ''}`);
       }
@@ -351,80 +523,66 @@ function PostEditor({ filePath, onBack }: { filePath: string | null; onBack: () 
     setSaving(false);
   };
 
-  useEffect(() => {
-    if (!post) return;
-    const timer = setTimeout(() => {
-      localStorage.setItem(`cms-draft-${post.path}`, post.content);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [post?.content, post?.path]);
+  const handleUploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiFetch('/api/images/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '上传失败');
+    return data.markdown;
+  };
 
   if (loading) return <div className="text-gray-500">加载中...</div>;
-  if (!post) return <div className="text-red-500">加载失败</div>;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-y-2">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">&larr; 返回</button>
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">{filePath ? '编辑文章' : '新建文章'}</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {message && <span className="text-sm text-green-600 dark:text-green-400">{message}</span>}
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-transparent dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {saving ? '保存中...' : '保存草稿'}
           </button>
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
             {saving ? '发布中...' : '发布'}
           </button>
         </div>
       </div>
 
-      <div className="text-sm text-gray-500 mb-3">{post.path}</div>
+      <div className="mb-3 text-sm break-all text-gray-500">{path}</div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Markdown</div>
-          <textarea
-            value={post.content}
-            onChange={e => setPost(p => p ? { ...p, content: e.target.value } : p)}
-            className="w-full h-[600px] p-4 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
-            spellCheck={false}
-          />
-        </div>
-        <div>
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">预览</div>
-          <div
-            className="w-full h-[600px] p-4 border border-gray-300 dark:border-gray-600 rounded-lg overflow-auto bg-white dark:bg-gray-800 prose dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: simpleMarkdown(post.content) }}
-          />
-        </div>
-      </div>
+      <details className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <summary className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+          Frontmatter(标题 / 日期 / 分类 / 标签 / draft)
+        </summary>
+        <textarea
+          value={fm}
+          onChange={e => { setFm(e.target.value); scheduleAutosave(); }}
+          className="w-full p-4 border-t border-gray-200 dark:border-gray-700 rounded-b-lg font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          rows={10}
+          spellCheck={false}
+        />
+      </details>
+
+      <VditorEditor
+        key={path}
+        initialValue={initialBody}
+        onChange={handleBodyChange}
+        onUploadImage={handleUploadImage}
+      />
     </div>
   );
-}
-
-function simpleMarkdown(md: string): string {
-  let html = md
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/^\- (.+)$/gm, '<li>$1</li>')
-    .replace(/\n{2,}/g, '</p><p>')
-    .replace(/\n/g, '<br/>');
-  return `<p>${html}</p>`;
 }
 
 // ============= TagManager =============

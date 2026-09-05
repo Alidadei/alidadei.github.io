@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AdminApp from '../../../components/admin/AdminApp';
 
 export function getStaticPaths() {
   return [
@@ -12,16 +13,5 @@ const { lang } = Astro.params;
 ---
 
 <BaseLayout title={lang === 'zh' ? '管理后台' : 'Admin'} noindex={true}>
-  <div id="admin-root" class="min-h-screen bg-gray-50 dark:bg-gray-900"></div>
+  <AdminApp client:only="react" />
 </BaseLayout>
-
-<script>
-  import { mountAdminApp } from '../../../components/admin/bootstrap';
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const root = document.getElementById('admin-root');
-    if (root) {
-      mountAdminApp(root);
-    }
-  });
-</script>

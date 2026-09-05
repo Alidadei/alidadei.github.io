@@ -309,7 +309,7 @@ Cloudflare Worker (yhl-blog-cms)
     ├── /api/auth/login      → GitHub OAuth 授权
     ├── /api/auth/callback    → 换取 token + 创建 KV 会话
     ├── /api/posts            → CRUD 博客文章
-    ├── /api/file/*           → 读写任意文件 (categories.json 等)
+    ├── /api/file/*           → 读写白名单目录文件 (src/content|src/data|public/images)
     ├── /api/images           → 上传/删除图片
     ├── /api/batch            → 批量操作 (GraphQL commit)
     ├── /api/deploy/status    → 查看 GitHub Actions 部署状态
@@ -324,6 +324,10 @@ GitHub Repository
     ▼  触发
 GitHub Actions → 构建 → 部署到 GitHub Pages
 ```
+
+> **安全与编码**:所有动态路径先过 `paths.ts` 白名单(规范化后校验前缀,拒绝 `.github/`、`..` 穿越),
+> 防止改 workflow 提权。文件编解码走 `base64.ts` 纯 JS 实现——workerd 的 `atob` 实测为标准
+> 二进制串语义,直接 `atob` 中文必乱码(见 `record/2026-09-04-workerd-atob-语义实测.md`)。
 
 ---
 
@@ -367,9 +371,14 @@ alidadei.github.io/
 ├── scripts/                           # 构建/维护脚本
 │   ├── gen-portfolio-thumbs.mjs       # 作品集缩略图 (sharp)
 │   ├── cms.mjs                        # 分类/标签 CLI 维护工具 (npm run cms)
+│   ├── copy-vditor.mjs                # 拷贝 Vditor 运行时资源到 public/vditor/dist (dev/build 自动调用)
 │   └── new-post.mjs                   # 给已有内容 md(无 frontmatter)补 frontmatter (npm run new-post <文件>)
 ├── tests/                             # 验证脚本
 │   ├── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
+│   ├── worker-base64.test.mjs         # worker base64 编解码测试
+│   ├── worker-path-guard.test.mjs     # worker 仓库路径白名单测试
+│   ├── admin-post-meta.test.mjs       # admin frontmatter 行级处理测试
+│   ├── atob-workerd-test/             # workerd atob 语义实测用最小 Worker (wrangler dev 手动跑)
 │   ├── dev-service-worker-cleanup.test.mjs # 开发态 SW/缓存清理回归
 │   ├── inspect-reading-progress.mjs   # Chrome 真实弧长 + 动态视觉视口回归
 │   ├── reading-progress.test.mjs      # 阅读进度纯函数单测
@@ -453,8 +462,9 @@ alidadei.github.io/
 │   │   ├── resume/
 │   │   │   └── InteractiveResume.tsx  # 简历交互 ⚛
 │   │   └── admin/
-│   │       ├── AdminApp.tsx           # CMS管理 ⚛
-│   │       └── bootstrap.ts           # CMS入口
+│   │       ├── AdminApp.tsx           # CMS管理 ⚛ (响应式: 桌面侧栏 / 移动端顶栏+抽屉)
+│   │       ├── VditorEditor.tsx       # Vditor 富文本编辑器封装 ⚛ (IR 模式, cdn 指向自托管 /vditor)
+│   │       └── post-meta.ts           # frontmatter 行级处理纯函数 (split/join/setDraftFlag/parse)
 │   │
 │   ├── pages/                         # 页面路由
 │   │   ├── index.astro                # 根路径重定向
@@ -470,7 +480,7 @@ alidadei.github.io/
 │   │       │   └── category/
 │   │       │       └── [...path].astro # 分类页
 │   │       └── admin/
-│   │           └── index.astro        # CMS后台
+│   │           └── index.astro        # CMS后台 (AdminApp client:only="react" 岛屿)
 │   │
 │   └── content/                       # 内容
 │       ├── posts/zh/                  # 博客 zh (含 knowledge/maturity 三轴标注)
@@ -480,11 +490,13 @@ alidadei.github.io/
 └── worker/                            # CMS 后端
     ├── wrangler.toml
     └── src/
-        ├── index.ts                   # 路由 (含 /api/feed-proxy 白名单反代, 绕过 CF 对 CI 的拦截)
+        ├── index.ts                   # 路由 (白名单路径守卫 403、/api/feed-proxy 白名单反代)
         ├── auth.ts                    # OAuth
         ├── github-api.ts              # GitHub API
-        ├── batch.ts                   # 批量操作
-        └── utils.ts                   # 工具函数
+        ├── batch.ts                   # 批量操作 (GraphQL commit, 同样过路径白名单)
+        ├── base64.ts                  # 纯 JS base64+UTF-8 编解码 (不依赖运行时 atob/btoa)
+        ├── paths.ts                   # 仓库路径白名单 (src/content|src/data|public/images, 防 .. 穿越)
+        └── utils.ts                   # 工具函数 (CORS/session)
 ```
 
 ---
@@ -658,6 +670,18 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 **frontmatter 改写策略**:行级替换、不重序列化(`categories` 单行内联数组、`tags` YAML 多行块各自处理),保留单引号/缩进/字段顺序,最小化 git diff。
 
 **删除分类**:批量/单个删除时,会把受影响文章的 `categories` 路径截断到被删节点的父级(纯函数 `truncateForDeletedPaths`),避免悬空 slug 导致文章从分类页消失。
+
+---
+
+## 17. 在线管理后台 (/zh/admin/)
+
+> GitHub 登录(用户 ID 白名单)→ Cloudflare Worker → GitHub Contents API 直接 commit master → Actions 构建,约 2-3 分钟后线上生效。
+>
+> - **前端**: `AdminApp.tsx` 必须以 `client:only="react"` 岛屿挂载——裸 `<script>` 手动挂载 React 在 Astro 6 dev 下缺 react-refresh preamble 会整页白屏。Vditor 编辑器为 IR 模式,源数据始终是 Markdown;运行时资源(lute/katex/highlight.js)由 `scripts/copy-vditor.mjs` 自托管到 `/vditor/`(已 gitignore,dev/build 自动生成),不依赖外部 CDN。
+> - **功能**:文章列表(标题/日期/「已隐藏」徽标,8 并发拉 frontmatter)、draft 行级隐藏/恢复(隐藏=列表/RSS/详情 URL 全下线,文件保留)、Vditor 富文本编辑(图片粘贴上传接 `/api/images/upload`,插入 Typora 兼容相对路径)、frontmatter 折叠面板、标签/分类/图片管理、部署状态。
+> - **frontmatter 处理**: `post-meta.ts` 行级改写、绝不重序列化,与 cms CLI 同约定,最小化 git diff。
+> - **测试**: `npm run check:cms`(base64 编解码/路径白名单/frontmatter 行级处理/CORS 共 21 项)。
+> - **用法**: docs/quick-commands.md「在线管理后台」小节。
 
 ---
 

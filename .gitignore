@@ -44,3 +44,6 @@ storybook-source.js
 *-source.txt
 .wrangler/
 /.agents
+
+# vditor 编辑器运行时资源(scripts/copy-vditor.mjs 生成)
+public/vditor/
