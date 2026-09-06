@@ -6,11 +6,99 @@
 <title>山峦册 ShanLuanCe · 山峰信息收集册</title>
 <link rel="stylesheet" href="assets/detail.css">
 <style>
-  :root { --accent: #1e4d3b; --accent-dark: #123527; --tint: #eef4ec; --hero-from: #2d6a4f; --hero-to: #10281e; }
+  /* 山峦册 · 国画风覆盖（仅本页）：宣纸 × 松墨 × 朱砂印 × 楷体题字 */
+  :root {
+    --accent: #1e4d3b; --accent-dark: #123527;
+    --tint: #f2efe4; --hero-from: #2d6a4f; --hero-to: #10281e;
+    --ink: #22322b; --muted: #8fa098; --line: rgba(34, 50, 43, .14);
+    --bg: #f4f2ea; --card: #fffefa;
+    --cinnabar: #b8442c; --gold: #b08b3e;
+    --serif-cn: "Kaiti SC", STKaiti, KaiTi, "Noto Serif SC", "Songti SC", serif;
+  }
+  body { background:
+    radial-gradient(1100px 420px at 50% -180px, rgba(30, 77, 59, .06), transparent 60%),
+    var(--bg); color: var(--ink); }
+  ::selection { background: rgba(30, 77, 59, .16); }
+
+  .topbar { background: rgba(250, 248, 242, .88); border-bottom: 1px solid var(--line); }
+  .topbar .back, .lang-toggle button { color: var(--ink-2, #5d6e66); }
+  .lang-toggle { border-color: var(--line); }
+  .lang-toggle button.active { background: var(--accent); color: #f5f2e8; }
+
+  /* Hero：宣纸题字 + 千里江山横卷 */
+  .hero { background: transparent; color: var(--ink); padding: 56px 24px 46px; }
+  .hero h1 { font-family: var(--serif-cn); font-weight: 400; letter-spacing: .14em; }
+  .hero .hero-sub { color: #4c5b53; opacity: 1; }
+  .hero .tag { color: #4c5b53; opacity: 1; }
+  .hero .links a { color: var(--accent); }
+  .hero .links a:hover { color: var(--accent-dark); }
+  .h1-seal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: .78em; height: .78em; margin-left: .18em; vertical-align: .08em;
+    background: var(--cinnabar); color: #fbf9f2; font-size: .52em;
+    font-family: var(--serif-cn); letter-spacing: 0;
+    border-radius: .09em; transform: rotate(-2.5deg);
+    box-shadow: inset 0 0 0 .045em rgba(251, 249, 242, .4);
+  }
+  .scroll-mount { max-width: 820px; margin: 30px auto 0; }
+  .scroll-mount img {
+    width: 100%; aspect-ratio: 2 / 1; object-fit: cover; display: block;
+    border-radius: 8px; box-shadow: 0 10px 30px -12px rgba(28, 44, 36, .35);
+    border: 1px solid rgba(34, 50, 43, .18);
+  }
+  .scroll-mount .scroll-cap {
+    font-family: var(--serif-cn); letter-spacing: .18em; text-align: right;
+    font-size: .85rem; color: #8fa098; margin-top: 10px;
+  }
+
+  /* 章节标题：朱砂刻线 + 楷体 */
+  .section h2 {
+    font-family: var(--serif-cn); font-weight: 400; letter-spacing: .1em;
+    color: var(--ink); border-bottom: none; padding-bottom: 0;
+    position: relative; padding-left: 15px;
+  }
+  .section h2::before {
+    content: ""; position: absolute; left: 0; top: .18em; bottom: .18em;
+    width: 4px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--cinnabar), #96351d);
+  }
+  .section h3 { color: var(--accent); }
+  .lead { color: #3c4b43; }
+
+  /* 卷轴分隔 */
+  .divider { display: flex; align-items: center; gap: 12px; margin: 46px 0 0; }
+  .divider::before, .divider::after {
+    content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line) 25%, var(--line) 75%, transparent);
+  }
+  .divider span { width: 6px; height: 6px; transform: rotate(45deg); background: var(--cinnabar); opacity: .7; }
+
+  /* 插图卡：暖纸 + 发丝边 */
+  .scene { background: #faf8f0; border: 1px solid var(--line); }
+
+  /* 挑战梯：墨章 + 朱砂箭头 */
   .step-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 22px 0; }
-  .chip { background: var(--accent); color: #fff; border-radius: 999px; padding: 8px 18px; font-size: .95rem; white-space: nowrap; }
-  .chip.dim { background: #e5e7eb; color: #4b5563; }
-  .arrow { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
+  .chip {
+    background: var(--card); color: var(--ink); border: 1px solid rgba(30, 77, 59, .45);
+    border-radius: 10px; padding: 8px 16px; font-size: .95rem; white-space: nowrap;
+    font-family: var(--serif-cn); letter-spacing: .06em;
+    box-shadow: 0 1px 2px rgba(28, 44, 36, .05);
+  }
+  .chip.dim { background: transparent; color: #8fa098; border: 1px dashed rgba(34, 50, 43, .3); box-shadow: none; }
+  .arrow { color: var(--cinnabar); font-size: 1.4rem; font-weight: 700; }
+
+  /* 数字卡：宣纸卡 + 松墨数 */
+  .num, .stat { background: var(--card); border: 1px solid var(--line); box-shadow: 0 2px 6px -2px rgba(28, 44, 36, .08); }
+  .num b { font-variant-numeric: tabular-nums; }
+
+  /* 页脚印章 */
+  .footer { border-top: none; }
+  .footer .foot-seal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 4px; margin-right: 8px; vertical-align: -5px;
+    background: var(--cinnabar); color: #fbf9f2; font-family: var(--serif-cn); font-size: 12px;
+    transform: rotate(-2deg); box-shadow: inset 0 0 0 1px rgba(251, 249, 242, .4);
+  }
 </style>
 </head>
 <body>
@@ -27,27 +115,15 @@
 
 <div class="hero">
   <h1 data-lang="en">ShanLuanCe ⛰️</h1>
-  <h1 data-lang="zh">山峦册 ⛰️</h1>
+  <h1 data-lang="zh">山峦册<span class="h1-seal">山</span></h1>
   <p class="hero-sub" data-lang="zh">山峰信息收集册 · Available · 2026</p>
   <p class="hero-sub" data-lang="en">A collection album of Chinese mountains · 2026</p>
   <p class="tag" data-lang="en">A collection album of 45 famous Chinese mountains — with real photos, weather-aware picks and distance. As a bonus, the stairs you climb every day count too: a virtual climb up real trails.</p>
   <p class="tag" data-lang="zh">一本收录 45 座中国名山的信息收集册——实景相册、看天推荐、离你多远,一页一档案。附带的小心思:你每天爬的楼梯也算数,化作一场沿真实山径的虚拟登山。</p>
-  <div class="hero-art">
-    <svg viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="120" cy="60" r="26" fill="#fbd38d"/>
-      <ellipse cx="580" cy="50" rx="52" ry="16" fill="#fff" opacity=".22"/>
-      <ellipse cx="630" cy="62" rx="40" ry="13" fill="#fff" opacity=".16"/>
-      <path d="M0 220 L150 70 L240 160 L330 40 L470 220 Z" fill="#ffffff" opacity=".14"/>
-      <path d="M240 220 L400 30 L560 220 Z" fill="#ffffff" opacity=".26"/>
-      <path d="M360 220 L540 60 L760 220 Z" fill="#ffffff" opacity=".16"/>
-      <path d="M330 40 L352 66 L328 70 L344 92" stroke="#ffe9b8" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="2 9"/>
-      <g transform="translate(406,108)">
-        <circle r="8" fill="#ffe9b8"/><path d="M-7 22 Q0 8 7 22 L6 30 L-6 30 Z" fill="#e2e8f0"/>
-        <path d="M-4 30 L-6 44 M4 30 L6 44" stroke="#ffe9b8" stroke-width="4" stroke-linecap="round"/>
-      </g>
-      <text x="380" y="212" font-size="15" fill="#fff" opacity=".75" text-anchor="middle" font-family="sans-serif">1,545 m · Mount Tai</text>
-    </svg>
-  </div>
+  <figure class="scroll-mount">
+    <img src="/images/shanluance.webp" alt="《千里江山图》局部">
+    <figcaption class="scroll-cap">《千里江山图》· 北宋 王希孟 · 故宫博物院藏（局部）</figcaption>
+  </figure>
   <p class="links">
     <a href="https://alidadei.github.io/ShanLuanCe/" target="_blank" rel="noopener" data-lang="en">🚀 Try it live</a>
     <span data-lang="en" style="opacity:.5;">·</span>
@@ -68,36 +144,38 @@
     <div class="scene">
       <svg viewBox="0 0 820 250" xmlns="http://www.w3.org/2000/svg">
         <g font-family="sans-serif">
-          <rect x="30" y="30" width="240" height="190" rx="10" fill="#fff" stroke="#2f855a" stroke-width="3"/>
-          <g stroke="#8fc7a8" stroke-width="3" fill="none">
+          <rect x="30" y="30" width="240" height="190" rx="10" fill="#fff" stroke="#1e4d3b" stroke-width="3"/>
+          <g stroke="#9db3a6" stroke-width="3" fill="none">
             <path d="M60 200 h40 v-35 h40 v-35 h40 v-35 h40"/>
           </g>
           <g transform="translate(120,120)">
-            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+            <circle r="9" fill="#1e4d3b"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#3d7a5f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#1e4d3b" stroke-width="4.5" stroke-linecap="round"/>
           </g>
-          <text x="150" y="245" font-size="14" fill="#6b7280" text-anchor="middle">📱 每天爬楼 3F +3m</text>
-          <path d="M310 125 H480" stroke="#2f855a" stroke-width="5" stroke-linecap="round"/>
-          <path d="M480 125 L462 114 V136 Z" fill="#2f855a"/>
-          <text x="395" y="108" font-size="14" fill="#2f855a" text-anchor="middle" font-weight="600">accumulate ⏳</text>
-          <path d="M510 220 L640 50 L780 220 Z" fill="#cfe6d8"/>
-          <path d="M620 220 L730 90 L820 220 Z" fill="#a9d3bc"/>
-          <path d="M612 178 L640 146 L664 178" stroke="#2f855a" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <path d="M640 146 L664 178 L690 150 L712 178" stroke="#e2b04a" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="1 8"/>
+          <text x="150" y="245" font-size="14" fill="#5d6e66" text-anchor="middle">📱 每天爬楼 3F +3m</text>
+          <path d="M310 125 H480" stroke="#1e4d3b" stroke-width="5" stroke-linecap="round"/>
+          <path d="M480 125 L462 114 V136 Z" fill="#1e4d3b"/>
+          <text x="395" y="108" font-size="14" fill="#1e4d3b" text-anchor="middle" font-weight="600">accumulate ⏳</text>
+          <path d="M510 220 L640 50 L780 220 Z" fill="#cdd6cd"/>
+          <path d="M620 220 L730 90 L820 220 Z" fill="#9fb3a6"/>
+          <path d="M612 178 L640 146 L664 178" stroke="#1e4d3b" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M640 146 L664 178 L690 150 L712 178" stroke="#c9a227" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="1 8"/>
           <g transform="translate(700,150)">
-            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+            <circle r="9" fill="#1e4d3b"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#3d7a5f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#1e4d3b" stroke-width="4.5" stroke-linecap="round"/>
           </g>
           <g transform="translate(730,42)">
-            <path d="M-22 2 L0 -18 L22 2 L22 8 L-22 8 Z" fill="#e2b04a"/>
+            <path d="M-22 2 L0 -18 L22 2 L22 8 L-22 8 Z" fill="#c9a227"/>
             <path d="M-22 8 L0 -10 L22 8" fill="none" stroke="#fff" stroke-width="2.5"/>
-            <rect x="-24" y="8" width="48" height="7" rx="2" fill="#c9973c"/>
+            <rect x="-24" y="8" width="48" height="7" rx="2" fill="#a8871f"/>
           </g>
-          <text x="680" y="245" font-size="14" fill="#6b7280" text-anchor="middle">🏔 攒够 1,545 m = 登顶泰山</text>
+          <text x="680" y="245" font-size="14" fill="#5d6e66" text-anchor="middle">🏔 攒够 1,545 m = 登顶泰山</text>
         </g>
       </svg>
     </div>
   </section>
+
+  <div class="divider" aria-hidden="true"><span></span></div>
 
   <section class="section">
     <h2 data-lang="en">The climb feels real 📍</h2>
@@ -107,37 +185,39 @@
     <div class="scene">
       <svg viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
         <g font-family="sans-serif" font-size="14">
-          <path d="M40 140 C 160 60, 300 180, 440 100 C 560 34, 680 120, 790 46" stroke="#2f855a" stroke-width="4" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
+          <path d="M40 140 C 160 60, 300 180, 440 100 C 560 34, 680 120, 790 46" stroke="#1e4d3b" stroke-width="4" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
           <g>
-            <circle cx="60" cy="132" r="13" fill="#2f855a"/><text x="60" y="137" text-anchor="middle" fill="#fff" font-size="13">门</text>
-            <text x="60" y="170" text-anchor="middle" fill="#374151">红门 ✓</text>
+            <circle cx="60" cy="132" r="13" fill="#1e4d3b"/><text x="60" y="137" text-anchor="middle" fill="#fff" font-size="13">门</text>
+            <text x="60" y="170" text-anchor="middle" fill="#3c4b43">红门 ✓</text>
           </g>
           <g>
-            <circle cx="230" cy="112" r="13" fill="#2f855a"/><text x="230" y="117" text-anchor="middle" fill="#fff" font-size="12">天</text>
-            <text x="230" y="170" text-anchor="middle" fill="#374151">中天门 ✓</text>
+            <circle cx="230" cy="112" r="13" fill="#1e4d3b"/><text x="230" y="117" text-anchor="middle" fill="#fff" font-size="12">天</text>
+            <text x="230" y="170" text-anchor="middle" fill="#3c4b43">中天门 ✓</text>
           </g>
           <g>
-            <circle cx="410" cy="122" r="13" fill="#2f855a"/><text x="410" y="127" text-anchor="middle" fill="#fff" font-size="12">盘</text>
-            <text x="410" y="170" text-anchor="middle" fill="#374151">十八盘 ✓</text>
+            <circle cx="410" cy="122" r="13" fill="#1e4d3b"/><text x="410" y="127" text-anchor="middle" fill="#fff" font-size="12">盘</text>
+            <text x="410" y="170" text-anchor="middle" fill="#3c4b43">十八盘 ✓</text>
           </g>
           <g>
-            <circle cx="580" cy="72" r="13" fill="#fff" stroke="#2f855a" stroke-width="3"/><text x="580" y="77" text-anchor="middle" fill="#2f855a" font-size="12">南</text>
-            <text x="580" y="170" text-anchor="middle" fill="#9ca3af">南天门</text>
+            <circle cx="580" cy="72" r="13" fill="#fff" stroke="#1e4d3b" stroke-width="3"/><text x="580" y="77" text-anchor="middle" fill="#1e4d3b" font-size="12">南</text>
+            <text x="580" y="170" text-anchor="middle" fill="#8fa098">南天门</text>
           </g>
           <g>
-            <circle cx="740" cy="50" r="15" fill="#e2b04a"/><text x="740" y="56" text-anchor="middle" fill="#fff" font-size="14">顶</text>
-            <text x="740" y="170" text-anchor="middle" fill="#9ca3af">玉皇顶 🏁</text>
+            <circle cx="740" cy="50" r="15" fill="#c9a227"/><text x="740" y="56" text-anchor="middle" fill="#fff" font-size="14">顶</text>
+            <text x="740" y="170" text-anchor="middle" fill="#8fa098">玉皇顶 🏁</text>
           </g>
           <g transform="translate(490,96)">
-            <circle r="9" fill="#2f855a"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#429b6f"/>
-            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#2f855a" stroke-width="4.5" stroke-linecap="round"/>
+            <circle r="9" fill="#1e4d3b"/><path d="M-8 24 Q0 9 8 24 L7 33 L-7 33 Z" fill="#3d7a5f"/>
+            <path d="M-5 33 L-7 48 M5 33 L7 48" stroke="#1e4d3b" stroke-width="4.5" stroke-linecap="round"/>
           </g>
-          <rect x="620" y="8" width="150" height="30" rx="15" fill="#fff" stroke="#2f855a" stroke-width="2"/>
-          <text x="695" y="28" text-anchor="middle" fill="#2f855a" font-size="13">预计 8 月 30 日登顶 ⏰</text>
+          <rect x="620" y="8" width="150" height="30" rx="15" fill="#fff" stroke="#1e4d3b" stroke-width="2"/>
+          <text x="695" y="28" text-anchor="middle" fill="#1e4d3b" font-size="13">预计 8 月 30 日登顶 ⏰</text>
         </g>
       </svg>
     </div>
   </section>
+
+  <div class="divider" aria-hidden="true"><span></span></div>
 
   <section class="section">
     <h2 data-lang="en">Six peaks to conquer 🎯</h2>
@@ -153,6 +233,8 @@
     <p class="lead" data-lang="en">From a weekend hill to Everest — the ladder keeps going. Plus: a 45-mountain album with real photo galleries, an AI buddy (voice in, voice out) that explains its picks, weather-aware recommendations computed by GitHub Actions, GPX import, a stamp-collection passport and 10 achievement badges. Installable as a PWA — it works offline in the mountains.</p>
     <p class="lead" data-lang="zh">从一座周末小山到珠穆朗玛——梯子一直向上。此外还有:45 座名山档案与实景相册、会解释推荐理由的 AI 搭子「山灵」(支持语音对话)、跑在 GitHub Actions 上的看天推荐、GPX 轨迹一键导入、山峰护照集章和 10 枚成就徽章。可安装为 PWA——山里没信号也能用。</p>
   </section>
+
+  <div class="divider" aria-hidden="true"><span></span></div>
 
   <section class="section">
     <h2 data-lang="en">A quiet piece of engineering 🛠</h2>
@@ -170,7 +252,7 @@
 </div>
 
 <div class="footer">
-  <span data-lang="en">ShanLuanCe &copy; 2026 · </span>
+  <span class="foot-seal" aria-hidden="true">册</span><span data-lang="en">ShanLuanCe &copy; 2026 · </span>
   <span data-lang="zh">山峦册 &copy; 2026 · </span>
   <a href="https://github.com/Alidadei/shanluance" target="_blank">GitHub</a>
 </div>
