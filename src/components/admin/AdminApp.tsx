@@ -936,14 +936,37 @@ function SiteLock() {
         body: JSON.stringify({ hidden: next }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setHidden(!!data.hidden);
-        setMessage({ ok: true, text: next ? '已对外隐藏,访客侧立即生效' : '已恢复显示,访客侧立即生效' });
-      } else {
-        setMessage({ ok: false, text: `操作失败: ${data.error || '未知错误'}` });
+      if (!res.ok) throw new Error(data.error || '未知错误');
+      setHidden(!!data.hidden);
+
+      // 可靠通道:同步提交同源开关文件,国内直连访客(连不上 workers.dev 的)靠它生效
+      let fileOk = true;
+      try {
+        const cur = await apiFetch('/api/file/public/site-mode.json');
+        const sha = cur.ok ? (await cur.json()).sha : undefined;
+        const put = await apiFetch('/api/file/public/site-mode.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: JSON.stringify({ hidden: next }),
+            sha,
+            message: `cms: site-lock ${next ? 'on' : 'off'}`,
+          }),
+        });
+        fileOk = put.ok;
+      } catch {
+        fileOk = false;
       }
-    } catch {
-      setMessage({ ok: false, text: '网络错误' });
+
+      const timing = '有代理的访客已立即生效;国内直连访客等构建后约 2-3 分钟生效';
+      setMessage({
+        ok: true,
+        text: next
+          ? (fileOk ? `已对外隐藏。${timing}` : '已隐藏(快速通道已生效),但开关文件提交失败:国内直连访客可能暂不受影响,请稍后重试或看「部署」页')
+          : (fileOk ? `已恢复显示。${timing}` : '已恢复(快速通道已生效),但开关文件提交失败:国内直连访客可能要等下次构建才复原,请重试'),
+      });
+    } catch (e) {
+      setMessage({ ok: false, text: `操作失败: ${e instanceof Error ? e.message : '网络错误'}` });
     }
     setBusy(false);
   };
@@ -963,8 +986,8 @@ function SiteLock() {
           <li>隐藏后,访客只能看到首页的星空 3D 动画和每日一句。</li>
           <li>导航、博客、项目、关于等页面没有入口,直接输入网址也会跳回首页。</li>
           <li>你自己不受影响:已登录过本后台的浏览器仍可正常浏览全站。</li>
+          <li>生效时间:有代理的访客立即;国内直连访客等构建后约 2-3 分钟(开关会同时写入两条通道)。</li>
           <li>管理后台 /zh/admin/ 始终可达,用于点击「恢复显示」。</li>
-          <li>访客侧立即生效,不需要重新构建部署。</li>
         </ul>
 
         {message && (

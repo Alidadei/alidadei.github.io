@@ -57,8 +57,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     {noindex && <meta name="robots" content="noindex" />}
 
     <!-- 对外「一键隐藏」守卫:锁站时非首页跳回首页,首页只保留星空与每日一句。
-         状态存于 CMS Worker KV(/api/site-mode);站长浏览器(登录过管理后台)豁免;
-         管理后台与管理页本身不受锁影响。开发模式跳过,不影响本地开发。 -->
+         状态走双通道:① workers.dev KV(有代理的访客即时生效) ② 同源 /site-mode.json
+         (国内直连访客的唯一可靠通道,随构建更新);可连通的状态里 API 优先。
+         站长浏览器(登录过管理后台)豁免;/admin 路径豁免(恢复入口);开发模式跳过。 -->
     <style is:inline>
       html.site-locked header, html.site-locked main, html.site-locked footer { display: none !important; }
     </style>
@@ -139,14 +140,26 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         try { cached = sessionStorage.getItem('site_lock_cache'); } catch (e) {}
         if (cached === '1') apply(true); // 本会话已确认过锁,立即生效避免闪现内容
 
-        fetch(workerUrl + '/api/site-mode', { cache: 'no-store' })
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (data) {
-            var hidden = !!(data && data.hidden);
-            try { sessionStorage.setItem('site_lock_cache', hidden ? '1' : '0'); } catch (e) {}
-            if ((cached === '1') !== hidden) apply(hidden);
-          })
-          .catch(function () { /* Worker 不可达时保持现状,不误伤正常浏览 */ });
+        // 双通道探测:null = 该通道不可达(国内直连常见于 workers.dev)
+        function probe(url) {
+          return fetch(url, { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { return (d && typeof d.hidden === 'boolean') ? d.hidden : null; })
+            .catch(function () { return null; });
+        }
+        Promise.all([
+          probe('/site-mode.json?_=' + Date.now()),
+          probe(workerUrl + '/api/site-mode')
+        ]).then(function (results) {
+          var fileH = results[0], apiH = results[1];
+          var hidden;
+          if (apiH !== null) hidden = apiH;          // API 可达:以它为准(切换即时)
+          else if (fileH !== null) hidden = fileH;   // 否则用同源文件(随构建更新)
+          else return;                                // 都不可达:维持现状,不误伤
+          var next = hidden ? '1' : '0';
+          try { sessionStorage.setItem('site_lock_cache', next); } catch (e) {}
+          if ((cached === '1') !== (next === '1')) apply(hidden);
+        });
       })();
     </script>
 

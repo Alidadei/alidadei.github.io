@@ -25,6 +25,13 @@ test('通用文件接口放行内容/数据/图片目录', () => {
   assert.equal(isAllowedFilePath('public/images/posts/1.png'), true);
 });
 
+test('通用文件接口精确放行站点锁开关文件', () => {
+  assert.equal(isAllowedFilePath('public/site-mode.json'), true);
+  // 仅放行该文件本身,目录内的其他文件仍拒绝
+  assert.equal(isAllowedFilePath('public/site-mode.json.bak'), false);
+  assert.equal(isAllowedFilePath('public/index.html'), false);
+});
+
 test('提权路径一律拒绝(workflow、仓库根、越界穿越)', () => {
   assert.equal(isAllowedFilePath('.github/workflows/deploy.yml'), false);
   assert.equal(isAllowedPostPath('.github/workflows/deploy.yml'), false);

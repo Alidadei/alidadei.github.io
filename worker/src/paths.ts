@@ -6,6 +6,9 @@
 // 允许读写的目录(前缀匹配,均以 / 结尾)
 const ALLOWED_ROOTS = ['src/content/', 'src/data/', 'public/images/'];
 
+// 额外精确放行的单文件:站点锁开关(在线后台「站点开关」双通道的仓库侧文件)
+const ALLOWED_FILES = ['public/site-mode.json'];
+
 // 各路由的收窄限制
 export const POSTS_ROOT = 'src/content/posts/';
 export const IMAGES_ROOT = 'public/images/';
@@ -27,10 +30,12 @@ function isUnderAnyRoot(path: string, roots: string[]): boolean {
   return roots.some(root => path.startsWith(root));
 }
 
-// 通用文件接口(/api/file/*):允许内容、数据与图片目录
+// 通用文件接口(/api/file/*):允许内容、数据与图片目录,以及精确放行的开关文件
 export function isAllowedFilePath(raw: string): boolean {
   const path = normalizeRepoPath(raw);
-  return path !== null && isUnderAnyRoot(path + (path.endsWith('/') ? '' : '/'), ALLOWED_ROOTS) ;
+  if (path === null) return false;
+  if (ALLOWED_FILES.includes(path)) return true;
+  return isUnderAnyRoot(path + (path.endsWith('/') ? '' : '/'), ALLOWED_ROOTS);
 }
 
 // 文章接口(/api/posts/*):只允许文章目录

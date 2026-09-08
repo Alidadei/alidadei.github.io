@@ -28,6 +28,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // 仅同源
+  if (url.pathname === '/site-mode.json') return; // 站点锁开关:永远直连网络,不走 SW 缓存
 
   // ① 重资源:Cache First(强制缓存,连硬刷新也命中)
   const isHeavy = url.pathname === '/three-bg.js' || url.pathname === '/3d-background.html';
