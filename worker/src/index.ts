@@ -14,6 +14,7 @@ import {
   handleDeployStatus,
 } from './github-api';
 import { handleBatchOperation } from './batch';
+import { handleGetSiteMode, handleSetSiteMode } from './site-mode';
 
 function wrapCors(handler: () => Promise<Response>, request: Request, env: Env): Promise<Response> {
   return handler().then(res => {
@@ -59,6 +60,13 @@ export default {
       // API routes (CORS-wrapped)
       if (path === '/api/user' && request.method === 'GET') {
         return wrapCors(() => handleGetUser(request, env), request, env);
+      }
+      // 站点对外隐藏开关:读公开,写需要管理后台会话
+      if (path === '/api/site-mode' && request.method === 'GET') {
+        return wrapCors(() => handleGetSiteMode(env), request, env);
+      }
+      if (path === '/api/site-mode' && request.method === 'POST') {
+        return wrapCors(() => handleSetSiteMode(request, env), request, env);
       }
       if (path === '/api/posts' && request.method === 'GET') {
         return wrapCors(() => handleListPosts(request, env), request, env);

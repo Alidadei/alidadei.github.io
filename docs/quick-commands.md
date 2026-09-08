@@ -156,6 +156,7 @@ cms 菜单结构:
 | 文章列表 | 显示标题/文件名/日期,带「已隐藏」徽标;支持按标题或文件名搜索 |
 | 富文本编辑 | Vditor 即时渲染模式,支持公式/代码块/表格/图片粘贴上传;frontmatter 折叠在编辑器上方 |
 | 隐藏/恢复显示 | 行级改写 frontmatter 的 `draft` 字段:隐藏后列表、RSS、详情页 URL 全部下线(访问 404),文件保留在仓库 |
+| 站点开关 | 一键对外隐藏/恢复:隐藏后访客只剩首页星空 3D+每日一句,其余页面无入口且直接访问会跳回首页;登录过后台的浏览器(站长)不受影响;立即生效,无需等构建 |
 | 删除 | 直接删仓库里的 md 文件(不可恢复,慎用;只想下线用「隐藏」) |
 | 图片管理 | 上传/删除 `public/images/posts/`,复制 Typora 兼容的相对路径 markdown |
 | 标签/分类 | 标签重命名(批量同步文章)、categories.json 直编 |
@@ -168,12 +169,15 @@ cms 菜单结构:
 - 编辑器图片上传走 Worker `/api/images/upload`,插进正文的是 Typora 兼容相对路径
 - Worker 代码在 `worker/`,改完需重新部署:`cd worker && npx wrangler deploy`
 - Worker 只允许写 `src/content/`、`src/data/`、`public/images/` 三类路径(防止误改 CI 配置)
+- 「站点开关」状态存在 Worker KV 里,和文章草稿无关;恢复入口固定是管理后台页本身(锁站时也能打开)
+- 站点开关的原理与边界见 `docs/一键内容隐藏功能.md`
 
 相关测试:
 
 | 命令 | 作用 |
 |------|------|
-| npm run check:cms | 在线后台相关测试(base64 编解码、路径白名单、frontmatter 行级改写、CORS) |
+| npm run check:cms | 在线后台相关测试(base64 编解码、路径白名单、frontmatter 行级改写、CORS、站点开关接口) |
+| npm run check:site-guard | 锁站守卫脚本行为回归测试(需要先 build,从产物提取脚本验证:锁首页/跳转/站长豁免/失败放行) |
 
 ---
 

@@ -338,6 +338,11 @@ const TRAVEL_BASE = 888;
         if (animId) cancelAnimationFrame(animId);
         c.style.transition = 'opacity 1.5s ease';
         c.style.opacity = '0';
+        // 锁站期间(对外一键隐藏)每日一句保留:访客只看星空 3D + 每日一句
+        if (window.__SITE_LOCKED__) {
+          setTimeout(() => { c.style.display = 'none'; }, 1600);
+          return;
+        }
         quoteEl.style.opacity = '0';
         setTimeout(() => { c.style.display = 'none'; quoteEl.remove(); }, 1600);
       };

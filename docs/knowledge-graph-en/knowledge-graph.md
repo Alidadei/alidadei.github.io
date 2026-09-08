@@ -494,6 +494,7 @@ alidadei.github.io/
         ├── auth.ts                    # OAuth
         ├── github-api.ts              # GitHub API
         ├── batch.ts                   # 批量操作 (GraphQL commit, 同样过路径白名单)
+        ├── site-mode.ts               # 对外「一键隐藏」开关读写 (KV key=site_mode, 写需会话)
         ├── base64.ts                  # 纯 JS base64+UTF-8 编解码 (不依赖运行时 atob/btoa)
         ├── paths.ts                   # 仓库路径白名单 (src/content|src/data|public/images, 防 .. 穿越)
         └── utils.ts                   # 工具函数 (CORS/session)
@@ -679,8 +680,9 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 >
 > - **前端**: `AdminApp.tsx` 必须以 `client:only="react"` 岛屿挂载——裸 `<script>` 手动挂载 React 在 Astro 6 dev 下缺 react-refresh preamble 会整页白屏。Vditor 编辑器为 IR 模式,源数据始终是 Markdown;运行时资源(lute/katex/highlight.js)由 `scripts/copy-vditor.mjs` 自托管到 `/vditor/`(已 gitignore,dev/build 自动生成),不依赖外部 CDN。
 > - **功能**:文章列表(标题/日期/「已隐藏」徽标,8 并发拉 frontmatter)、draft 行级隐藏/恢复(隐藏=列表/RSS/详情 URL 全下线,文件保留)、Vditor 富文本编辑(图片粘贴上传接 `/api/images/upload`,插入 Typora 兼容相对路径)、frontmatter 折叠面板、标签/分类/图片管理、部署状态。
+> - **站点开关(对外一键隐藏)**:KV `site_mode` 一键切换;守卫脚本内联于 `BaseLayout.astro`(每页 fetch `/api/site-mode`,锁站时非首页跳回首页、首页 `html.site-locked` 只留星空 3D+每日一句;`/admin` 与开发模式豁免;站长浏览器以 localStorage `cms_owner_at` 标记豁免,登录写入/退出清除)。属访客视角软开关,边界与原理见 docs/一键内容隐藏功能.md。
 > - **frontmatter 处理**: `post-meta.ts` 行级改写、绝不重序列化,与 cms CLI 同约定,最小化 git diff。
-> - **测试**: `npm run check:cms`(base64 编解码/路径白名单/frontmatter 行级处理/CORS 共 21 项)。
+> - **测试**: `npm run check:cms`(base64 编解码/路径白名单/frontmatter 行级处理/CORS/站点开关接口 共 27 项)。
 > - **用法**: docs/quick-commands.md「在线管理后台」小节。
 
 ---

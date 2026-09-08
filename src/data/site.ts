@@ -44,3 +44,6 @@ export const siteConfig = {
 export type Lang = 'zh' | 'en';
 export const languages: Lang[] = ['zh', 'en'];
 export const defaultLang: Lang = 'zh';
+
+// CMS Worker(Cloudflare)地址:在线管理后台与站点守卫脚本共用
+export const WORKER_URL = 'https://yhl-blog-cms.yuhl.workers.dev';

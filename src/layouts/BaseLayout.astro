@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { siteConfig, type Lang } from '../data/site';
+import { WORKER_URL } from '../data/site';
 import { getUI } from '../i18n/ui';
 import { getSafeAlternateUrl, getLangFromUrl } from '../lib/i18n';
 
@@ -54,6 +55,100 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet" />
     {noindex && <meta name="robots" content="noindex" />}
+
+    <!-- 对外「一键隐藏」守卫:锁站时非首页跳回首页,首页只保留星空与每日一句。
+         状态存于 CMS Worker KV(/api/site-mode);站长浏览器(登录过管理后台)豁免;
+         管理后台与管理页本身不受锁影响。开发模式跳过,不影响本地开发。 -->
+    <style is:inline>
+      html.site-locked header, html.site-locked main, html.site-locked footer { display: none !important; }
+    </style>
+    <script is:inline define:vars={{ workerUrl: WORKER_URL, isDev: import.meta.env.DEV }}>
+      (function () {
+        if (isDev) return;
+        var path = location.pathname;
+        if (path.indexOf('/admin') !== -1) return;
+
+        var isHome = path === '/' || /^\/(zh|en)\/?$/.test(path);
+        var lang = path.indexOf('/en') === 0 ? 'en' : 'zh';
+        var root = document.documentElement;
+
+        function isOwner() {
+          try { return !!localStorage.getItem('cms_owner_at'); } catch (e) { return false; }
+        }
+
+        // 锁站首页兜底:无论与主页脚本谁先执行,保证「每日一句」可见
+        function ensureQuote() {
+          var p = document.getElementById('quote-2d');
+          if (p && p.parentElement) { p.parentElement.style.opacity = '1'; return; }
+          var box = document.createElement('div');
+          box.id = 'site-lock-quote';
+          box.style.cssText = 'position:fixed;bottom:18%;left:0;right:0;text-align:center;z-index:1;pointer-events:none;';
+          var inner = document.createElement('p');
+          inner.id = 'quote-2d';
+          inner.style.cssText = 'display:inline-block;max-width:70vw;padding:0 1em;font-size:clamp(14px,2.5vw,20px);color:rgba(220,215,205,0.75);font-family:serif;letter-spacing:0.08em;line-height:1.8;';
+          box.appendChild(inner);
+          document.body.appendChild(box);
+          fetch('/quotes.json').then(function (r) { return r.json(); }).then(function (data) {
+            var list = (data && (data[lang] || data.zh)) || [];
+            if (!list.length) return;
+            var d = new Date();
+            inner.textContent = list[(d.getFullYear() * 366 + d.getMonth() * 31 + d.getDate()) % list.length];
+          }).catch(function () {});
+        }
+
+        function addLockNote() {
+          if (document.getElementById('site-lock-note')) return;
+          var note = document.createElement('div');
+          note.id = 'site-lock-note';
+          note.textContent = lang === 'en' ? '· TIDYING UP ·' : '· 内 容 整 理 中 ·';
+          note.style.cssText = 'position:fixed;bottom:9%;left:0;right:0;text-align:center;z-index:1;pointer-events:none;font-size:12px;letter-spacing:0.35em;color:rgba(200,205,215,0.45);';
+          document.body.appendChild(note);
+        }
+
+        function lockPage() {
+          if (root.classList.contains('site-locked')) return;
+          root.classList.add('site-locked');
+          window.__SITE_LOCKED__ = true;
+          var paint = function () { ensureQuote(); addLockNote(); };
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', paint);
+          } else {
+            paint();
+          }
+        }
+
+        function unlockPage() {
+          root.classList.remove('site-locked');
+          window.__SITE_LOCKED__ = false;
+          ['site-lock-quote', 'site-lock-note'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.remove();
+          });
+        }
+
+        function apply(hidden) {
+          if (hidden && !isOwner()) {
+            if (!isHome) { location.replace('/' + lang + '/'); return; }
+            lockPage();
+          } else {
+            unlockPage();
+          }
+        }
+
+        var cached = null;
+        try { cached = sessionStorage.getItem('site_lock_cache'); } catch (e) {}
+        if (cached === '1') apply(true); // 本会话已确认过锁,立即生效避免闪现内容
+
+        fetch(workerUrl + '/api/site-mode', { cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            var hidden = !!(data && data.hidden);
+            try { sessionStorage.setItem('site_lock_cache', hidden ? '1' : '0'); } catch (e) {}
+            if ((cached === '1') !== hidden) apply(hidden);
+          })
+          .catch(function () { /* Worker 不可达时保持现状,不误伤正常浏览 */ });
+      })();
+    </script>
 
     <!-- KaTeX CSS for math rendering (only needed on blog posts) -->
     <!-- Moved to PostLayout.astro to reduce page load -->

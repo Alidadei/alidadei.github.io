@@ -8,11 +8,11 @@
   "scripts": {
     "dev": "esbuild src/3d/background.ts --bundle --format=esm --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && node scripts/copy-vditor.mjs && node scripts/run-astro.mjs dev",
     "sky-preview": "node scripts/sky-preview.mjs",
-    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && node scripts/copy-vditor.mjs && astro build && node tests/check-rendered-markdown.mjs && node scripts/bump-sw-version.mjs",
+    "build": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js && node scripts/sync-quotes.mjs && npm run thumbs && node scripts/copy-vditor.mjs && astro build && node tests/check-rendered-markdown.mjs && node scripts/bump-sw-version.mjs && node --test tests/site-guard.test.mjs",
     "build:3d": "esbuild src/3d/background.ts --bundle --format=esm --minify --outfile=public/three-bg.js",
     "thumbs": "node scripts/gen-portfolio-thumbs.mjs",
     "cms": "node scripts/cms.mjs",
-    "check:cms": "node --experimental-strip-types --test tests/worker-base64.test.mjs tests/worker-path-guard.test.mjs tests/admin-post-meta.test.mjs && node --experimental-strip-types --test tests/worker-cors.test.mjs",
+    "check:cms": "node --experimental-strip-types --test tests/worker-base64.test.mjs tests/worker-path-guard.test.mjs tests/admin-post-meta.test.mjs && node --experimental-strip-types --test tests/worker-cors.test.mjs tests/worker-site-mode.test.mjs",
     "new-post": "node scripts/new-post.mjs",
     "favicon": "node scripts/set-favicon.mjs",
     "avatar": "node scripts/set-avatar.mjs",
@@ -22,6 +22,7 @@
     "check:reading-progress": "node --test tests/reading-progress.test.mjs",
     "check:mobile-overflow": "node tests/mobile-overflow-regression.mjs",
     "check:worker-security": "node --experimental-strip-types --test tests/worker-cors.test.mjs",
+    "check:site-guard": "node --test tests/site-guard.test.mjs",
     "preview": "node scripts/run-astro.mjs preview",
     "astro": "astro"
   },

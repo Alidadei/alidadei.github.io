@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import VditorEditor from './VditorEditor';
 import { joinFrontmatter, parsePostMeta, setDraftFlag, splitFrontmatter, type PostMeta } from './post-meta';
+import { WORKER_URL } from '../../data/site';
 
 const API_BASE = typeof window !== 'undefined'
-  ? (window as any).__WORKER_URL__ || 'https://yhl-blog-cms.yuhl.workers.dev'
+  ? (window as any).__WORKER_URL__ || WORKER_URL
   : '';
 
 let _sessionToken: string | null = null;
@@ -33,7 +34,7 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
   return fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
 }
 
-type View = 'posts' | 'editor' | 'tags' | 'categories' | 'images' | 'deploy';
+type View = 'posts' | 'editor' | 'tags' | 'categories' | 'images' | 'deploy' | 'site';
 
 const NAV: Array<{ view: View; icon: string; label: string }> = [
   { view: 'posts', icon: '📝', label: '文章' },
@@ -41,6 +42,7 @@ const NAV: Array<{ view: View; icon: string; label: string }> = [
   { view: 'categories', icon: '📁', label: '分类' },
   { view: 'images', icon: '🖼️', label: '图片' },
   { view: 'deploy', icon: '🚀', label: '部署' },
+  { view: 'site', icon: '🔒', label: '站点开关' },
 ];
 
 interface User {
@@ -72,6 +74,8 @@ export default function AdminApp() {
       const res = await apiFetch('/api/user');
       const data = await res.json();
       if (data.authenticated) {
+        // 站点守卫脚本读本标记判定「站长浏览器」,锁站时豁免
+        try { localStorage.setItem('cms_owner_at', String(Date.now())); } catch { /* 隐私模式忽略 */ }
         setState(s => ({ ...s, authenticated: true, user: data.user }));
       } else {
         setState(s => ({ ...s, authenticated: false }));
@@ -90,6 +94,7 @@ export default function AdminApp() {
   const logout = async () => {
     sessionStorage.removeItem('cms_session_token');
     _sessionToken = null;
+    try { localStorage.removeItem('cms_owner_at'); } catch { /* 隐私模式忽略 */ }
     await apiFetch('/api/auth/logout', { method: 'POST' });
     setState(s => ({ ...s, authenticated: false, user: null }));
   };
@@ -191,6 +196,7 @@ export default function AdminApp() {
           {state.view === 'categories' && <CategoryManager />}
           {state.view === 'images' && <ImageManager />}
           {state.view === 'deploy' && <DeployStatus />}
+          {state.view === 'site' && <SiteLock />}
         </main>
       </div>
     </div>
@@ -896,6 +902,91 @@ function DeployStatus() {
       ) : (
         <div className="text-gray-500">暂无部署记录</div>
       )}
+    </div>
+  );
+}
+
+// ============= SiteLock(对外一键隐藏/恢复) =============
+function SiteLock() {
+  const [hidden, setHidden] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    apiFetch('/api/site-mode')
+      .then(r => r.json())
+      .then(d => setHidden(!!d.hidden))
+      .catch(() => { setHidden(false); setMessage({ ok: false, text: '读取开关状态失败(网络错误)' }); });
+  }, []);
+
+  const toggle = async () => {
+    const next = !hidden;
+    if (next && !confirm(
+      '确定对外隐藏全部内容吗?\n\n' +
+      '隐藏后,访客打开本站只能看到首页的星空 3D 动画和每日一句,\n' +
+      '其余页面没有入口,直接访问也会跳回首页。\n' +
+      '你本人(已登录本管理后台的浏览器)不受影响,可正常浏览和开发。'
+    )) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await apiFetch('/api/site-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: next }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHidden(!!data.hidden);
+        setMessage({ ok: true, text: next ? '已对外隐藏,访客侧立即生效' : '已恢复显示,访客侧立即生效' });
+      } else {
+        setMessage({ ok: false, text: `操作失败: ${data.error || '未知错误'}` });
+      }
+    } catch {
+      setMessage({ ok: false, text: '网络错误' });
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">站点开关(对外一键隐藏)</h2>
+      <div className="max-w-xl bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 mb-4">
+          <span className={`inline-block h-3 w-3 rounded-full ${hidden ? 'bg-red-500' : 'bg-green-500'}`} />
+          <span className="text-lg font-medium text-gray-900 dark:text-white">
+            {hidden === null ? '状态读取中...' : hidden ? '当前状态:对外隐藏中' : '当前状态:正常开放'}
+          </span>
+        </div>
+
+        <ul className="mb-5 space-y-1 text-sm text-gray-600 dark:text-gray-300 list-disc list-inside">
+          <li>隐藏后,访客只能看到首页的星空 3D 动画和每日一句。</li>
+          <li>导航、博客、项目、关于等页面没有入口,直接输入网址也会跳回首页。</li>
+          <li>你自己不受影响:已登录过本后台的浏览器仍可正常浏览全站。</li>
+          <li>管理后台 /zh/admin/ 始终可达,用于点击「恢复显示」。</li>
+          <li>访客侧立即生效,不需要重新构建部署。</li>
+        </ul>
+
+        {message && (
+          <div className={`mb-4 rounded p-3 text-sm ${message.ok
+            ? 'text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-300'
+            : 'text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-300'}`}>
+            {message.text}
+          </div>
+        )}
+
+        <button
+          onClick={toggle}
+          disabled={busy || hidden === null}
+          className={`w-full px-4 py-3 rounded-lg text-white text-sm font-medium disabled:opacity-50 ${hidden ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+        >
+          {busy ? '处理中...' : hidden ? '恢复显示(对外全部复原)' : '一键隐藏内容(对外只留首页星空)'}
+        </button>
+
+        <p className="mt-3 text-xs text-gray-400">
+          提示:这是访客视角的软隐藏(静态站的公开页面技术上仍可被直接抓取),用于临时闭站,不作为内容保护手段。
+        </p>
+      </div>
     </div>
   );
 }
