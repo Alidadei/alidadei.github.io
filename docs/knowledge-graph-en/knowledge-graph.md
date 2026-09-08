@@ -308,11 +308,13 @@ Cloudflare Worker (yhl-blog-cms)
     │
     ├── /api/auth/login      → GitHub OAuth 授权
     ├── /api/auth/callback    → 换取 token + 创建 KV 会话
+    ├── /api/user             → 当前登录用户 (会话校验)
     ├── /api/posts            → CRUD 博客文章
-    ├── /api/file/*           → 读写白名单目录文件 (src/content|src/data|public/images)
+    ├── /api/file/*           → 读写白名单目录文件 (src/content|src/data|public/images + 精确放行 public/site-mode.json)
     ├── /api/images           → 上传/删除图片
     ├── /api/batch            → 批量操作 (GraphQL commit)
     ├── /api/deploy/status    → 查看 GitHub Actions 部署状态
+    ├── /api/site-mode        → 站点对外隐藏开关 (GET 公开 / POST 需会话, KV key=site_mode)
     ├── /api/feed-proxy       → 友链 RSS 反代 (白名单, 绕过 CF 对 CI 数据中心 IP 的拦截)
     │
     ▼
@@ -354,6 +356,8 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 关于我/简历 | 照片墙彩蛋 | React AwardWall (client:load) |
 | 全局 | 移动端汉堡菜单动画 (max-height+opacity) | Vanilla JS + CSS transition |
 | CMS 后台 | 文章增删改 + 图片管理 + 部署 | React AdminApp (client:only) |
+| CMS 后台 | 站点开关 (对外一键隐藏/恢复, 双通道同写) | React AdminApp「🔒 站点开关」视图 |
+| 全局 | 站点锁守卫: 锁站时非首页跳回首页, 首页 html.site-locked 隐藏 header/main/footer 只留星空+每日一句 | BaseLayout 内联脚本 (双通道探测: /api/site-mode 优先 + 同源 /site-mode.json 兜底; sessionStorage 缓存同步生效; 站长浏览器 cms_owner_at 豁免) |
 
 ---
 
@@ -376,8 +380,11 @@ alidadei.github.io/
 ├── tests/                             # 验证脚本
 │   ├── cms-functions.test.mjs         # cms 纯函数测试 (61 项)
 │   ├── worker-base64.test.mjs         # worker base64 编解码测试
-│   ├── worker-path-guard.test.mjs     # worker 仓库路径白名单测试
+│   ├── worker-path-guard.test.mjs     # worker 仓库路径白名单测试 (含 site-mode.json 精确放行)
 │   ├── admin-post-meta.test.mjs       # admin frontmatter 行级处理测试
+│   ├── worker-cors.test.mjs           # worker CORS 来源白名单测试 (esbuild 打包走真实路由)
+│   ├── worker-site-mode.test.mjs      # 站点开关接口测试 (鉴权/读写/非法请求/CORS)
+│   ├── site-guard.test.mjs            # 站点锁守卫脚本行为回归 (从 dist 提取脚本+桩 DOM, 11 场景; 挂在 build 末尾)
 │   ├── atob-workerd-test/             # workerd atob 语义实测用最小 Worker (wrangler dev 手动跑)
 │   ├── dev-service-worker-cleanup.test.mjs # 开发态 SW/缓存清理回归
 │   ├── inspect-reading-progress.mjs   # Chrome 真实弧长 + 动态视觉视口回归
@@ -396,6 +403,7 @@ alidadei.github.io/
 │   ├── 个人技术博客写作风格.md          # 博客写作风格
 │   ├── 知识架构分类.md                 # 知识三轴 (origin × subject × maturity) 设计文档
 │   ├── 网站防复制与安全边界.md          # 防复制/安全策略文档
+│   ├── 一键内容隐藏功能.md              # 站点开关原理/双通道/边界/恢复途径
 │   ├── UI借鉴.md                       # UI 参考站点收集 (含塔罗网站等)
 │   ├── agent反思修改.md                # agent 反思与修改记录
 │   ├── posts-writing-guide.md          # 博客写作规范 (原posts/README.md)
@@ -406,7 +414,8 @@ alidadei.github.io/
 │
 ├── public/                            # 静态资源
 │   ├── 3d-background.html             # 3D场景 (Three.js warm-storybook)
-│   ├── sw.js                          # Service Worker (强制缓存3D重资源)
+│   ├── sw.js                          # Service Worker (强制缓存3D重资源; /site-mode.json 直通不缓存)
+│   ├── site-mode.json                 # 站点锁开关文件 {"hidden":false} (后台切换时 commit, 构建后生效)
 │   ├── favicon.png / favicon.svg
 │   ├── robots.txt
 │   ├── fonts/                         # 自托管 Inter 字体 (woff2)
@@ -443,7 +452,7 @@ alidadei.github.io/
 │   └── lib/feed.ts                    # RSS 解析 (构建时抓友链 feed, 失败回退不破坏构建)
 │   │
 │   ├── layouts/                       # 布局
-│   │   ├── BaseLayout.astro           # HTML 骨架
+│   │   ├── BaseLayout.astro           # HTML 骨架 + 站点锁守卫脚本(内联,双通道) + SW 注册 + 复制按钮
 │   │   ├── PageLayout.astro           # Header+Main (无Footer)
 │   │   └── PostLayout.astro           # 文章布局+TOC (桌面比例网格 / 移动端悬浮面板, header mb-4)
 │   │
@@ -462,7 +471,7 @@ alidadei.github.io/
 │   │   ├── resume/
 │   │   │   └── InteractiveResume.tsx  # 简历交互 ⚛
 │   │   └── admin/
-│   │       ├── AdminApp.tsx           # CMS管理 ⚛ (响应式: 桌面侧栏 / 移动端顶栏+抽屉)
+│   │       ├── AdminApp.tsx           # CMS管理 ⚛ (响应式: 桌面侧栏 / 移动端顶栏+抽屉; 含站点开关视图)
 │   │       ├── VditorEditor.tsx       # Vditor 富文本编辑器封装 ⚛ (IR 模式, cdn 指向自托管 /vditor)
 │   │       └── post-meta.ts           # frontmatter 行级处理纯函数 (split/join/setDraftFlag/parse)
 │   │
@@ -496,7 +505,7 @@ alidadei.github.io/
         ├── batch.ts                   # 批量操作 (GraphQL commit, 同样过路径白名单)
         ├── site-mode.ts               # 对外「一键隐藏」开关读写 (KV key=site_mode, 写需会话)
         ├── base64.ts                  # 纯 JS base64+UTF-8 编解码 (不依赖运行时 atob/btoa)
-        ├── paths.ts                   # 仓库路径白名单 (src/content|src/data|public/images, 防 .. 穿越)
+        ├── paths.ts                   # 仓库路径白名单 (src/content|src/data|public/images + 精确放行 public/site-mode.json, 防 .. 穿越)
         └── utils.ts                   # 工具函数 (CORS/session)
 ```
 
@@ -607,6 +616,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 | 移动端干支容器 | commit aac2053: 干支容器移动端top改为 top-[66px] (紧贴Header下方) |
 | 移动端3D行星缩放 | commit aac2053: 3d-background.html 移动端ORBIT_RADIUS从350增至480，使行星在手机屏幕上更小 |
 | Service Worker 强制缓存 | commit 1d979da: public/sw.js 重资源(vendor/*, 3d-background.html)Cache First,连硬刷新也秒开;HTML Network First;其他静态 SWR。BaseLayout 注册(仅生产,dev 不注册)。pre-commit hook 在 vendor/three/ 改时自动 bump sw.js VERSION 清旧库缓存;3d-background.html 改时自动更新 iframe ?v= |
+| 站点锁状态零缓存 | sw.js 对 /site-mode.json 直接 return(不 respondWith);守卫 fetch no-store + 时间戳参数,确保开关状态不被 SWR/边缘缓存拖延(2026-09-08) |
 | 开发态缓存隔离 | BaseLayout 在 `import.meta.env.DEV` 中自动注销同源 `/sw.js`，只删除本站 `heavy-v*` / `runtime-v*` 缓存；若当前页仍受旧 SW 控制，用 session 标记保证只自动刷新一次，避免干扰 HMR |
 | 代码块配色 | Shiki `github-light` 浅色主题(深色文字);`pre` 背景由 CSS `!important` 覆盖为浅灰 #e8e8e8(Shiki 默认注入 inline `#fff` 白底,须 !important 才能盖过);浅底配深字,与米色站点协调 |
 
@@ -643,11 +653,12 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 - 所有图片懒加载 (`loading="lazy"`)
 
 ### AdminApp.tsx — CMS 管理面板
-- 单文件 React SPA (~744行)
-- GitHub OAuth 登录
-- 文章编辑器 (Markdown + 实时预览)
-- 标签管理 / 分类管理 / 图片管理 / 部署状态
-- 自动保存到 localStorage
+- 单文件 React SPA (~1000行)
+- GitHub OAuth 登录 (成功写 localStorage `cms_owner_at` 站长标记, 退出清除——站点锁守卫据此豁免站长)
+- 文章编辑器 (Vditor IR 模式 + frontmatter 折叠面板)
+- 文章列表 (draft 行级隐藏/恢复) / 标签管理 / 分类管理 / 图片管理 / 部署状态
+- 「站点开关」视图: 一键对外隐藏/恢复, 同时写 KV(/api/site-mode) 与 commit public/site-mode.json
+- 编辑草稿自动保存到 localStorage
 
 ---
 
@@ -683,6 +694,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 > - **站点开关(对外一键隐藏)**:KV `site_mode` 一键切换;守卫脚本内联于 `BaseLayout.astro`(双通道探测:workers.dev `/api/site-mode` 优先 + 同源 `/site-mode.json` 兜底——workers.dev 国内被墙,直连访客靠仓库开关文件随构建生效;锁站时非首页跳回首页、首页 `html.site-locked` 只留星空 3D+每日一句;`/admin` 与开发模式豁免;站长浏览器以 localStorage `cms_owner_at` 豁免)。切换时后台同时写 KV 与 commit 仓库文件;`sw.js` 对开关文件直通不缓存。属访客视角软开关,边界与原理见 docs/一键内容隐藏功能.md。
 > - **frontmatter 处理**: `post-meta.ts` 行级改写、绝不重序列化,与 cms CLI 同约定,最小化 git diff。
 > - **测试**: `npm run check:cms`(base64 编解码/路径白名单/frontmatter 行级处理/CORS/站点开关接口 共 28 项)。
+> - **上线记录**: 站点开关 v1(9efac31) 2026-09-08 上线;同日 v3 双通道(d185b76) 修复 workers.dev 国内被墙导致直连访客锁不到的问题,已线上验证。
 > - **用法**: docs/quick-commands.md「在线管理后台」小节。
 
 ---
