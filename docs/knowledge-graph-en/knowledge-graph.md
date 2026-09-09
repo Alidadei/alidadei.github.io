@@ -1,6 +1,6 @@
 # Harry Yu 个人博客 — 项目知识图谱
 
-> 生成时间：2026-07-02 (最后更新: 2026-08-19 — docs 文件清单同步: 新增 UI借鉴/agent反思修改/个人技术博客写作风格/知识架构分类/网站防复制与安全边界)
+> 生成时间：2026-07-02 (最后更新: 2026-09-09 — docs 文件清单同步: 新增 网站审美规范)
 > 项目：`alidadei.github.io` | Astro 6 + React 19 + Tailwind CSS 4
 
 ---
@@ -357,7 +357,7 @@ GitHub Actions → 构建 → 部署到 GitHub Pages
 | 全局 | 移动端汉堡菜单动画 (max-height+opacity) | Vanilla JS + CSS transition |
 | CMS 后台 | 文章增删改 + 图片管理 + 部署 | React AdminApp (client:only) |
 | CMS 后台 | 站点开关 (对外一键隐藏/恢复, 双通道同写) | React AdminApp「🔒 站点开关」视图 |
-| 全局 | 站点锁守卫: 锁站时非首页跳回首页, 首页 html.site-locked 隐藏 header/main/footer 只留星空+每日一句 | BaseLayout 内联脚本 (双通道探测: /api/site-mode 优先 + 同源 /site-mode.json 兜底; sessionStorage 缓存同步生效; 站长浏览器 cms_owner_at 豁免) |
+| 全局 | 站点锁守卫: 锁站时非首页跳回首页, 首页 html.site-locked 隐藏 header/main/footer 只留星空+每日一句 | BaseLayout 内联脚本 (双通道先答先锁: /site-mode.json 同源最快, /api/site-mode 3 秒超时判不可达; sessionStorage + 5 分钟 localStorage 记忆; 站长浏览器 cms_owner_at 豁免) |
 
 ---
 
@@ -400,6 +400,7 @@ alidadei.github.io/
 │   │   └── knowledge-graph.md         # ← 本文件
 │   ├── quick-commands.md               # 常用快捷命令 (dev/build/cms/手机调试)
 │   ├── 技术博客排版规范.md              # 博客排版规范 (适配本项目:单行categories/正文从##起)
+│   ├── 网站审美规范.md                  # 站主审美全集:个人站(暖米纸)+社区站收录评分榜(夜航,重外观哲学) 配色/排版/组件/动效/红线
 │   ├── 个人技术博客写作风格.md          # 博客写作风格
 │   ├── 知识架构分类.md                 # 知识三轴 (origin × subject × maturity) 设计文档
 │   ├── 网站防复制与安全边界.md          # 防复制/安全策略文档
@@ -691,7 +692,7 @@ Harry Yu (logo, 左上, Caveat手写体, 棕色#8d6e63, 2rem)   右移2px对齐
 >
 > - **前端**: `AdminApp.tsx` 必须以 `client:only="react"` 岛屿挂载——裸 `<script>` 手动挂载 React 在 Astro 6 dev 下缺 react-refresh preamble 会整页白屏。Vditor 编辑器为 IR 模式,源数据始终是 Markdown;运行时资源(lute/katex/highlight.js)由 `scripts/copy-vditor.mjs` 自托管到 `/vditor/`(已 gitignore,dev/build 自动生成),不依赖外部 CDN。
 > - **功能**:文章列表(标题/日期/「已隐藏」徽标,8 并发拉 frontmatter)、draft 行级隐藏/恢复(隐藏=列表/RSS/详情 URL 全下线,文件保留)、Vditor 富文本编辑(图片粘贴上传接 `/api/images/upload`,插入 Typora 兼容相对路径)、frontmatter 折叠面板、标签/分类/图片管理、部署状态。
-> - **站点开关(对外一键隐藏)**:KV `site_mode` 一键切换;守卫脚本内联于 `BaseLayout.astro`(双通道探测:workers.dev `/api/site-mode` 优先 + 同源 `/site-mode.json` 兜底——workers.dev 国内被墙,直连访客靠仓库开关文件随构建生效;锁站时非首页跳回首页、首页 `html.site-locked` 只留星空 3D+每日一句;`/admin` 与开发模式豁免;站长浏览器以 localStorage `cms_owner_at` 豁免)。切换时后台同时写 KV 与 commit 仓库文件;`sw.js` 对开关文件直通不缓存。属访客视角软开关,边界与原理见 docs/一键内容隐藏功能.md。
+> - **站点开关(对外一键隐藏)**:KV `site_mode` 一键切换;守卫脚本内联于 `BaseLayout.astro`(双通道「先答先锁」:任一通道报隐藏立即锁——workers.dev `/api/site-mode` 即时但国内被墙且挂起,3 秒超时视为不可达;同源 `/site-mode.json` 随构建生效,是国内访客可靠通道;sessionStorage + 5 分钟 localStorage 记忆,防微信内置浏览器重置会话后闪现全文;锁站时非首页跳回首页、首页 `html.site-locked` 只留星空 3D+每日一句;`/admin` 与开发模式豁免;站长浏览器以 localStorage `cms_owner_at` 豁免)。切换时后台同时写 KV 与 commit 仓库文件,页内分通道显示状态+漂移警告;`sw.js` 对开关文件直通不缓存;`.githooks/pre-push` 拦截本地把隐藏开关覆盖回开放。属访客视角软开关,边界与原理见 docs/一键内容隐藏功能.md。
 > - **frontmatter 处理**: `post-meta.ts` 行级改写、绝不重序列化,与 cms CLI 同约定,最小化 git diff。
 > - **测试**: `npm run check:cms`(base64 编解码/路径白名单/frontmatter 行级处理/CORS/站点开关接口 共 28 项)。
 > - **上线记录**: 站点开关 v1(9efac31) 2026-09-08 上线;同日 v3 双通道(d185b76) 修复 workers.dev 国内被墙导致直连访客锁不到的问题,已线上验证。

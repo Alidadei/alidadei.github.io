@@ -40,14 +40,15 @@ function makeElement(tag) {
   return el;
 }
 
-// channel 值:true/false = 返回 hidden 状态;'unreachable' = 网络失败;404 对应 http 错误
+// channel 值:true/false = 返回 hidden 状态;'unreachable' = 网络失败;404 对应 http 错误;'pending' = 永不返回(模拟被墙挂起)
 function channelResponse(v) {
+  if (v === 'pending') return new Promise(() => {});
   if (v === 'unreachable') return Promise.reject(new TypeError('network down'));
   if (v === 404) return Promise.resolve({ ok: false, json: async () => ({}) });
   return Promise.resolve({ ok: true, json: async () => ({ hidden: !!v }) });
 }
 
-function makeSandbox({ pathname, api = false, file = false, owner = false, cached = null }) {
+function makeSandbox({ pathname, api = false, file = false, owner = false, cached = null, lastLock = null, lastTs = null }) {
   const calls = { fetches: [], replacedTo: null, appended: [] };
   const docEl = { classSet: new Set(), classList: {
     add: (c) => docEl.classSet.add(c),
@@ -73,6 +74,10 @@ function makeSandbox({ pathname, api = false, file = false, owner = false, cache
   sandbox.window = sandbox;
   if (owner) sandbox.localStorage.setItem('cms_owner_at', String(Date.now()));
   if (cached !== null) sandbox.sessionStorage.setItem('site_lock_cache', cached);
+  if (lastLock !== null) {
+    sandbox.localStorage.setItem('site_lock_last', lastLock);
+    sandbox.localStorage.setItem('site_lock_ts', String(lastTs ?? Date.now()));
+  }
 
   sandbox.fetch = (url) => {
     const u = String(url);
@@ -144,13 +149,63 @@ test('同源文件 404(旧构建),仅 API 报隐藏 → 上锁', async () => {
   assert.equal(isLocked(sandbox), true);
 });
 
-test('API 可达时优先:API 报开放、文件残留隐藏 → 不上锁(恢复不被文件延迟拖住)', async () => {
+test('任一通道报隐藏即锁:API 报开放、文件报隐藏 → 上锁(隐藏优先,不等 API)', async () => {
   const script = loadGuardScript();
   const { sandbox } = makeSandbox({ pathname: '/zh/', api: false, file: true });
   vm.runInContext(script, sandbox);
   await flush();
+  assert.equal(isLocked(sandbox), true);
+  assert.equal(sandbox.sessionStorage.getItem('site_lock_cache'), '1');
+});
+
+test('workers.dev 被墙挂起未应答,同源文件报隐藏 → 立即上锁,不等 API', async () => {
+  const script = loadGuardScript();
+  const { sandbox } = makeSandbox({ pathname: '/zh/', api: 'pending', file: true });
+  vm.runInContext(script, sandbox);
+  await flush();
+  assert.equal(isLocked(sandbox), true);
+});
+
+test('API 挂起、文件报开放 → 暂不上锁也不写缓存(等 API 回话再定)', async () => {
+  const script = loadGuardScript();
+  const { sandbox } = makeSandbox({ pathname: '/zh/', api: 'pending', file: false });
+  vm.runInContext(script, sandbox);
+  await flush();
   assert.equal(isLocked(sandbox), false);
+  assert.equal(sandbox.sessionStorage.getItem('site_lock_cache'), null);
+  assert.equal(sandbox.localStorage.getItem('site_lock_last'), null);
+});
+
+test('localStorage 记忆:sessionStorage 被重置(微信场景),5 分钟内锁过 → 同步立即锁', async () => {
+  const script = loadGuardScript();
+  const { sandbox } = makeSandbox({ pathname: '/zh/', cached: null, lastLock: '1', lastTs: Date.now() - 60000, api: 'pending', file: 'pending' });
+  vm.runInContext(script, sandbox);
+  assert.equal(isLocked(sandbox), true); // 同步阶段即锁,不等任何探测
+  await flush();
+  assert.equal(isLocked(sandbox), true);
+});
+
+test('localStorage 记忆超过 5 分钟 → 不再同步锁,由探测决定', async () => {
+  const script = loadGuardScript();
+  const { sandbox } = makeSandbox({ pathname: '/zh/', cached: null, lastLock: '1', lastTs: Date.now() - 400000, api: false, file: false });
+  vm.runInContext(script, sandbox);
+  assert.equal(isLocked(sandbox), false);
+  await flush();
+  assert.equal(isLocked(sandbox), false); // 两通道报开放 → 维持解锁
   assert.equal(sandbox.sessionStorage.getItem('site_lock_cache'), '0');
+});
+
+test('恢复后写 localStorage 记忆,后续微信重进(记忆=0)不闪锁', async () => {
+  const script = loadGuardScript();
+  const { sandbox } = makeSandbox({ pathname: '/zh/', api: false, file: false });
+  vm.runInContext(script, sandbox);
+  await flush();
+  assert.equal(sandbox.localStorage.getItem('site_lock_last'), '0');
+  assert.ok(Number(sandbox.localStorage.getItem('site_lock_ts')) > 0);
+  // 模拟微信重进:sessionStorage 清空,localStorage 记忆仍在
+  sandbox.sessionStorage.removeItem('site_lock_cache');
+  vm.runInContext(script, sandbox);
+  assert.equal(isLocked(sandbox), false);
 });
 
 test('双通道都不可达:维持现状,不误伤正常浏览', async () => {

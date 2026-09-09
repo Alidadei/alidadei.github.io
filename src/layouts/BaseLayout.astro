@@ -57,8 +57,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     {noindex && <meta name="robots" content="noindex" />}
 
     <!-- 对外「一键隐藏」守卫:锁站时非首页跳回首页,首页只保留星空与每日一句。
-         状态走双通道:① workers.dev KV(有代理的访客即时生效) ② 同源 /site-mode.json
-         (国内直连访客的唯一可靠通道,随构建更新);可连通的状态里 API 优先。
+         状态双通道:① workers.dev KV(即时,但国内常被墙,3 秒超时视为不可达)
+         ② 同源 /site-mode.json(随构建更新,国内访客的可靠通道)。
+         任一通道报隐藏立即锁;sessionStorage + 5 分钟 localStorage 记忆防内置浏览器闪现。
          站长浏览器(登录过管理后台)豁免;/admin 路径豁免(恢复入口);开发模式跳过。 -->
     <style is:inline>
       html.site-locked header, html.site-locked main, html.site-locked footer { display: none !important; }
@@ -138,28 +139,50 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         var cached = null;
         try { cached = sessionStorage.getItem('site_lock_cache'); } catch (e) {}
-        if (cached === '1') apply(true); // 本会话已确认过锁,立即生效避免闪现内容
-
-        // 双通道探测:null = 该通道不可达(国内直连常见于 workers.dev)
-        function probe(url) {
-          return fetch(url, { cache: 'no-store' })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (d) { return (d && typeof d.hidden === 'boolean') ? d.hidden : null; })
-            .catch(function () { return null; });
+        if (cached !== '1' && cached !== '0') {
+          // 微信等内置浏览器会重置 sessionStorage:退而看 5 分钟内的 localStorage 记忆
+          try {
+            var lastTs = Number(localStorage.getItem('site_lock_ts'));
+            if (Date.now() - lastTs < 300000) cached = localStorage.getItem('site_lock_last');
+          } catch (e) {}
         }
-        Promise.all([
-          probe('/site-mode.json?_=' + Date.now()),
-          probe(workerUrl + '/api/site-mode')
-        ]).then(function (results) {
-          var fileH = results[0], apiH = results[1];
-          var hidden;
-          if (apiH !== null) hidden = apiH;          // API 可达:以它为准(切换即时)
-          else if (fileH !== null) hidden = fileH;   // 否则用同源文件(随构建更新)
-          else return;                                // 都不可达:维持现状,不误伤
+        if (cached === '1') apply(true); // 已确认过锁:同步立即生效避免闪现内容
+
+        // 双通道探测:任一通道确认「隐藏」立即上锁(文件通道同源最快,不等 workers.dev;
+        // workers.dev 国内常被墙且表现为长时间挂起,3 秒不回话视为不可达)。
+        // 「恢复」需要有通道明确报开放:API 开放,或 API 不可达且文件开放;全不可达维持现状。
+        function probe(url, timeoutMs) {
+          var opts = { cache: 'no-store' };
+          if (timeoutMs && typeof AbortController !== 'undefined') {
+            var ctrl = new AbortController();
+            opts.signal = ctrl.signal;
+            setTimeout(function () { ctrl.abort(); }, timeoutMs);
+          }
+          return fetch(url, opts)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { return (d && typeof d.hidden === 'boolean') ? d.hidden : 'down'; })
+            .catch(function () { return 'down'; });
+        }
+
+        var fileH = 'pending', apiH = 'pending', decided = false;
+        function decide() {
+          if (decided) return;
+          var hidden = null;
+          if (fileH === true || apiH === true) hidden = true;          // 任一通道确认隐藏:立即锁
+          else if (apiH === false) hidden = false;                     // API 可达且开放:恢复
+          else if (apiH === 'down' && fileH === false) hidden = false; // API 不可达,文件开放:恢复
+          else return;                                                 // 还有通道没回话 / 全不可达:维持现状
+          decided = true;
           var next = hidden ? '1' : '0';
-          try { sessionStorage.setItem('site_lock_cache', next); } catch (e) {}
+          try {
+            sessionStorage.setItem('site_lock_cache', next);
+            localStorage.setItem('site_lock_last', next);
+            localStorage.setItem('site_lock_ts', String(Date.now()));
+          } catch (e) {}
           if ((cached === '1') !== (next === '1')) apply(hidden);
-        });
+        }
+        probe('/site-mode.json?_=' + Date.now()).then(function (v) { fileH = v; decide(); });
+        probe(workerUrl + '/api/site-mode', 3000).then(function (v) { apiH = v; decide(); });
       })();
     </script>
 
