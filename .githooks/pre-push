@@ -1,0 +1,30 @@
+#!/bin/sh
+# 站点锁保护:防止本地把 public/site-mode.json 从「隐藏」覆盖回「开放」推上 master。
+# 背景:站长在后台点「隐藏」时,Worker 会 commit 该文件为 true;若本地没有先 git pull 就 push,
+# 会把它冲回 false——没代理的国内访客立即重新看到全部内容(即时通道也只在访客能连上
+# workers.dev 时兜底,不可靠)。确需本地覆盖,用 GIT_ALLOW_SITE_UNLOCK=1 前缀执行 push。
+
+zero=0000000000000000000000000000000000000000
+
+while read local_ref local_sha remote_ref remote_sha; do
+	[ "$remote_ref" = "refs/heads/master" ] || continue
+	[ "$local_sha" = "$zero" ] && continue   # 删除分支,不管
+	[ "$remote_sha" = "$zero" ] && continue  # 新建远端分支,不管
+
+	remote_hidden=$(git show "$remote_sha:public/site-mode.json" 2>/dev/null | grep -c '"hidden": *true')
+	local_hidden=$(git show "$local_sha:public/site-mode.json" 2>/dev/null | grep -c '"hidden": *true')
+
+	if [ "$remote_hidden" = "1" ] && [ "$local_hidden" != "1" ]; then
+		if [ "$GIT_ALLOW_SITE_UNLOCK" = "1" ]; then
+			continue
+		fi
+		echo "" >&2
+		echo "✋ 推送被拦下:线上 master 的站点开关是「隐藏」,而你要推的版本把它改回「开放」。" >&2
+		echo "   这会让国内直连访客立刻重新看到全部内容。" >&2
+		echo "   先 git pull 同步;若确实要恢复显示,请到 /zh/admin/ 的「站点开关」操作;" >&2
+		echo "   或本次强制推送:GIT_ALLOW_SITE_UNLOCK=1 git push ..." >&2
+		exit 1
+	fi
+done
+
+exit 0

@@ -908,7 +908,8 @@ function DeployStatus() {
 
 // ============= SiteLock(对外一键隐藏/恢复) =============
 function SiteLock() {
-  const [hidden, setHidden] = useState<boolean | null>(null);
+  const [hidden, setHidden] = useState<boolean | null>(null); // 即时通道:workers.dev KV
+  const [fileHidden, setFileHidden] = useState<boolean | null>(null); // 文件通道:仓库 site-mode.json
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -916,7 +917,11 @@ function SiteLock() {
     apiFetch('/api/site-mode')
       .then(r => r.json())
       .then(d => setHidden(!!d.hidden))
-      .catch(() => { setHidden(false); setMessage({ ok: false, text: '读取开关状态失败(网络错误)' }); });
+      .catch(() => setHidden(null));
+    apiFetch('/api/file/public/site-mode.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setFileHidden(!!(d && d.hidden)))
+      .catch(() => setFileHidden(null));
   }, []);
 
   const toggle = async () => {
@@ -959,6 +964,7 @@ function SiteLock() {
       }
 
       const timing = '有代理的访客已立即生效;国内直连访客等构建后约 2-3 分钟生效';
+      if (fileOk) setFileHidden(next);
       setMessage({
         ok: true,
         text: next
@@ -975,12 +981,26 @@ function SiteLock() {
     <div>
       <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">站点开关(对外一键隐藏)</h2>
       <div className="max-w-xl bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-4">
-          <span className={`inline-block h-3 w-3 rounded-full ${hidden ? 'bg-red-500' : 'bg-green-500'}`} />
-          <span className="text-lg font-medium text-gray-900 dark:text-white">
-            {hidden === null ? '状态读取中...' : hidden ? '当前状态:对外隐藏中' : '当前状态:正常开放'}
-          </span>
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <span className={`inline-block h-3 w-3 rounded-full shrink-0 ${hidden ? 'bg-red-500' : hidden === false ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <span className="text-lg font-medium text-gray-900 dark:text-white">
+              {hidden === null ? '即时通道:状态读取失败(网络)' : hidden ? '即时通道:隐藏中' : '即时通道:正常开放'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`inline-block h-3 w-3 rounded-full shrink-0 ${fileHidden ? 'bg-red-500' : fileHidden === false ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              {fileHidden === null ? '文件通道(国内访客靠它):状态读取失败(网络)' : fileHidden ? '文件通道(国内访客靠它):隐藏中' : '文件通道(国内访客靠它):正常开放'}
+            </span>
+          </div>
         </div>
+
+        {hidden !== null && fileHidden !== null && hidden !== fileHidden && (
+          <div className="mb-4 rounded p-3 text-sm text-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300">
+            两条通道状态不一致(通常是一轮切换只完成了一半)。请连续完成一整次开关切换(先点恢复、再点隐藏,或反过来),两条通道即自动对齐;不一致期间,连不上即时通道的访客以文件通道为准。
+          </div>
+        )}
 
         <ul className="mb-5 space-y-1 text-sm text-gray-600 dark:text-gray-300 list-disc list-inside">
           <li>隐藏后,访客只能看到首页的星空 3D 动画和每日一句。</li>
