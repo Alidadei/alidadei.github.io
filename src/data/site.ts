@@ -14,7 +14,7 @@ export const siteConfig = {
       en: 'Ph.D.student @ FDU',
     },
     location: 'Shanghai, China',
-    email: '13427917163@163.com',
+    email: '2765428788@qq.com',
     github: 'Alidadei',
     researchInterests: [
       'Large Language Models',
